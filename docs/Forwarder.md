@@ -178,3 +178,16 @@ MIR中 `CPacket` 的处理流程包含以下管道：
 本管道的处理流程包含以下步骤：
 
 1. 通过对应的 *LogicFace* 将 `CPacket` 发出。
+
+
+
+
+
+```go
+type ExpiryTimerCallback func(pitEntry *PITEntry)
+
+SetExpiryTimer(duration uint64, callback ExpiryTimerCallback)
+
+CancelTimer()
+```
+
