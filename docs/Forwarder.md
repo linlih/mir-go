@@ -184,10 +184,19 @@ MIR中 `CPacket` 的处理流程包含以下管道：
 
 
 ```go
-type ExpiryTimerCallback func(pitEntry *PITEntry)
+type StrategyChoiceEntry struct {
+  StrategyInstanceName string 			// 策略实例的名字
+  prefix *Identifier								// 标识前缀
+  strategy *Strategy								// 策略实例
+}
 
-SetExpiryTimer(duration uint64, callback ExpiryTimerCallback)
+// Get and Set functions
 
-CancelTimer()
+type StrategyChoiceTable interface {
+  /**
+  * 为指定的名字查找一个可以使用的策略实例
+  */
+  FindEffectiveStrategy(prefix *Identifier) (*Strategy, error)
+}
 ```
 
