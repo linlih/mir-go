@@ -10,6 +10,7 @@ package fw
 import (
 	"minlib/component"
 	"minlib/packet"
+	"mir/daemon/lf"
 	"mir/daemon/table"
 )
 
@@ -21,7 +22,7 @@ type IForwarder interface {
 	// @param ingress	入口Face
 	// @param interest	收到的内容兴趣包
 	//
-	OnIncomingInterest(ingress *LogicFaceEndpoint, interest *packet.Interest)
+	OnIncomingInterest(ingress *lf.LogicFace, interest *packet.Interest)
 
 	//
 	// 处理一个回环的兴趣包 （ Interest Loop Pipeline ）
@@ -30,7 +31,7 @@ type IForwarder interface {
 	// @param ingress
 	// @param interest
 	//
-	OnInterestLoop(ingress *LogicFaceEndpoint, interest *packet.Interest)
+	OnInterestLoop(ingress *lf.LogicFace, interest *packet.Interest)
 
 	//
 	// 处理兴趣包未命中缓存 （ ContentStore Miss Pipeline ）
@@ -40,7 +41,7 @@ type IForwarder interface {
 	// @param pitEntry
 	// @param interest
 	//
-	OnContentStoreMiss(ingress *LogicFaceEndpoint, pitEntry *table.PITEntry, interest *packet.Interest)
+	OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest)
 
 	//
 	// 处理兴趣包命中缓存 （ ContentStore Hit Pipeline ）
@@ -51,7 +52,7 @@ type IForwarder interface {
 	// @param interest
 	// @param data
 	//
-	OnContentStoreHit(ingress *LogicFaceEndpoint, pitEntry *table.PITEntry, interest *packet.Interest, data *packet.Data)
+	OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *packet.Data)
 
 	//
 	// 处理将兴趣包通过 LogicFace 发出 （ Outgoing Interest Pipeline ）
@@ -61,7 +62,7 @@ type IForwarder interface {
 	// @param pitEntry
 	// @param interest
 	//
-	OnOutgoingInterest(egress *LogicFaceEndpoint, pitEntry *table.PITEntry, interest *packet.Interest)
+	OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest)
 
 	//
 	// 兴趣包最终回收处理，此时兴趣包要么被满足要么被Nack （ Interest Finalize Pipeline ）
@@ -78,7 +79,7 @@ type IForwarder interface {
 	// @param ingress
 	// @param data
 	//
-	OnIncomingData(ingress *LogicFaceEndpoint, data *packet.Data)
+	OnIncomingData(ingress *lf.LogicFace, data *packet.Data)
 
 	//
 	// 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
@@ -87,7 +88,7 @@ type IForwarder interface {
 	// @param ingress
 	// @param data
 	//
-	OnDataUnsolicited(ingress *LogicFaceEndpoint, data *packet.Data)
+	OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data)
 
 	//
 	// 处理将一个数据包发出 （ Outgoing Data Pipeline ）
@@ -96,7 +97,7 @@ type IForwarder interface {
 	// @param egress
 	// @param data
 	//
-	OnOutgoingData(egress *LogicFaceEndpoint, data *packet.Data)
+	OnOutgoingData(egress *lf.LogicFace, data *packet.Data)
 
 	//
 	// 处理一个 Nack 到来 （ Incoming Nack Pipeline ）
@@ -105,7 +106,7 @@ type IForwarder interface {
 	// @param ingress
 	// @param nack
 	//
-	OnIncomingNack(ingress *LogicFaceEndpoint, nack *packet.Nack)
+	OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack)
 
 	//
 	// 处理一个 Nack 发出 （ Outgoing Nack Pipeline ）
@@ -115,5 +116,5 @@ type IForwarder interface {
 	// @param pitEntry
 	// @param header
 	//
-	OnOutgoingNack(egress *LogicFaceEndpoint, pitEntry *table.PITEntry, header *component.NackHeader)
+	OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader)
 }
