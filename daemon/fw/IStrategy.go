@@ -140,4 +140,24 @@ type IStrategy interface {
 	// @param cPacket		要转发出的 CPacket
 	//
 	sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	//// 其它辅助函数
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//
+	// 在 FIB 表中查询可用于转发 Interest 的 FIB 条目
+	//
+	// @Description:
+	// @param interest
+	//
+	lookupFibForInterest(interest *packet.Interest)
+
+	//
+	// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+	//
+	// @Description:
+	// @param cPacket
+	//
+	lookupFibForCPacket(cPacket *packet.CPacket)
 }

@@ -286,3 +286,30 @@ sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
 ```
 
 转发策略（ *forwarding strategy* ）可以调用 **sendCPacket** 操作转发一个 `CPacket` ，本操作将会启动 **Outgoing CPacket** 管道处理流程。
+
+## 3. 其它辅助函数
+
+### 3.1 lookupFibForInterest
+
+```go
+//
+// 在 FIB 表中查询可用于转发 Interest 的 FIB 条目
+//
+// @Description:
+// @param interest
+//
+lookupFibForInterest(interest *packet.Interest)
+```
+
+### 3.2 lookupFibForCPacket
+
+```go
+//
+// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+//
+// @Description:
+// @param cPacket
+//
+lookupFibForCPacket(cPacket *packet.CPacket)
+```
+
