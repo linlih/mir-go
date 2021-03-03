@@ -117,4 +117,22 @@ type IForwarder interface {
 	// @param header
 	//
 	OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader)
+
+	//
+	// 处理一个 CPacket 到来 （Incoming CPacket Pipeline）
+	//
+	// @Description:
+	// @param ingress
+	// @param cPacket
+	//
+	OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
+
+	//
+	// 处理一个 CPacket 发出 （Outgoing CPacket Pipeline）
+	//
+	// @Description:
+	// @param egress
+	// @param cPacket
+	//
+	OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
 }
