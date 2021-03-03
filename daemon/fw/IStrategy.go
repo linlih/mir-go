@@ -8,12 +8,17 @@
 package fw
 
 import (
+	"minlib/component"
 	"minlib/packet"
 	"mir/daemon/lf"
 	"mir/daemon/table"
 )
 
 type IStrategy interface {
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	//// Triggers
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	//
 	// 当收到一个兴趣包时，会触发本触发器
 	//
@@ -72,4 +77,67 @@ type IStrategy interface {
 	// @param cPacket		收到的 CPacket
 	//
 	AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	//// Actions
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//
+	// 将 Interest 从指定的逻辑接口转发出去
+	//
+	// @Description:
+	// @param egress		转发 Interest 的出口 LogicFace
+	// @param interest		要转发的 Interest
+	// @param entry			Interest 对应匹配的 PIT 条目
+	//
+	sendInterest(egress *lf.LogicFace, interest *packet.Interest, pitEntry *table.PITEntry)
+
+	//
+	// 将 Data 从指定的逻辑接口转发出去
+	//
+	// @Description:
+	// @param egress		转发 Data 的出口 LogicFace
+	// @param data			要转发的 Data
+	// @param pitEntry		Data 对应匹配的 PIT 条目
+	//
+	sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+
+	//
+	// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
+	//
+	// @Description:
+	// @param ingress		Data 到来的入口 LogicFace => 主要是用来避免往收到 Data 包的 LogicFace 转发 Data
+	// @param data			要转发的 Data
+	// @param pitEntry		Data 对应匹配的 PIT 条目
+	//
+	sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+
+	//
+	// 往指定的逻辑接口发送一个 Nack
+	//
+	// @Description:
+	// @param egress		转发 Nack 的出口 LogicFace
+	// @param nackHeader	要转发出的Nack的元信息
+	// @param pitEntry		Nack 对应匹配的 PIT 条目
+	//
+	sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+
+	//
+	// 将 Nack 发送给对应 PIT 条目记录的所有符合条件的下游节点
+	//
+	// @Description:
+	// @param ingress		收到 Nack 的入口 LogicFace
+	// @param nackHeader	要转发出的Nack的元信息
+	// @param pitEntry		Nack 对应匹配的 PIT 条目
+	//
+	sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+
+	//
+	// 往指定的逻辑接口发送一个 CPacket
+	//
+	// @Description:
+	// @param egress		转发 CPacket 的出口 LogicFace
+	// @param cPacket		要转发出的 CPacket
+	//
+	sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
 }

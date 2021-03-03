@@ -11,7 +11,10 @@
   - `AfterReceiveNack`
   - `AfterReceiveCPacket`
 - **操作（Actions） ** ：每个操作（ *Action* ）实际上就是策略程序实际作出的转发决策。
-  - 
+  - `sendInterest`
+  - `sendData`
+  - `sendNack`
+  - `sendCPacket`
 
 MIR中可以定义很多的策略，但是对于某个具体的网络包的转发必须由单一的转发策略决定，为此我们根据命名空间来进行策略的选择。网络管理员可以为某个前缀配置特定的策略，默认至少会为 `/` 前缀配置一个策略，保证所有的包至少是可以匹配到策略的。实际使用时，转发管道会去策略选择表进行最长前缀匹配，找到匹配的策略来进行转发决策。
 
@@ -39,6 +42,8 @@ AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry 
 ```
 
 当MIR收到一个 `Interest` 时，会传递给 **Incoming Interest** 管道处理，如果这个 `Interest` 满足下述的几个条件，那么 **Incoming Interest** 管道将会触发 **After Receive Interest** 触发器：
+
+- 存在 `TTL` ，并且 `TTL` 大于等于1；
 
 - `Interest` 不是回环的；
 - `Interest` 没有命中缓存；
@@ -92,6 +97,8 @@ AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEn
 
 当传入的 `Data` 匹配到 PIT 条目时，会触发本触发器，此时策略将对 `Data` 的转发具有完全的控制权。默认情况下，本触发器将把 `Data` 转发到所有有效的下游 *LogicFace*。调用此触发器是需要满足以下先决条件：
 
+- 存在 `TTL` ，并且 `TTL` 大于等于1
+
 - `Data` 经过查表和验证，可以匹配到 PIT 条目；
 - `Data` 位于当前策略的命名空间下。
 
@@ -121,6 +128,8 @@ AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *table.PITEn
 ```
 
 当MIR收到一个 `Nack` ，会传递给 **Incoming Nack** 管道处理，如果 `Nack` 满足下述的几个条件，那么 **Incoming Nack** 管道将会触发 **After Receive Nack** 触发器：
+
+- 存在 `TTL` ，并且 `TTL` 大于等于1；
 
 - `Nack` 响应一个已经转发的 `Interest` ，即使用 `Nack` 中包含的 `Interest` 可以在 PIT 表中检索到匹配的 PIT 条目；
 
@@ -153,7 +162,127 @@ AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *table.PITEn
 AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
 ```
 
+当MIR收到一个 `CPacket`，会传递给 **Incoming CPacket** 管道处理，如果 `CPacket` 满足下述的几个条件，那么 **Incoming CPacket** 管道将会触发 **After Receive CPacket** 触发器：
+
+- 存在 `TTL` ，并且 `TTL` 大于等于1
+
+当 **After Receive CPacket** 触发器被触发后，策略程序通常的行为为查询FIB表，找到可用的路由将 `CPacket` 转发出去
+
 ## 2. Actions
 
+所谓操作（ *Action* ） 是转发策略 （ *forwarding strategy* ）对网络包的转发作出的决策，由上一节提到的触发器调用。
 
+### 2.1 Send Interest
 
+```go
+// 将兴趣包从指定的逻辑接口转发出去
+//
+// @Description:
+// @param egress		转发 Interest 的出口 LogicFace
+// @param interest		要转发的 Interest
+// @param entry			Interest 对应匹配的 PIT 条目
+//
+sendInterest(egress *lf.LogicFace, interest *packet.Interest, entry *table.PITEntry)
+```
+
+转发策略（ *forwarding strategy* ）可以调用 **sendInterest** 操作转发一个 `Interest` ，调用之前应该保证传入的 `Interest` 是对应的PIT条目中某个 *in-record* 中所存储的。只要不影响 `Interest` 和对应 PIT 条目的匹配关系，可以创建 `Interest` 的副本并对其进行修改。
+
+最后本操作将会启动 **Outgoing Interest** 管道处理流程。
+
+### 2.2 Send Data
+
+```go
+//
+// 将 Data 从指定的逻辑接口转发出去
+//
+// @Description:
+// @param egress		转发 Data 的出口 LogicFace
+// @param data			要转发的 Data
+// @param pitEntry		Data 对应匹配的 PIT 条目
+//
+sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+```
+
+转发策略（ *forwarding strategy* ）可以调用 **sendData** 操作转发一个 `Data`，该操作会执行以下步骤：
+
+- 首先，删除对应 PIT 条目中对应的 *in-record*；
+- 接着启动 **Outgoing Data** 管道处理流程。
+
+在多数情况下，转发策略通常希望将 `Data` 发送到每个有效下游，所以我们还定义一个辅助函数，用来将 `Data` 发往所有符合条件的下游：
+
+```go
+//
+// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
+//
+// @Description:
+// @param ingress		Data 到来的入口 LogicFace => 主要是用来避免往收到 Data 包的 LogicFace 转发 Data
+// @param data			要转发的 Data
+// @param pitEntry		Data 对应匹配的 PIT 条目
+//
+sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+```
+
+**sendDataToAll** 函数应该包含以下执行步骤：
+
+- 首先，从 PIT 条目的 *in-records* 中过滤出有效的可用于转发的连接下游的 *LogicFace*，满足下列条件的 *LogicFace* 称为有效的 *LogicFace*  ：
+  - 首先，该 *LogicFace* 必然是包含在要转发的 `Data` 对应匹配的 PIT 条目的 *in-records* 当中的；
+  - 然后，对应的 *in-record* 应该是没有过期的（ *in-record* 的超时时间大于当前时间）；
+  - 最后，该 *LogicFace* 不能是收到 `Data` 的 *LogicFace*。
+- 然后往每一个有效的 *LogicFace* 通过调用 **sendData** 操作，将 `Data` 发往该下游。
+
+### 2.3 Send Nack
+
+```go
+//
+// 往指定的逻辑接口发送一个 Nack
+//
+// @Description:
+// @param egress		转发 Nack 的出口 LogicFace
+// @param nackHeader	要转发出的Nack的元信息
+// @param pitEntry		Nack 对应匹配的 PIT 条目
+//
+sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+```
+
+转发策略（ *forwarding strategy* ）可以调用 **sendNack** 操作尝试往一个指定的下游转发一个 `Nack`，本操作会启动 **Outgoing Nack** 管道处理流程。
+
+> **Outgoing Nack** 管道会执行以下步骤：
+>
+> - 首先尝试根据 *egress* 去 *pitEntry* 中找到匹配的 *in-record* ，如果没有，则操作无效直接返回；
+> - 接着从 *in-record* 中提取出对应的 `Interest` ，和 *nackHeader* 组合成一个 `Nack` ，然后通过 *egress* 转发出去。
+
+在多数情况下，转发策略通常希望将 `Nack` 发送到每个有效的下游，所以我们定义一个辅助函数，用来将 `Nack` 发往所有符合条件的下游：
+
+```go
+//
+// 将 Nack 发送给对应 PIT 条目记录的所有符合条件的下游节点
+//
+// @Description:
+// @param ingress		收到 Nack 的入口 LogicFace
+// @param nackHeader	要转发出的Nack的元信息
+// @param pitEntry		Nack 对应匹配的 PIT 条目
+//
+sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+```
+
+**sendNackToAll** 函数应该包含以下执行步骤：
+
+- 首先，从 PIT 条目的 *in-records* 中过滤出有效的可用于转发的连接下游的 *LogicFace*，满足下列条件的 *LogicFace* 称为有效的 *LogicFace*  ：
+  - 首先，该 *LogicFace* 必然是包含在要转发的 `Data` 对应匹配的 PIT 条目的 *in-records* 当中的；
+  - 然后，该 *LogicFace* 不能是收到 `Data` 的 *LogicFace*。
+- 然后往每一个有效的 *LogicFace* 通过调用 **sendNack** 操作，将 `Nack` 发往该下游。
+
+### 2.4 Send CPacket
+
+```go
+//
+// 往指定的逻辑接口发送一个 CPacket
+//
+// @Description:
+// @param egress		转发 CPacket 的出口 LogicFace
+// @param cPacket		要转发出的 CPacket
+//
+sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
+```
+
+转发策略（ *forwarding strategy* ）可以调用 **sendCPacket** 操作转发一个 `CPacket` ，本操作将会启动 **Outgoing CPacket** 管道处理流程。
