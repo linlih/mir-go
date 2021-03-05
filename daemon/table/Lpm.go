@@ -8,14 +8,16 @@
 
 package table
 
-import "sync"
+import (
+	"sync"
+)
 
 type LpmMatcher struct {
 	node
 }
 
 type node struct {
-	val   *interface{}
+	val   interface{}
 	table *sync.Map
 	lock  *sync.RWMutex
 }
@@ -42,11 +44,11 @@ func (n *node) empty() bool {
 	return count == 0
 }
 
-func deref(val *interface{}) (interface{}, bool){
+func deref(val interface{}) (interface{}, bool){
 	if val == nil {
 		return nil, false
 	}
-	return *val, true
+	return val, true
 }
 
 func (n *node) FindLongestPrefixMatch(key []string) ( interface{},  bool) {
@@ -64,10 +66,10 @@ func (n *node) FindLongestPrefixMatch(key []string) ( interface{},  bool) {
 		return deref(n.val)
 	}
 
-	child := childInterface.(nodeAndLock)
-	child.lock.RLock()
-	val, found := child.node.FindLongestPrefixMatch(key[1:])
-	child.lock.RUnlock()
+	child := childInterface.(*node)
+	//child.lock.RLock()
+	val, found := child.FindLongestPrefixMatch(key[1:])
+	//child.lock.RUnlock()
 
 	return val,found
 }
@@ -86,19 +88,24 @@ func (n *node) FindExactMatch(key []string) ( interface{},  bool) {
 		return deref(n.val)
 	}
 
-	child := childInterface.(nodeAndLock)
-	child.lock.RLock()
-	val, found := child.node.FindLongestPrefixMatch(key[1:])
-	child.lock.RUnlock()
+	child := childInterface.(*node)
+	//child.lock.RLock()
+	val, found := child.FindLongestPrefixMatch(key[1:])
+	//child.lock.RUnlock()
 
 	return val,found
 }
 
-func (n *node) AddOrUpdate(key []string, val interface{}) {
-
+func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}) interface{}) {
 	n.lock.Lock()
 	if len(key) == 0 {
-		n.val = &val
+		if val != nil{
+			n.val = val
+		}
+
+		if f != nil {
+			n.val = f(&n.val)
+		}
 		n.lock.Unlock()
 		return
 	}
@@ -108,7 +115,7 @@ func (n *node) AddOrUpdate(key []string, val interface{}) {
 	}
 
 	if _, ok := n.table.Load(key[0]); !ok {
-		nal := nodeAndLock{node: &node{table: new(sync.Map), lock: new(sync.RWMutex)}, lock: &sync.RWMutex{}}
+		nal :=  &node{table: new(sync.Map), lock: new(sync.RWMutex)}
 		n.table.Store(key[0], nal)
 	}
 	n.lock.Unlock()
@@ -118,23 +125,23 @@ func (n *node) AddOrUpdate(key []string, val interface{}) {
 	if !ok{
 		n.lock.RUnlock()
 		n.lock.Lock()
-		nal := nodeAndLock{node: &node{table: new(sync.Map), lock: new(sync.RWMutex)}, lock: &sync.RWMutex{}}
+		nal := &node{table: new(sync.Map), lock: new(sync.RWMutex)}
 		n.table.Store(key[0], nal)
 		childInterface, _= n.table.Load(key[0])
-		child := childInterface.(nodeAndLock)
+		child := childInterface.(*node)
 		if len(key) > 1{
-			child.lock.RLock()
-			child.node.AddOrUpdate(key[1:], val)
-			child.lock.RUnlock()
+		//	child.lock.RLock()
+			child.AddOrUpdate(key[1:], val, f)
+		//	child.lock.RUnlock()
 		}else {
-			child.lock.Lock()
-			child.node.AddOrUpdate(key[1:], val)
-			child.lock.Unlock()
+		//	child.lock.Lock()
+			child.AddOrUpdate(key[1:], val, f)
+		//	child.lock.Unlock()
 		}
 		n.lock.Unlock()
 	}else {
-		child := childInterface.(nodeAndLock)
-		child.node.AddOrUpdate(key[1:], val)
+		child := childInterface.(*node)
+		child.AddOrUpdate(key[1:], val, f)
 		n.lock.RUnlock()
 	}
 
@@ -149,36 +156,36 @@ func (n *node) Delete(key []string) {
 	}
 	n.lock.Unlock()
 
-	n.lock.RLock()
 	if n.table == nil {
-		n.lock.RUnlock()
 		return
 	}
 
+	n.lock.RLock()
 	childInterface, ok := n.table.Load(key[0])
 
 	if !ok{
 		n.lock.RUnlock()
 		return
 	}
-	child := childInterface.(nodeAndLock)
+	child := childInterface.(*node)
 
 	if len(key) > 1{
-		child.lock.RLock()
-		child.node.Delete(key[1:])
-		child.lock.RUnlock()
+	//	child.lock.RLock()
+		child.Delete(key[1:])
+	//	child.lock.RUnlock()
 	}else {
-		child.lock.Lock()
-		child.node.Delete(key[1:])
-		child.lock.Unlock()
+	//	child.lock.Lock()
+		child.Delete(key[1:])
+	//	child.lock.Unlock()
 	}
 	n.lock.RUnlock()
 
 	n.lock.Lock()
-	child.lock.Lock()
-	if child.node.empty() {
+	//child.lock.Lock()
+	if child.empty() {
+
 		n.table.Delete(key[0])
 	}
-	child.lock.Unlock()
+	//child.lock.Unlock()
 	n.lock.Unlock()
 }

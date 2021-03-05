@@ -22,15 +22,12 @@ func TestMatcher(t *testing.T){
 	s := make([]string, 0)
 	s = append(s, "test")
 	test1 := "!11"
-	m.AddOrUpdate(s, &test1)
-	m.Delete(s)
-	m.AddOrUpdate(s, &test1)
+	m.AddOrUpdate(s, &test1, nil)
+	//m.Delete(s)
+	m.AddOrUpdate(s, &test1, nil)
 
-	s = append(s, "test1")
-
-	fmt.Println(m.FindExactMatch(s))
 	fmt.Println(m.FindLongestPrefixMatch(s))
-
+	fmt.Println(m.FindExactMatch(s))
 
 	lpm,_ := m.FindLongestPrefixMatch(s)
 
@@ -50,34 +47,33 @@ func Test_Currency(t *testing.T){
 
 	s := make([]string, 0)
 	s = append(s, "test")
+	s = append(s, "test1")
 	test1 := "!11"
-	m.AddOrUpdate(s, &test1)
+	m.AddOrUpdate(s, &test1, nil)
 
 	var wg sync.WaitGroup
-	wg.Add(1000)
+	wg.Add(10000)
 	var wg1 sync.WaitGroup
-	wg1.Add(1000)
-	count := 0
+	wg1.Add(10000)
 	i := 0
-	for i < 1000 {
+	for i < 10000 {
 		go func() {
 			defer wg.Done()
-			count++
-			m.AddOrUpdate(s, &test1)
+
+			m.AddOrUpdate(s, &test1, nil)
 		}()
 		i++
 	}
 
 	j := 0
-	for j < 1000 {
+	for j < 10000 {
 		go func() {
 			defer wg.Done()
-			count++
 			m.Delete(s)
 		}()
-
+		j++
 	}
 	wg.Wait()
 	wg1.Wait()
-	fmt.Println(count)
+
 }
