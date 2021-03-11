@@ -98,6 +98,16 @@ CommandData = 1 TLV-LENGTH
 
 回复数据放在管理回复包的 `Payload` 部分，格式为json格式，如果数据较多，需要分片进行传输
 
+回复包的状态码表如下：
+
+| 状态码 |                含义                |
+| :----: | :--------------------------------: |
+|  200   |              请求成功              |
+|  400   | 通用客户端请求错误（比如参数缺失） |
+|  500   |           通用服务端错误           |
+
+
+
 ## 2. Dispatcher
 
 `Dispatcher` 是管理模块与 MIR 交互的统一出入口，负责对所有的管理请求进行有效性校验，并把管理模块返回的响应数据发送给 MIR，主要具备以下几点功能：
@@ -301,9 +311,9 @@ TlvManagementMtu				  = 226 // 最大传输单元
 
 ### 3.1 控制命令
 
-- **`add`**
+- **`add-logic-face`**
 
-  > add 命令用于添加一个逻辑接口
+  > add-logic-face 命令用于添加一个逻辑接口
 
   - 命令行工具命令
 
@@ -336,48 +346,61 @@ TlvManagementMtu				  = 226 // 最大传输单元
     }
     ```
 
-- **`del`**
+- **`del-logic-face`**
 
-  > del 命令用于删除一个逻辑接口
+  > del-logic-face 命令用于删除一个逻辑接口
 
   - 命令行工具命令
 
     ```bash
-    mirc lf del <LFID|LFURI>
+    mirc lf del <LFID>
     ```
 
   - 请求参数
 
     在命令兴趣包的参数 `ControlParameters` 部分，需要填充以下参数：
 
-  - 
+    - < `LogicFaceId` > : 逻辑接口id
 
-- **`show`**
+  - 返回数据格式：
 
-  > show 命令用于展示指定ID的逻辑接口的信息
+    ```json
+    // 操作成功
+    {
+      "code": 200,
+      "errMsg": "",
+    }
+    
+    // 操作失败
+    {
+      "code": 400,
+      "errMsg": "Missing parameter Uri"
+    }
+    ```
 
-  ```
-  mirc lf show <LFID>
-  ```
 
 ### 3.2 数据集
 
-- **`list`**
+- **`list-logic-face`**
 
-  > list 命令用于显示逻辑接口的详细信息
+  > list-logic-face 命令用于显示逻辑接口的详细信息
 
-  ```
+  - 命令行工具命令
+  
+    ```bash
   mirc lf list [remote <LFURI>] [local <LFURI>] [scheme <SCHEME>]
-  ```
+    ```
 
   - 请求参数：
+  
+    在命令兴趣包的参数 `ControlParameters` 部分，可选的可以填充以下参数作为查询的过滤条件：
 
-    - [`remoteUri`]
-    - [`localUri`]
-    - [`scheme`]
-
+    - [ `Uri` ] : 远端地址
+  - [ `LocalUri` ] : 本地地址
+    - [ `Scheme`] : 地址模式
+  
   - 回复数据格式：
-
+  
     ```json
     {
       "code": 200,
@@ -388,13 +411,52 @@ TlvManagementMtu				  = 226 // 最大传输单元
           "remoteUri": "tcp://192.168.1.2:13899",
           "localUri": "tcp://192.168.1.3:19533",
           "mtu": 7000,
-          <Face 的详细信息，等Face设计完毕>
+          <Face 的详细信息待补充，等Face设计完毕>
         }
       ]
     }
     ```
 
-### 2.2 OPTIONS
+- **`show-logic-face`**
+
+  > show-logic-face 命令用于展示指定ID的逻辑接口的信息
+
+  - 命令行工具命令
+
+    ```bash
+    mirc lf show <LFID>
+    ```
+
+  - 请求参数
+
+    在命令兴趣包的参数 `ControlParameters` 部分，需要填充以下参数：
+
+    - < `LogicFaceId` > : 逻辑接口id
+
+  - 返回数据格式：
+
+    ```json
+    // 操作成功
+    {
+      "code": 200,
+      "errMsg": "",
+      "data": {
+        "lfId": 5,
+        "remoteUri": "tcp://192.168.1.2:13899",
+        "localUri": "tcp://192.168.1.3:19533",
+        "mtu": 7000,
+        <Face 的详细信息待补充，等Face设计完毕>
+      }
+    }
+    
+    // 操作失败
+    {
+      "code": 400,
+      "errMsg": "Missing parameter Uri"
+    }
+    ```
+
+### 3.3 OPTIONS
 
 - **LFID**
 
@@ -429,10 +491,6 @@ TlvManagementMtu				  = 226 // 最大传输单元
 - **MTU**
 
   Mtu 参数指定了逻辑接口的最大传输单元的大小。
-  
-- **COST**
-
-  链路开销
 
 ## 3. FIB Management
 
@@ -440,12 +498,144 @@ TlvManagementMtu				  = 226 // 最大传输单元
 
 ### 3.1 控制命令
 
-- **`list`**
+- **`add-next-hop`**
 
-  > list 命令用于展示 FIB 表的信息
+  > add-next-hop 命令用于在 FIB 表中添加一个到指定前缀的路由
 
-  `mirc fib list `
+  - 命令行工具命令
 
-- **`add`**
+    ```bash
+    mirc fib add identifier <IDENTIFIER> nexthop <LFID> [cost <COST>]
+    ```
 
-- **`del`**
+  - 请求参数
+
+    在命令兴趣包的参数 `ControlParameters` 部分，需要填充以下参数：
+
+    - < `Identifier` > : 标识前缀
+
+    - < `LogicFaceId` > : 逻辑接口id
+    - < `Cost` > : 开销 
+
+  - 返回数据格式：
+
+    ```json
+    // 操作成功
+    {
+      "code": 200,
+      "errMsg": "",
+    }
+    
+    // 操作失败
+    {
+      "code": 400,
+      "errMsg": "Missing parameter Uri"
+    }
+    ```
+
+- `del-next-hop`
+
+  > del-next-hop 命令用于在 FIB 表中移除一个到指定前缀的路由
+
+  - 命令行工具命令
+
+    ```bash
+    mirc fib del identifier <IDENTIFIER> nexthop <LFID> 
+    ```
+
+  - 请求参数
+
+    在命令兴趣包的参数 `ControlParameters` 部分，需要填充以下参数：
+
+    - < `Identifier` > : 标识前缀
+
+    - < `LogicFaceId` > : 逻辑接口id
+
+  - 返回数据格式：
+
+    ```json
+    // 操作成功
+    {
+      "code": 200,
+      "errMsg": "",
+    }
+    
+    // 操作失败
+    {
+      "code": 400,
+      "errMsg": "Missing parameter Uri"
+    }
+    ```
+
+### 3.2 数据集
+
+- **`list-fib`**
+
+  > list-fib 命令用于展示 FIB 表的信息
+
+  - 命令行工具命令
+
+    ```bash
+    mirc fib list
+    ```
+
+  - 请求参数
+
+    无
+
+  - 返回数据格式：
+
+    ```json
+    // 操作成功
+    {
+      "code": 200,
+      "errMsg": "",
+      "data": [
+        {
+          "identifier": "/edu/pkusz/1",
+          "nextHops": [
+            {
+              "lfId": 5,
+              "cost": 0
+            },
+            {
+              "lfId": 6,
+              "cost": 10
+            }
+          ]
+        }
+      ]
+    }
+    
+    // 操作失败
+    {
+      "code": 400,
+      "errMsg": "Missing parameter Uri"
+    }
+    ```
+
+## 4. 前缀监听注册流程
+
+![前缀监听注册流程](https://gitee.com/quejianming/pic-bed/raw/master/uPic/2021/03/11/%E5%89%8D%E7%BC%80%E7%9B%91%E5%90%AC%E6%B3%A8%E5%86%8C%E6%B5%81%E7%A8%8B-1615467552.svg)
+
+如上图所示的是一个客户端通过`min-dev` 提供的接口接入路由器，并注册一个前缀监听的流程：
+
+1. 首先，客户端会通过 `min-dev` 指定通过某种方式建立一个链路（TCP、Unix Socket、UDP，以太网）。然后客户端本地会构造一个特殊的网络包，我们称之为连接验证包，包格式如下：
+
+   <此处补充一个验证包格式图>
+
+   客户端需要使用自己的网络身份对连接验证包进行签名。
+
+   > 注意：此时客户端的 `LogicFace` 已经创建了，但是 MIR 上与之相连的 `LogicFace` 还没有创建
+
+2. MIR收到连接验证包之后，会去验证包签名，并判断对应网络身份是否有接入当前路由器的权限：
+
+   - 如果验证通过，则创建对应的 `LogicFace` 以处理后续的网络包；
+   - 如果验证不通过，则直接断开链路，不创建 `LogicFace` （如果是TCP链路，直接断开连接，其它无连接的链路，删除掉维护的状态信息即可）；
+
+   > 执行完第二步，链路才算完全建立成功了
+
+3. 当链路建立成功之后，就可以通过创建好的 `LogicFace` 与管理模块进行通信了，可以发送一个 **RegisterPrefixCommand** 命令到 MIR 中，尝试注册一个前缀监听；
+
+4. MIR收到 **RegisterPrefixCommand** 之后，如果验证都通过，就会去FIB表配置一个到客户端的路由，至此前缀监听成功。
+
