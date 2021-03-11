@@ -25,7 +25,7 @@ func(f *FIB) Create(){
 func(f *FIB)Insert(identifier component.Identifier, logicFaceId uint64, cost uint64 ) {
 	s := make([]string, 0)
 	s = append(s, "test")
-	f.lpm.AddOrUpdate(s, nil, func(val interface{}) interface{} {
+	f.lpm.AddOrUpdate(s, nil, func(val interface{}) *interface{} {
 		if _, ok :=(val).(*FIBEntry); !ok{
 			fmt.Println("1111")
 			val = &FIBEntry{Identifier: &identifier}
@@ -35,8 +35,9 @@ func(f *FIB)Insert(identifier component.Identifier, logicFaceId uint64, cost uin
 			entry.NextHopList = make(map[uint64]NextHop)
 		}
 		entry.NextHopList[logicFaceId] = NextHop{LogicFaceId: logicFaceId, Cost: cost}
+		var t interface{} = entry
 
-		return entry
+		return &t
 	})
 }
 

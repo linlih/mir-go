@@ -96,7 +96,7 @@ func (n *node) FindExactMatch(key []string) ( interface{},  bool) {
 	return val,found
 }
 
-func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}) interface{}) {
+func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}) *interface{}) {
 	n.lock.Lock()
 	if len(key) == 0 {
 		if val != nil{
@@ -104,7 +104,7 @@ func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}
 		}
 
 		if f != nil {
-			n.val = f(&n.val)
+			n.val = *f(&n.val)
 		}
 		n.lock.Unlock()
 		return
