@@ -1,5 +1,5 @@
 /**
- * @Author: wzx
+ * @Author: yzy
  * @Description:
  * @Version: 1.0.0
  * @Date: 2021/3/4 上午1:37
@@ -14,38 +14,14 @@ import (
 )
 
 type FIB struct {
-	lpm    *LpmMatcher
+	lpm *LpmMatcher //最长前缀匹配器
 }
 
-func(f *FIB) Create(){
-	f.lpm = &LpmMatcher{}
-	f.lpm.Create()
+func CreateFIB() *FIB {
+	var f = &FIB{}
+	f.lpm = &LpmMatcher{} //初始化
+	f.lpm.Create()        //初始化锁
+	return f
 }
 
-func(f *FIB)Insert(identifier component.Identifier, logicFaceId uint64, cost uint64 ) {
-	s := make([]string, 0)
-	s = append(s, "test")
-	f.lpm.AddOrUpdate(s, nil, func(val interface{}) *interface{} {
-		if _, ok :=(val).(*FIBEntry); !ok{
-			fmt.Println("1111")
-			val = &FIBEntry{Identifier: &identifier}
-		}
-		entry := (val).(*FIBEntry)
-		if entry.NextHopList == nil{
-			entry.NextHopList = make(map[uint64]NextHop)
-		}
-		entry.NextHopList[logicFaceId] = NextHop{LogicFaceId: logicFaceId, Cost: cost}
-		var t interface{} = entry
-
-		return &t
-	})
-}
-
-func(f *FIB)FindExactMatch(identifier *component.Identifier) *FIBEntry{
-	s := make([]string, 0)
-	s = append(s, "test")
-	entry, _ := f.lpm.FindExactMatch(s)
-	return  entry.(*FIBEntry)
-
-}
 

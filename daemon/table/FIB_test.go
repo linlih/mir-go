@@ -14,10 +14,9 @@ import (
 )
 import "minlib/component"
 
-func TestFib(t *testing.T){
-	var fib FIB
-	fib.Create()
-	fib.Insert(component.Identifier{},1, 1)
+func TestFib(t *testing.T) {
+	fib := CreateFIB()
+	fib.AddOrUpdate(&component.Identifier{}, 1, 1)
 
 	fmt.Println(fib.FindExactMatch(&component.Identifier{}))
 }

@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestMatcher(t *testing.T){
+func TestMatcher(t *testing.T) {
 	var m LpmMatcher
 	m.Create()
 	fmt.Println(m.empty())
@@ -29,18 +29,18 @@ func TestMatcher(t *testing.T){
 	fmt.Println(m.FindLongestPrefixMatch(s))
 	fmt.Println(m.FindExactMatch(s))
 
-	lpm,_ := m.FindLongestPrefixMatch(s)
+	lpm, _ := m.FindLongestPrefixMatch(s)
 
 	ss := lpm.(*string)
 	fmt.Println(ss)
 
 	test1 = "1111"
-	lpm,_ = m.FindLongestPrefixMatch(s)
+	lpm, _ = m.FindLongestPrefixMatch(s)
 	fmt.Println(*lpm.(*string))
 	m.Delete(s)
 }
 
-func Test_Currency(t *testing.T){
+func Test_Currency(t *testing.T) {
 	var m LpmMatcher
 	m.Create()
 	fmt.Println(m.empty())
