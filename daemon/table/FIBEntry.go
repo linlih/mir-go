@@ -14,18 +14,24 @@ import (
 	"sync"
 )
 
-//下一跳
+//
+// 下一跳结构体
+//
+// @Description:下一跳结构体 用于存储下一跳信息
+//
 type NextHop struct {
 	LogicFaceId uint64 //逻辑接口号
 	Cost        uint64 //路由开销
 }
 
-/*
-FIBEntry类用于存储FIB每条表项的具体内容
-类的属性成员至少包括
-Identifier、表项有效期和下一跳列表
-而下一跳列表中的每一项应包含下一跳逻辑接口号（uint64）和路由开销
-*/
+//
+// FIBEntry结构体 对应FIB表项
+//
+// @Description:
+//	1.FIBEntry类用于存储FIB每条表项的具体内容
+//	2.类的属性成员至少包括Identifier、表项有效期和下一跳列表
+//	3.下一跳列表中的每一项应包含下一跳逻辑接口号（uint64）和路由开销
+//
 type FIBEntry struct {
 	Identifier *component.Identifier //标识对象指针
 	//Ttl         time.Duration         //表项有效期
@@ -33,6 +39,12 @@ type FIBEntry struct {
 	RWlock      *sync.RWMutex      //读写锁
 }
 
+//
+// 初始化FIBEntry并返回
+//
+// @Description:
+// @return *FIBEntry
+//
 func CreateFIBEntry() *FIBEntry {
 	var f = &FIBEntry{}
 	f.RWlock = new(sync.RWMutex)
@@ -40,10 +52,20 @@ func CreateFIBEntry() *FIBEntry {
 	return f
 }
 
-//获得标识
+//
+// 返回FIBEntry的标识
+//
+// @Description:
+// @return *component.Identifier
+//
 func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.Identifier }
 
-//获得下一跳列表 列表应该按cost从小到大排序
+//
+// 返回FIBEntry中的下一跳列表 列表应该按cost从小到大排序
+//
+// @Description:
+// @return []NextHop
+//
 func (f *FIBEntry) GetNextHops() []NextHop {
 	NextHopList := make([]NextHop, 0)
 	//if f.NextHopList == nil {
@@ -62,7 +84,12 @@ func (f *FIBEntry) GetNextHops() []NextHop {
 	return NextHopList
 }
 
-//判断有没有下一跳的信息 true表示有数据 false表示没有数据
+//
+// 判断有没有下一跳的信息 true表示有数据 false表示没有数据
+//
+// @Description:
+// @return bool
+//
 func (f *FIBEntry) HasNextHops() bool {
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
@@ -70,7 +97,12 @@ func (f *FIBEntry) HasNextHops() bool {
 	return len(f.NextHopList) != 0
 }
 
+//
 // 判断logicFaceId是否在下一跳列表中
+//
+// @Description:
+// @return bool
+//
 func (f *FIBEntry) HasNextHop(logicFaceId uint64) bool {
 	f.RWlock.RLock()
 	//for _, nextHop := range f.NextHopList {
@@ -83,7 +115,12 @@ func (f *FIBEntry) HasNextHop(logicFaceId uint64) bool {
 	return ok
 }
 
-// 添加或更新一个下一跳信息
+//
+// 添加或更新下一跳信息
+//
+// @Description:
+// @param logicFaceId,cost 下一跳信息
+//
 func (f *FIBEntry) AddOrUpdateNextHop(logicFaceId uint64, cost uint64) {
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
@@ -94,7 +131,12 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFaceId uint64, cost uint64) {
 	f.RWlock.Unlock()
 }
 
-// 删除一个下一跳信息
+//
+// 删除下一跳信息
+//
+// @Description:
+// @param logicFaceId 下一跳信息的logicFaceId
+//
 func (f *FIBEntry) RemoveNextHop(logicFaceId uint64) {
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
