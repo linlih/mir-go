@@ -177,7 +177,7 @@ func TestRemoveNextHopByFace(t *testing.T) {
 	fmt.Println(fib.RemoveNextHopByFace(1))
 }
 
-func TestSize(t *testing.T) {
+func TestFIBSize(t *testing.T) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min")
 	if err != nil {
