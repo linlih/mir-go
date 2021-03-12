@@ -86,6 +86,7 @@ func (n *node) FindExactMatch(key []string) (interface{}, bool) {
 		return deref(n.val)
 	}
 	if n.table == nil {
+
 		return deref(nil)
 	}
 	childInterface, ok := n.table.Load(key[0])
@@ -95,7 +96,7 @@ func (n *node) FindExactMatch(key []string) (interface{}, bool) {
 
 	child := childInterface.(*node)
 	//child.lock.RLock()
-	val, found := child.FindLongestPrefixMatch(key[1:])
+	val, found := child.FindExactMatch(key[1:])
 	//child.lock.RUnlock()
 
 	return val, found
@@ -121,9 +122,14 @@ func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}
 	if n.table == nil {
 		n.table = new(sync.Map)
 	}
-
 	if _, ok := n.table.Load(key[0]); !ok {
-		nal := &node{table: new(sync.Map), lock: new(sync.RWMutex)}
+		var nal *node
+		if len(key) == 1 {
+			nal = &node{table: nil, lock: new(sync.RWMutex)}
+		} else {
+			nal = &node{table: new(sync.Map), lock: new(sync.RWMutex)}
+		}
+
 		n.table.Store(key[0], nal)
 	}
 	n.lock.Unlock()
@@ -160,9 +166,13 @@ func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}
 func (n *node) Delete(key []string) error {
 	n.lock.Lock()
 	if len(key) == 0 {
-		n.val = nil
+		if n.val != nil {
+			n.val = nil
+			n.lock.Unlock()
+			return nil
+		}
 		n.lock.Unlock()
-		return nil
+		return createNodeErrorByType(DataNotExistedError)
 	}
 	n.lock.Unlock()
 
@@ -232,7 +242,7 @@ func createNodeErrorByType(errorType int) (err NodeError) {
 	case NodeNotExistedError:
 		err.msg = "the node is not existed"
 	case DataNotExistedError:
-		err.msg = "the table is not existed"
+		err.msg = "the entry is not existed"
 	default:
 		err.msg = "Unknown error"
 	}
