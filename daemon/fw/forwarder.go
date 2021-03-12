@@ -10,6 +10,10 @@ import "mir/daemon/common"
 type Forwarder struct {
 }
 
+
+type Strategy struct {
+
+}
 func (f *Forwarder) IncomingInterest() {
 
 }
