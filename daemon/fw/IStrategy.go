@@ -10,8 +10,8 @@ package fw
 import (
 	"minlib/component"
 	"minlib/packet"
-	"mir/daemon/lf"
-	"mir/daemon/table"
+	"mir-go/daemon/lf"
+	"mir-go/daemon/table"
 )
 
 type IStrategy interface {

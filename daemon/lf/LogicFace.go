@@ -8,4 +8,5 @@
 package lf
 
 type LogicFace struct {
+	LogicFaceId uint64
 }

@@ -32,10 +32,10 @@ type AuthorizationReject func()
 //
 // @Description:
 //
-// @param topPrefix	顶级管理前缀，例如 "/min-mir/mgmt/localhost，可以通过本参数实现以下控制需求
-//					1. 比如可以控制只有指定的顶级管理前缀可以授权通过，其它都不行，例如：/min-mir/mgmt/localhost 合法，其它前缀均不合法；
-//					2. 也可以实现对不同的顶级前缀实现不同级别的授权，比如 "/min-mir/mgmt/localhost" 认为是本地管理员，拥有较高权限，默认
-//					   可以控制和获取路由器状态；"/<路由器前缀>/min-mir/mgmt/remote" 认定为远程管理员发过来的命令，拥有较局限的权限，只能
+// @param topPrefix	顶级管理前缀，例如 "/min-mir-go/mgmt/localhost，可以通过本参数实现以下控制需求
+//					1. 比如可以控制只有指定的顶级管理前缀可以授权通过，其它都不行，例如：/min-mir-go/mgmt/localhost 合法，其它前缀均不合法；
+//					2. 也可以实现对不同的顶级前缀实现不同级别的授权，比如 "/min-mir-go/mgmt/localhost" 认为是本地管理员，拥有较高权限，默认
+//					   可以控制和获取路由器状态；"/<路由器前缀>/min-mir-go/mgmt/remote" 认定为远程管理员发过来的命令，拥有较局限的权限，只能
 //					   做基本的获取状态操作，如果要修改路由器状态，需要进一步的授权。
 //
 // @param interest		收到的命令兴趣包
@@ -62,7 +62,7 @@ type ValidateParameters func(parameters *mgmt.ControlParameters) bool
 // 一个回调函数，用于对收到的已授权的命令进行处理（每个管理模块会通过传入本回调函数自己实现对特定命令的处理逻辑）
 //
 // @Description:
-// @param topPrefix		顶级管理前缀，例如："/min-mir/mgmt/localhost"
+// @param topPrefix		顶级管理前缀，例如："/min-mir-go/mgmt/localhost"
 // @param interest		收到的命令兴趣包
 // @param parameters	已通过参数验证的命令参数
 // @return *mgmt.ControlResponse	返回一个 ControlResponse 返回给调用方

@@ -10,8 +10,8 @@ package fw
 import (
 	"minlib/component"
 	"minlib/packet"
-	"mir/daemon/lf"
-	"mir/daemon/table"
+	"mir-go/daemon/lf"
+	"mir-go/daemon/table"
 )
 
 type IForwarder interface {
@@ -52,7 +52,7 @@ type IForwarder interface {
 	// @param interest
 	// @param data
 	//
-	OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *packet.Data)
+	OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *table.CSEntry)
 
 	//
 	// 处理将兴趣包通过 LogicFace 发出 （ Outgoing Interest Pipeline ）

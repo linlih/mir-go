@@ -160,7 +160,7 @@ func TestRemoveNextHopByFace(t *testing.T) {
 		fmt.Println(err)
 	}
 	fib.AddOrUpdate(identifier, 0, 1)
-	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir")
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -205,7 +205,7 @@ func TestFIBSize(t *testing.T) {
 	fib.AddOrUpdate(identifier, 0, 1)
 	fmt.Println(fib.Size())
 
-	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir")
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
 	if err != nil {
 		fmt.Println(err)
 	}
