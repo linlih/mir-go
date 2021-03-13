@@ -11,17 +11,23 @@ package table
 import (
 	"fmt"
 	"minlib/packet"
-	"time"
 )
 
-/*
-PIT表应该设计专门的定时器，用于定时清理超时的PIT表项，PIT提供设置超时回调函数的接口
-*/
-
+//
+// PIT表结构体
+//
+// @Description:PIT表结构体,用前缀树存储表项
+//
 type PIT struct {
 	lpm *LpmMatcher //最长前缀匹配器
 }
 
+//
+// 初始化PIT表 并返回
+//
+// @Description:
+// @return *PIT
+//
 func CreatePIT() *PIT {
 	var p = &PIT{}
 	p.lpm = &LpmMatcher{} //初始化
@@ -29,6 +35,12 @@ func CreatePIT() *PIT {
 	return p
 }
 
+//
+// 返回PIT表中含有数据的表项数
+//
+// @Description:
+// @return uint64
+//
 func (p *PIT) Size() uint64 {
 	return p.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if _, ok := val.(*PITEntry); ok {
@@ -40,6 +52,13 @@ func (p *PIT) Size() uint64 {
 	})
 }
 
+//
+// 通过兴趣包在前缀树中精准匹配查找对应的PITEntry
+//
+// @Description:
+// @param *packet.Interest	需要进行查找的兴趣包
+// @return *PITEntry error
+//
 func (p *PIT) Find(interest *packet.Interest) (*PITEntry, error) {
 	var PrefixList []string
 	for _, v := range interest.GetName().GetComponents() {
@@ -53,7 +72,14 @@ func (p *PIT) Find(interest *packet.Interest) (*PITEntry, error) {
 	return nil, createPITErrorByType(PITEntryNotExistedError)
 }
 
-func (p *PIT) Insert(interest *packet.Interest, logicFaceId uint64, expireTime time.Duration) *PITEntry {
+//
+// 在PIT表中插入PITEntry
+//
+// @Description:
+// @param *packet.Interest 兴趣包指针
+// @return *PITEntry
+//
+func (p *PIT) Insert(interest *packet.Interest) *PITEntry {
 	var PrefixList []string
 	for _, v := range interest.GetName().GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
@@ -67,14 +93,18 @@ func (p *PIT) Insert(interest *packet.Interest, logicFaceId uint64, expireTime t
 		}
 		entry := (val).(*PITEntry)
 		entry.Identifier = interest.GetName()
-		entry.ExpireTime = expireTime
-		entry.InsertOrUpdateInRecord(logicFaceId, interest)
 		return entry
 	})
 	return val.(*PITEntry)
 }
 
-// 若为nil 说明 没有找到
+//
+// 根据数据包在PIT表中获取PITEntry
+//
+// @Description:
+// @param *packet.Data	数据包指针
+// @return *PITEntry
+//
 func (p *PIT) FindDataMatches(data *packet.Data) *PITEntry {
 	var PrefixList []string
 	for _, v := range data.GetName().GetComponents() {
@@ -87,6 +117,13 @@ func (p *PIT) FindDataMatches(data *packet.Data) *PITEntry {
 	return nil
 }
 
+//
+// 根据PITEntry删除PIT表中的PITEntry
+//
+// @Description:
+// @param *PITEntry
+// @return error
+//
 func (p *PIT) EraseByPITEntry(pitEntry *PITEntry) error {
 	var PrefixList []string
 	for _, v := range pitEntry.Identifier.GetComponents() {
@@ -95,6 +132,13 @@ func (p *PIT) EraseByPITEntry(pitEntry *PITEntry) error {
 	return p.lpm.Delete(PrefixList)
 }
 
+//
+// 根据logicFaceId删除PIT表中的PITEntry,返回删除的数量
+//
+// @Description:
+// @param logicFaceId
+// @return uint64
+//
 func (p *PIT) EraseByLogicFaceID(logicFaceId uint64) uint64 {
 	return p.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if pitEntry, ok := val.(*PITEntry); ok {

@@ -7,19 +7,19 @@ import (
 	"testing"
 )
 
-func TestCSSize(t *testing.T){
-	cs:=CreateCS()
-	data:=&packet.Data{}
-	identifier,err:=component.CreateIdentifierByString("/min/pku/edu")
-	if err!=nil{
+func TestCSSize(t *testing.T) {
+	cs := CreateCS()
+	data := &packet.Data{}
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
 		fmt.Println(err)
 	}
 	data.SetName(identifier)
 	cs.Insert(data)
 	fmt.Println(cs.Size())
 
-	identifier,err=component.CreateIdentifierByString("/min/pku")
-	if err!=nil{
+	identifier, err = component.CreateIdentifierByString("/min/pku")
+	if err != nil {
 		fmt.Println(err)
 	}
 	data.SetName(identifier)
