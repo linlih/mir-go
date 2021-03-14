@@ -5,6 +5,7 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
+	"time"
 )
 
 //
@@ -13,9 +14,10 @@ import (
 // @Description:
 //
 type Forwarder struct {
-	table.PIT // 内嵌一个PIT表
-	table.FIB // 内嵌一个FIB表
-	table.CS  // 内嵌一个CS表
+	table.PIT           // 内嵌一个PIT表
+	table.FIB           // 内嵌一个FIB表
+	table.CS            // 内嵌一个CS表
+	table.StrategyTable // 策略选择表
 }
 
 //
@@ -103,33 +105,106 @@ func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Inter
 	}
 	nack.SetNackReason(component.NackReasonDuplicate)
 
-	// TODO: 将Nack通过Face发出
-	// ingress.putNack(nack)
+	// 将Nack通过Face发出
+	ingress.SendNack(&nack)
 }
 
 //
 // 处理兴趣包未命中缓存 （ ContentStore Miss Pipeline ）
 //
 // @Description:
+// 1. 首先根据传入的 Interest 以及对应的传入 LogicFace 在尝试在对应的PIT条目中插入一条 in-record；
+//  - 如果对应的PIT条目中已经存在一个相同 LogicFace 的 in-record 记录（比如：下游正在重传同一个兴趣包），那只需要用收到的 Interest 中的
+//    Nonce 和 InterestLifetime 来更新对应的 in-record 即可，如果没有指定 InterestLifetime，则默认为4s；
+//  - 否则创建一个新的 in-record 记录插入到对应的PIT条目当中。
+// 2. 然后将PIT条目的超时计时器设置为当前 PIT 条目中所有 in-record 最大剩余超时时间。
+// 3. 然后传递给转发策略作转发决策，在转发策略中按需触发 Outgoing Interest 管道处理逻辑，将 Interest 转发出去。
 // @param ingress
 // @param pitEntry
 // @param interest
 //
 func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
+	// insert in-record
+	inRecord := pitEntry.InsertOrUpdateInRecord(ingress.LogicFaceId, interest)
+	// TODO: 检查一下，这个设置超时时间的操作要不要放到插入 in-record 的内部进行
+	inRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
 
-	panic("implement me")
+	// Set PIT Entry ExpiryTimer
+	// 设置超时时间为所有 in-record 中最迟的超时时间
+	maxTime := uint64(0)
+	for _, inRecord := range pitEntry.GetInRecords() {
+		if inRecord.ExpireTime > maxTime {
+			maxTime = inRecord.ExpireTime
+		}
+	}
+	duration := maxTime - GetCurrentTime()
+	if duration < 0 {
+		duration = 0
+	}
+	f.SetExpiryTime(pitEntry, time.Duration(duration))
+
+	// 查询当前兴趣包所匹配的策略，执行 AfterReceiveInterest 钩子
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
+		ste.GetStrategy().AfterReceiveInterest(ingress, interest, pitEntry)
+	} else {
+		// TODO: 输出错误，兴趣包没有找到匹配的可用策略
+	}
 }
 
+//
+// 处理兴趣包命中缓存 （ ContentStore Hit Pipeline ）
+//
+// @Description:
+//  在 incoming Interest 管道中执行 ContentStore 查找并找到匹配项之后触发 ContentStore hit 管道处理逻辑。此管道执行以下步骤：
+//   1. 首先将 Interest 对应PIT条目的到期计时器设置为当前时间，这会使得计时器到期，触发 Interest finalize 管道；
+//   2. 然后触发 Interest 对应策略的 Strategy::afterContentStoreHit 回调。
+// @param ingress
+// @param pitEntry
+// @param interest
+// @param data
+//
 func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *table.CSEntry) {
-	panic("implement me")
+	// 设置超时时间为当前时间
+	f.SetExpiryTime(pitEntry, 0)
+
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
+		ste.GetStrategy().AfterContentStoreHit(ingress, data.GetData(), pitEntry)
+	} else {
+		// TODO: 输出错误，兴趣包没有找到匹配的可用策略
+	}
 }
 
+//
+// 处理将兴趣包通过 LogicFace 发出 （ Outgoing Interest Pipeline ）
+//
+// @Description:
+//  该管道首先在PIT条目中为指定的传出 LogicFace 插入一个 out-record ，或者为同一 LogicFace 更新一个现有的 out-record 。 在这两种情况下，
+//  PIT记录都将记住最后一个传出兴趣数据包的 Nonce ，这对于匹配传入的Nacks很有用，还有到期时间戳，它是当前时间加上 InterestLifetime 。最后，
+//  Interest 被发送到传出的 LogicFace 。
+// @param egress
+// @param pitEntry
+// @param interest
+//
 func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
-	panic("implement me")
+	// 插入 out-record
+	outRecord := pitEntry.InsertOrUpdateOutRecord(egress.LogicFaceId, interest)
+	outRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
+
+	// 转发兴趣包
+	egress.SendInterest(interest)
 }
 
+//
+// 兴趣包最终回收处理，此时兴趣包要么被满足要么被Nack （ Interest Finalize Pipeline ）
+//
+// @Description:
+// @param pitEntry
+//
 func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
-	panic("implement me")
+	// 将对应的PIT条目从PIT表中移除
+	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
+		// TODO：删除 PIT 条目失败，在这边输出提示信息
+	}
 }
 
 func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
@@ -158,4 +233,24 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 
 func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
 	panic("implement me")
+}
+
+//
+// 设置 PIT 条目的超时时间，并在超时时触发 OnInterestFinalize 管道
+//
+// @Description:
+// @receiver f
+// @param pitEntry
+// @param duration
+//
+func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Duration) {
+	// TODO: 这边要check一下，是不是调用 SetExpiryTime 的时候之前的定时任务还没有触发，如果已经触发过了，是不是会有问题
+
+	// 首先取消之前的定时任务
+	pitEntry.CancelTimer()
+
+	// 接着设置新的定时任务
+	pitEntry.SetExpiryTimer(duration, func(entry *table.PITEntry) {
+		f.OnInterestFinalize(entry)
+	})
 }

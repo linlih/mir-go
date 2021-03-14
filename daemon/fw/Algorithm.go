@@ -11,6 +11,7 @@ import (
 	"minlib/component"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
+	"time"
 )
 
 const (
@@ -54,4 +55,14 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 		}
 	}
 	return result
+}
+
+//
+// 获取当前的时间戳（单位为 ms）
+//
+// @Description:
+// @return uint64
+//
+func GetCurrentTime() uint64 {
+	return uint64(time.Now().UnixNano() / 1e6)
 }

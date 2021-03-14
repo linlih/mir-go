@@ -24,7 +24,7 @@ import (
 type InRecord struct {
 	LogicFaceId uint64           //流入LogicFaceId
 	Interest    *packet.Interest //兴趣包指针
-	ExpireTime  time.Duration    //超时时间 应用层设置 底层不用
+	ExpireTime  uint64           //超时时间 应用层设置 底层不用
 	LastNonce   component.Nonce  //与最后加入记录表的兴趣包中的nonce一致
 }
 
@@ -35,7 +35,7 @@ type InRecord struct {
 //
 type OutRecord struct {
 	LogicFaceId uint64          //流出LogicFaceId
-	ExpireTime  time.Duration   //超时时间 应用层设置 底层不用
+	ExpireTime  uint64          //超时时间 应用层设置 底层不用
 	LastNonce   component.Nonce //与InRecord中的LastNonce一致
 }
 

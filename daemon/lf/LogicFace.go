@@ -7,6 +7,24 @@
 //
 package lf
 
+import "minlib/packet"
+
 type LogicFace struct {
 	LogicFaceId uint64
+}
+
+func (lf *LogicFace) SendInterest(interest *packet.Interest) {
+
+}
+
+func (lf *LogicFace) SendData(data *packet.Data) {
+
+}
+
+func (lf *LogicFace) SendNack(nack *packet.Nack) {
+
+}
+
+func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
+
 }
