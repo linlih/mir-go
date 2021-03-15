@@ -26,7 +26,7 @@ type Forwarder struct {
 	table.PIT           // 内嵌一个PIT表
 	table.FIB           // 内嵌一个FIB表
 	table.CS            // 内嵌一个CS表
-	table.StrategyTable // 策略选择表
+	table.StrategyTable // 内嵌一个策略选择表
 }
 
 //
@@ -170,7 +170,10 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
 		ste.GetStrategy().AfterReceiveInterest(ingress, interest, pitEntry)
 	} else {
-		// TODO: 输出错误，兴趣包没有找到匹配的可用策略
+		// 输出错误，兴趣包没有找到匹配的可用策略
+		common.LogErrorWithFields(logrus.Fields{
+			"interest": interest.ToUri(),
+		}, "Not found effective Strategy")
 	}
 }
 
@@ -198,7 +201,10 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
 		ste.GetStrategy().AfterContentStoreHit(ingress, data.GetData(), pitEntry)
 	} else {
-		// TODO: 输出错误，兴趣包没有找到匹配的可用策略
+		// 输出错误，兴趣包没有找到匹配的可用策略
+		common.LogErrorWithFields(logrus.Fields{
+			"interest": interest.ToUri(),
+		}, "Not found effective Strategy")
 	}
 }
 
@@ -240,7 +246,10 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 
 	// 将对应的PIT条目从PIT表中移除
 	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
-		// TODO：删除 PIT 条目失败，在这边输出提示信息
+		// 删除 PIT 条目失败，在这边输出提示信息
+		common.LogWarnWithFields(logrus.Fields{
+			"interest": pitEntry.GetIdentifier().ToUri(),
+		}, "Delete PITEntry failed")
 	}
 }
 
@@ -284,10 +293,16 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		pitEntry.IsSatisfied = true
 		// 清除对应的出记录
 		if err := pitEntry.DeleteOutRecord(ingress.LogicFaceId); err != nil {
-			// TODO：删除出记录失败，这边输出错误
+			// 删除出记录失败，这边输出错误
+			common.LogWarnWithFields(logrus.Fields{
+				"pitEntry": pitEntry.GetIdentifier().ToUri(),
+			}, "Delete out-record failed: ", err)
 		}
 	} else {
-		// TODO: 输出错误，数据包没有找到匹配的可用策略
+		// 输出错误，数据包没有找到匹配的可用策略
+		common.LogErrorWithFields(logrus.Fields{
+			"data": data.ToUri(),
+		}, "Not found effective Strategy")
 	}
 }
 
@@ -353,18 +368,30 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	pitEntry, err := f.PIT.Find(nack.Interest)
 	if err != nil || pitEntry == nil {
 		// 没有找到匹配的 PIT 条目，直接返回丢弃
+		common.LogDebugWithFields(logrus.Fields{
+			"nack":   nack.Interest.ToUri(),
+			"reason": nack.GetNackReason(),
+		}, "Have not found match PITEntry for nack")
 		return
 	}
 
 	outRecord, err := pitEntry.GetOutRecord(ingress.LogicFaceId)
 	if err != nil || outRecord == nil {
 		// 如果不存在对应 LogicFace 的 out-record，则丢弃
+		common.LogDebugWithFields(logrus.Fields{
+			"nack":   nack.Interest.ToUri(),
+			"reason": nack.GetNackReason(),
+		}, "Have not found match out-record for nack")
 		return
 	}
 
 	// 记录 NackHeader 到 out-record
 	if outRecord.LastNonce.GetNonce() != nack.Interest.GetNonce() {
 		// 如果 Nonce 不一致，直接丢弃
+		common.LogDebugWithFields(logrus.Fields{
+			"nack":   nack.Interest.ToUri(),
+			"reason": nack.GetNackReason(),
+		}, "Founded matched out-record, but Nonce is diff")
 		return
 	}
 	outRecord.NackHeader = &nack.Interest.NackHeader
@@ -441,6 +468,10 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
 	if cPacket.TTL.Minus() < 0 {
+		common.LogDebugWithFields(logrus.Fields{
+			"faceId":  ingress.LogicFaceId,
+			"cPacket": cPacket.ToUri(),
+		}, "CPacket TTL < 0")
 		return
 	}
 
@@ -448,7 +479,11 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(cPacket.DstIdentifier()); ste != nil {
 		ste.GetStrategy().AfterReceiveCPacket(ingress, cPacket)
 	} else {
-		// TODO: 输出错误，CPacket没有找到匹配的可用策略
+		// 输出错误，CPacket没有找到匹配的可用策略
+		common.LogErrorWithFields(logrus.Fields{
+			"faceId":  ingress.LogicFaceId,
+			"cPacket": cPacket.ToUri(),
+		}, "Not found matched Strategy for CPacket")
 	}
 }
 
