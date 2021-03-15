@@ -51,7 +51,7 @@ func (s *StrategyTable) SetDefaultStrategy(strategyName string) {
 }
 
 // 往策略表中插入一个策略
-func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName string, strategy *fw.Strategy) *StrategyTableEntry {
+func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName string, istrategy *fw.IStrategy) *StrategyTableEntry {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
@@ -65,7 +65,7 @@ func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName st
 		}
 		entry := (val).(*StrategyTableEntry)
 		entry.StrategyName = strategyName
-		entry.Strategy = strategy
+		entry.IStrategy = istrategy
 		return entry
 	})
 	return val.(*StrategyTableEntry)

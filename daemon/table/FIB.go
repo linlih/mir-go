@@ -94,7 +94,7 @@ func (f *FIB) AddOrUpdate(identifier *component.Identifier, logicFaceId uint64, 
 		}
 		entry := (val).(*FIBEntry)
 		entry.Identifier = identifier
-		entry.NextHopList[logicFaceId] = NextHop{LogicFaceId: logicFaceId, Cost: cost}
+		entry.NextHopList[logicFaceId] = &NextHop{LogicFaceId: logicFaceId, Cost: cost}
 		return entry
 	})
 	return val.(*FIBEntry)

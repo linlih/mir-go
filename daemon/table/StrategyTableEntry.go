@@ -17,7 +17,7 @@ import (
 type StrategyTableEntry struct {
 	Identifier   *component.Identifier // 标识
 	StrategyName string                // 策略名称
-	Strategy     *fw.Strategy
+	IStrategy     *fw.IStrategy
 	RWlock       *sync.RWMutex
 }
 
@@ -56,15 +56,15 @@ func (s *StrategyTableEntry) SetPrefix(identifier *component.Identifier) {
 }
 
 // 获取策略条目对应的策略结构体的指针
-func (s *StrategyTableEntry) GetStrategy() *fw.Strategy {
+func (s *StrategyTableEntry) GetStrategy() *fw.IStrategy {
 	s.RWlock.RLock()
 	defer s.RWlock.RUnlock()
-	return s.Strategy
+	return s.IStrategy
 }
 
 // 设置策略条目对应的策略结构体的指针
-func (s *StrategyTableEntry) SetStrategy(strategy *fw.Strategy) {
+func (s *StrategyTableEntry) SetStrategy(istrategy *fw.IStrategy) {
 	s.RWlock.Lock()
 	defer s.RWlock.Unlock()
-	s.Strategy = strategy
+	s.IStrategy = istrategy
 }

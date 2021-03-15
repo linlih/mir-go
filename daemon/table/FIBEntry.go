@@ -35,7 +35,7 @@ type NextHop struct {
 type FIBEntry struct {
 	Identifier *component.Identifier //标识对象指针
 	//Ttl         time.Duration         //表项有效期
-	NextHopList map[uint64]NextHop //下一跳列表 用map实现是为了查找和删除方便
+	NextHopList map[uint64]*NextHop //下一跳列表 用map实现是为了查找和删除方便
 	RWlock      *sync.RWMutex      //读写锁
 }
 
@@ -48,7 +48,7 @@ type FIBEntry struct {
 func CreateFIBEntry() *FIBEntry {
 	var f = &FIBEntry{}
 	f.RWlock = new(sync.RWMutex)
-	f.NextHopList = make(map[uint64]NextHop)
+	f.NextHopList = make(map[uint64]*NextHop)
 	return f
 }
 
@@ -66,8 +66,8 @@ func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.Identifier }
 // @Description:
 // @return []NextHop
 //
-func (f *FIBEntry) GetNextHops() []NextHop {
-	NextHopList := make([]NextHop, 0)
+func (f *FIBEntry) GetNextHops() []*NextHop {
+	NextHopList := make([]*NextHop, 0)
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
 	//	return NextHopList
@@ -127,7 +127,7 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFaceId uint64, cost uint64) {
 	//}
 	f.RWlock.Lock()
 	delete(f.NextHopList, logicFaceId)
-	f.NextHopList[logicFaceId] = NextHop{LogicFaceId: logicFaceId, Cost: cost}
+	f.NextHopList[logicFaceId] = &NextHop{LogicFaceId: logicFaceId, Cost: cost}
 	f.RWlock.Unlock()
 }
 

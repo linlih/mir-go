@@ -47,8 +47,8 @@ type OutRecord struct {
 type PITEntry struct {
 	Identifier *component.Identifier //标识对象指针
 	//ExpireTime    time.Duration         //超时时间 底层设置 过期删除
-	InRecordList  map[uint64]InRecord  //流入记录表
-	OutRecordList map[uint64]OutRecord //流出记录表
+	InRecordList  map[uint64]*InRecord  //流入记录表
+	OutRecordList map[uint64]*OutRecord //流出记录表
 	InRWlock      *sync.RWMutex        //流入读写锁
 	OutRWlock     *sync.RWMutex        //流出读写锁
 	Ticker        *time.Ticker         //定时器
@@ -63,8 +63,8 @@ type PITEntry struct {
 //
 func CreatePITEntry() *PITEntry {
 	var p = &PITEntry{}
-	p.InRecordList = make(map[uint64]InRecord)
-	p.OutRecordList = make(map[uint64]OutRecord)
+	p.InRecordList = make(map[uint64]*InRecord)
+	p.OutRecordList = make(map[uint64]*OutRecord)
 	p.InRWlock = new(sync.RWMutex)
 	p.OutRWlock = new(sync.RWMutex)
 	p.ch = make(chan int)
@@ -157,8 +157,8 @@ func (p *PITEntry) CanMatch(interest *packet.Interest) (bool, error) {
 // @Description:
 // @return []InRecord
 //
-func (p *PITEntry) GetInRecords() []InRecord {
-	InRecordList := make([]InRecord, 0)
+func (p *PITEntry) GetInRecords() []*InRecord {
+	InRecordList := make([]*InRecord, 0)
 	p.InRWlock.RLock()
 	for _, inRecord := range p.InRecordList {
 		InRecordList = append(InRecordList, inRecord)
@@ -185,13 +185,13 @@ func (p *PITEntry) HasInRecords() bool {
 // @Description:
 // @return InRecord, error
 //
-func (p *PITEntry) GetInRecord(logicFaceId uint64) (InRecord, error) {
+func (p *PITEntry) GetInRecord(logicFaceId uint64) (*InRecord, error) {
 	p.InRWlock.RLock()
 	defer p.InRWlock.RUnlock()
 	if inRecord, ok := p.InRecordList[logicFaceId]; ok {
 		return inRecord, nil
 	}
-	return InRecord{}, createPITEntryErrorByType(InRecordNotExistedError)
+	return &InRecord{}, createPITEntryErrorByType(InRecordNotExistedError)
 }
 
 //
@@ -210,11 +210,11 @@ func (p *PITEntry) InsertOrUpdateInRecord(logicFaceId uint64, interest *packet.I
 	//}
 	p.InRWlock.Lock()
 	delete(p.InRecordList, logicFaceId)
-	inRecord := InRecord{LogicFaceId: logicFaceId, Interest: interest, LastNonce: interest.Nonce}
+	inRecord := &InRecord{LogicFaceId: logicFaceId, Interest: interest, LastNonce: interest.Nonce}
 	p.InRecordList[logicFaceId] = inRecord
 	p.InRWlock.Unlock()
 	// 返回引用 对返回值修改就是对原值修改
-	return &inRecord
+	return inRecord
 }
 
 //
@@ -242,7 +242,7 @@ func (p *PITEntry) DeleteInRecord(logicFaceId uint64) error {
 func (p *PITEntry) ClearInRecords() {
 	p.InRWlock.Lock()
 	defer p.InRWlock.Unlock()
-	p.InRecordList = make(map[uint64]InRecord)
+	p.InRecordList = make(map[uint64]*InRecord)
 }
 
 //
@@ -251,8 +251,8 @@ func (p *PITEntry) ClearInRecords() {
 // @Description:
 // @return []OutRecord
 //
-func (p *PITEntry) GetOutRecords() []OutRecord {
-	OutRecordList := make([]OutRecord, 0)
+func (p *PITEntry) GetOutRecords() []*OutRecord {
+	OutRecordList := make([]*OutRecord, 0)
 	p.OutRWlock.RLock()
 	for _, outRecord := range p.OutRecordList {
 		OutRecordList = append(OutRecordList, outRecord)
@@ -280,13 +280,13 @@ func (p *PITEntry) HasOutRecords() bool {
 // @param logicFaceId
 // @return OutRecord, error
 //
-func (p *PITEntry) GetOutRecord(logicFaceId uint64) (OutRecord, error) {
+func (p *PITEntry) GetOutRecord(logicFaceId uint64) (*OutRecord, error) {
 	p.OutRWlock.RLock()
 	defer p.OutRWlock.RUnlock()
 	if outRecord, ok := p.OutRecordList[logicFaceId]; ok {
 		return outRecord, nil
 	}
-	return OutRecord{}, createPITEntryErrorByType(OutRecordNotExistedError)
+	return &OutRecord{}, createPITEntryErrorByType(OutRecordNotExistedError)
 }
 
 //
@@ -302,10 +302,10 @@ func (p *PITEntry) InsertOrUpdateOutRecord(logicFaceId uint64, interest *packet.
 	//}
 	p.OutRWlock.Lock()
 	delete(p.OutRecordList, logicFaceId)
-	outRecord := OutRecord{LogicFaceId: logicFaceId, LastNonce: interest.Nonce}
+	outRecord := &OutRecord{LogicFaceId: logicFaceId, LastNonce: interest.Nonce}
 	p.OutRecordList[logicFaceId] = outRecord
 	p.OutRWlock.Unlock()
-	return &outRecord
+	return outRecord
 }
 
 //
@@ -333,7 +333,7 @@ func (p *PITEntry) DeleteOutRecord(logicFaceId uint64) error {
 func (p *PITEntry) ClearOutRecords() {
 	p.OutRWlock.Lock()
 	defer p.OutRWlock.Unlock()
-	p.OutRecordList = make(map[uint64]OutRecord)
+	p.OutRecordList = make(map[uint64]*OutRecord)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
