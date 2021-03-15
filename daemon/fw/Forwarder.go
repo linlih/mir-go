@@ -8,8 +8,10 @@
 package fw
 
 import (
+	"github.com/sirupsen/logrus"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 	"time"
@@ -58,6 +60,11 @@ type Forwarder struct {
 // @param interest	收到的内容兴趣包
 //
 func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.Interest) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   ingress.LogicFaceId,
+		"interest": interest.ToUri(),
+	}, "Detect Interest loop")
+
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环兴趣包
 	if interest.TTL.Minus() < 0 {
 		f.OnInterestLoop(ingress, interest)
@@ -106,6 +113,10 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 // @param interest
 //
 func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Interest) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   ingress.LogicFaceId,
+		"interest": interest.ToUri(),
+	}, "Detect Interest loop")
 	// 创建一个原因为 duplicate 的Nack
 	nack := packet.Nack{
 		Interest: interest,
@@ -131,6 +142,11 @@ func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Inter
 // @param interest
 //
 func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   ingress.LogicFaceId,
+		"interest": interest.ToUri(),
+	}, "ContentStore miss")
+
 	// insert in-record
 	inRecord := pitEntry.InsertOrUpdateInRecord(ingress.LogicFaceId, interest)
 	// TODO: 检查一下，这个设置超时时间的操作要不要放到插入 in-record 的内部进行
@@ -171,6 +187,11 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 // @param data
 //
 func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *table.CSEntry) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   ingress.LogicFaceId,
+		"interest": interest.ToUri(),
+	}, "ContentStore hit")
+
 	// 设置超时时间为当前时间
 	f.SetExpiryTime(pitEntry, 0)
 
@@ -193,6 +214,11 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 // @param interest
 //
 func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   egress.LogicFaceId,
+		"interest": interest.ToUri(),
+	}, "Outgoing interest")
+
 	// 插入 out-record
 	outRecord := pitEntry.InsertOrUpdateOutRecord(egress.LogicFaceId, interest)
 	outRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
@@ -208,6 +234,10 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 // @param pitEntry
 //
 func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
+	common.LogDebugWithFields(logrus.Fields{
+		"entry": pitEntry.GetIdentifier().ToUri(),
+	}, "Interest finalize")
+
 	// 将对应的PIT条目从PIT表中移除
 	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
 		// TODO：删除 PIT 条目失败，在这边输出提示信息
@@ -230,6 +260,11 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 // @param data
 //
 func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId": ingress.LogicFaceId,
+		"data":   data.ToUri(),
+	}, "Incoming data")
+
 	// 找到对应的PIT条目
 	pitEntry := f.PIT.FindDataMatches(data)
 	if pitEntry == nil {
@@ -268,6 +303,10 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 // @param data
 //
 func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId": ingress.LogicFaceId,
+		"data":   data.ToUri(),
+	}, "Data unsolicited")
 	// TODO: 读取配置文件，是否缓存未经请求的 Data
 }
 
@@ -282,6 +321,11 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 // @param data
 //
 func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId": egress.LogicFaceId,
+		"data":   data.ToUri(),
+	}, "Outgoing data")
+
 	egress.SendData(data)
 }
 
@@ -299,6 +343,12 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 // @param nack
 //
 func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   ingress.LogicFaceId,
+		"interest": nack.Interest.ToUri(),
+		"reason":   nack.GetNackReason(),
+	}, "Incoming Nack")
+
 	// 判断 PIT 中是否有对应的条目
 	pitEntry, err := f.PIT.Find(nack.Interest)
 	if err != nil || pitEntry == nil {
@@ -350,6 +400,12 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 // @param header
 //
 func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":   egress.LogicFaceId,
+		"pitEntry": pitEntry.GetIdentifier().ToUri(),
+		"reason":   header.GetNackReason(),
+	}, "Outgoing Nack")
+
 	// 查找对应的 in-record
 	inRecord, err := pitEntry.GetInRecord(egress.LogicFaceId)
 	if err != nil || inRecord == nil {
@@ -378,6 +434,11 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 // @param cPacket
 //
 func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":  ingress.LogicFaceId,
+		"cPacket": cPacket.ToUri(),
+	}, "Incoming CPacket")
+
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
 	if cPacket.TTL.Minus() < 0 {
 		return
@@ -399,6 +460,11 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 // @param cPacket
 //
 func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId":  egress.LogicFaceId,
+		"cPacket": cPacket.ToUri(),
+	}, "Outgoing CPacket")
+
 	egress.SendCPacket(cPacket)
 }
 
