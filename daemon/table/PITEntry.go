@@ -37,6 +37,7 @@ type OutRecord struct {
 	LogicFaceId uint64          //流出LogicFaceId
 	ExpireTime  uint64          //超时时间 应用层设置 底层不用
 	LastNonce   component.Nonce //与InRecord中的LastNonce一致
+	NackHeader  *component.NackHeader
 }
 
 //
@@ -53,6 +54,7 @@ type PITEntry struct {
 	OutRWlock     *sync.RWMutex        //流出读写锁
 	Ticker        *time.Ticker         //定时器
 	ch            chan int             //取消定时器信号
+	IsSatisfied   bool                 // 是否已满足
 }
 
 //
@@ -68,6 +70,7 @@ func CreatePITEntry() *PITEntry {
 	p.InRWlock = new(sync.RWMutex)
 	p.OutRWlock = new(sync.RWMutex)
 	p.ch = make(chan int)
+	p.IsSatisfied = false
 	return p
 }
 
