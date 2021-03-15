@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/lf"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,10 +24,10 @@ import (
 // @Description:流入记录表结构体
 //
 type InRecord struct {
-	LogicFaceId uint64           //流入LogicFaceId
-	Interest    *packet.Interest //兴趣包指针
-	ExpireTime  uint64           //超时时间 应用层设置 底层不用
-	LastNonce   component.Nonce  //与最后加入记录表的兴趣包中的nonce一致
+	LogicFace  *lf.LogicFace    //流入LogicFace指针
+	Interest   *packet.Interest //兴趣包指针
+	ExpireTime uint64           //超时时间 应用层设置 底层不用
+	LastNonce  component.Nonce  //与最后加入记录表的兴趣包中的nonce一致
 }
 
 //
@@ -35,10 +36,10 @@ type InRecord struct {
 // @Description:流出记录表结构体
 //
 type OutRecord struct {
-	LogicFaceId uint64          //流出LogicFaceId
-	ExpireTime  uint64          //超时时间 应用层设置 底层不用
-	LastNonce   component.Nonce //与InRecord中的LastNonce一致
-	NackHeader  *component.NackHeader
+	LogicFace  *lf.LogicFace   //流出LogicFace指针
+	ExpireTime uint64          //超时时间 应用层设置 底层不用
+	LastNonce  component.Nonce //与InRecord中的LastNonce一致
+	NackHeader *component.NackHeader
 }
 
 //
@@ -230,15 +231,15 @@ func (p *PITEntry) HasInRecords() bool {
 }
 
 //
-// 根据logicFaceId从流入记录表中取出对应的流入记录
+// 根据logicFace从流入记录表中取出对应的流入记录
 //
 // @Description:
 // @return InRecord, error
 //
-func (p *PITEntry) GetInRecord(logicFaceId uint64) (*InRecord, error) {
+func (p *PITEntry) GetInRecord(logicFace *lf.LogicFace) (*InRecord, error) {
 	p.InRWlock.RLock()
 	defer p.InRWlock.RUnlock()
-	if inRecord, ok := p.InRecordList[logicFaceId]; ok {
+	if inRecord, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
 		return inRecord, nil
 	}
 	return &InRecord{}, createPITEntryErrorByType(InRecordNotExistedError)
@@ -251,7 +252,7 @@ func (p *PITEntry) GetInRecord(logicFaceId uint64) (*InRecord, error) {
 // @param uint64,*packet.Interest
 // @return *InRecord
 //
-func (p *PITEntry) InsertOrUpdateInRecord(logicFaceId uint64, interest *packet.Interest) *InRecord {
+func (p *PITEntry) InsertOrUpdateInRecord(logicFace *lf.LogicFace, interest *packet.Interest) *InRecord {
 	//if p.InRecordList == nil {
 	//	p.RWlock.Lock()
 	//	p.InRecordList = make(map[uint64]InRecord)
@@ -259,26 +260,26 @@ func (p *PITEntry) InsertOrUpdateInRecord(logicFaceId uint64, interest *packet.I
 	//	return &InRecord{}
 	//}
 	p.InRWlock.Lock()
-	delete(p.InRecordList, logicFaceId)
-	inRecord := &InRecord{LogicFaceId: logicFaceId, Interest: interest, LastNonce: interest.Nonce}
-	p.InRecordList[logicFaceId] = inRecord
+	delete(p.InRecordList, logicFace.LogicFaceId)
+	inRecord := &InRecord{LogicFace: logicFace, Interest: interest, LastNonce: interest.Nonce}
+	p.InRecordList[logicFace.LogicFaceId] = inRecord
 	p.InRWlock.Unlock()
 	// 返回引用 对返回值修改就是对原值修改
 	return inRecord
 }
 
 //
-// 根据logicFaceId删除PITEntry中的流入记录
+// 根据logicFace删除PITEntry中的流入记录
 //
 // @Description:
 // @param uint64
 // @return error
 //
-func (p *PITEntry) DeleteInRecord(logicFaceId uint64) error {
+func (p *PITEntry) DeleteInRecord(logicFace *lf.LogicFace) error {
 	p.InRWlock.Lock()
 	defer p.InRWlock.Unlock()
-	if _, ok := p.InRecordList[logicFaceId]; ok {
-		delete(p.InRecordList, logicFaceId)
+	if _, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
+		delete(p.InRecordList, logicFace.LogicFaceId)
 		return nil
 	}
 	return createPITEntryErrorByType(InRecordNotExistedError)
@@ -324,16 +325,16 @@ func (p *PITEntry) HasOutRecords() bool {
 }
 
 //
-// 根据logicFaceId从流出记录表中取出对应的流出记录
+// 根据logicFace从流出记录表中取出对应的流出记录
 //
 // @Description:
-// @param logicFaceId
+// @param logicFace
 // @return OutRecord, error
 //
-func (p *PITEntry) GetOutRecord(logicFaceId uint64) (*OutRecord, error) {
+func (p *PITEntry) GetOutRecord(logicFace *lf.LogicFace) (*OutRecord, error) {
 	p.OutRWlock.RLock()
 	defer p.OutRWlock.RUnlock()
-	if outRecord, ok := p.OutRecordList[logicFaceId]; ok {
+	if outRecord, ok := p.OutRecordList[logicFace.LogicFaceId]; ok {
 		return outRecord, nil
 	}
 	return &OutRecord{}, createPITEntryErrorByType(OutRecordNotExistedError)
@@ -346,30 +347,30 @@ func (p *PITEntry) GetOutRecord(logicFaceId uint64) (*OutRecord, error) {
 // @param uint64,*packet.Interest
 // @return *OutRecord
 //
-func (p *PITEntry) InsertOrUpdateOutRecord(logicFaceId uint64, interest *packet.Interest) *OutRecord {
+func (p *PITEntry) InsertOrUpdateOutRecord(logicFace *lf.LogicFace, interest *packet.Interest) *OutRecord {
 	//if p.OutRecordList == nil {
 	//	p.OutRecordList = make(map[uint64]OutRecord)
 	//}
 	p.OutRWlock.Lock()
-	delete(p.OutRecordList, logicFaceId)
-	outRecord := &OutRecord{LogicFaceId: logicFaceId, LastNonce: interest.Nonce}
-	p.OutRecordList[logicFaceId] = outRecord
+	delete(p.OutRecordList, logicFace.LogicFaceId)
+	outRecord := &OutRecord{LogicFace: logicFace, LastNonce: interest.Nonce}
+	p.OutRecordList[logicFace.LogicFaceId] = outRecord
 	p.OutRWlock.Unlock()
 	return outRecord
 }
 
 //
-// 根据logicFaceId删除PITEntry中的流出记录
+// 根据logicFace删除PITEntry中的流出记录
 //
 // @Description:
 // @param uint64
 // @return error
 //
-func (p *PITEntry) DeleteOutRecord(logicFaceId uint64) error {
+func (p *PITEntry) DeleteOutRecord(logicFace *lf.LogicFace) error {
 	p.OutRWlock.Lock()
 	defer p.OutRWlock.Unlock()
-	if _, ok := p.InRecordList[logicFaceId]; ok {
-		delete(p.InRecordList, logicFaceId)
+	if _, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
+		delete(p.InRecordList, logicFace.LogicFaceId)
 		return nil
 	}
 	return createPITEntryErrorByType(OutRecordNotExistedError)

@@ -10,10 +10,11 @@ package table
 
 import (
 	"fmt"
+	"minlib/component"
 	"testing"
 )
-import "minlib/component"
 
+// 单元测试
 func TestFindLongestPrefixMatch(t *testing.T) {
 	// 测试精确匹配
 	fib := CreateFIB()
@@ -219,4 +220,147 @@ func TestFIBSize(t *testing.T) {
 	fib.AddOrUpdate(identifier, 0, 1)
 	fmt.Println(fib.Size())
 
+}
+
+// 基准测试
+// allocs/op表示每个op(单次迭代)发生了多少个不同的内存分配.
+// B/op是每操作分配多少个字节.
+
+func BenchmarkFindLongestPrefixMatch(b *testing.B) {
+	// 精确匹配
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+	identifier, err = component.CreateIdentifierByString("/min/pku/edu/cn")
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fib.FindLongestPrefixMatch(identifier)
+	}
+}
+
+func BenchmarkFindExactMatch(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fib.FindExactMatch(identifier)
+	}
+}
+
+func BenchmarkAddOrUpdate(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fib.AddOrUpdate(identifier, 1, 1)
+	}
+}
+
+func BenchmarkEraseByIdentifier(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		fib.AddOrUpdate(identifier, 1, 1)
+		b.StartTimer()
+		fib.EraseByIdentifier(identifier)
+	}
+}
+
+func BenchmarkEraseByFIBEntry(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		fibEntry := fib.AddOrUpdate(identifier, 1, 1)
+		b.StartTimer()
+		fib.EraseByFIBEntry(fibEntry)
+	}
+}
+
+// b.StopTimer() 消除add函数添加的额外时间 测试时间60s左右 因为启用了定时器
+func BenchmarkRemoveNextHopByFace(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		fib.AddOrUpdate(identifier, 1, 1)
+		b.StartTimer()
+		fib.RemoveNextHopByFace(1)
+	}
+}
+
+func BenchmarkFIBSize(b *testing.B) {
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku/cn")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 0, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 1, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, 0, 1)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fib.Size()
+	}
 }

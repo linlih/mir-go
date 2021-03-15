@@ -11,6 +11,7 @@ package table
 import (
 	"fmt"
 	"minlib/packet"
+	"mir-go/daemon/lf"
 )
 
 //
@@ -99,7 +100,7 @@ func (p *PIT) Insert(interest *packet.Interest) *PITEntry {
 }
 
 //
-// 根据数据包在PIT表中获取PITEntry
+// 根据数据包在PIT表中获取PITEntry 匹配过程应该在PIT表中删除匹配过的表项
 //
 // @Description:
 // @param *packet.Data	数据包指针
@@ -133,21 +134,21 @@ func (p *PIT) EraseByPITEntry(pitEntry *PITEntry) error {
 }
 
 //
-// 根据logicFaceId删除PIT表中的PITEntry,返回删除的数量
+// 删除所有以logicFace为流入接口号或流出接口号的表项,返回删除的数量
 //
 // @Description:
-// @param logicFaceId
+// @param logicFace
 // @return uint64
 //
-func (p *PIT) EraseByLogicFaceID(logicFaceId uint64) uint64 {
+func (p *PIT) EraseByLogicFace(logicFace *lf.LogicFace) uint64 {
 	return p.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if pitEntry, ok := val.(*PITEntry); ok {
 			var ok1, ok2 bool
-			if _, ok1 = pitEntry.InRecordList[logicFaceId]; ok1 {
-				delete(pitEntry.InRecordList, logicFaceId)
+			if _, ok1 = pitEntry.InRecordList[logicFace.LogicFaceId]; ok1 {
+				delete(pitEntry.InRecordList, logicFace.LogicFaceId)
 			}
-			if _, ok2 = pitEntry.OutRecordList[logicFaceId]; ok2 {
-				delete(pitEntry.OutRecordList, logicFaceId)
+			if _, ok2 = pitEntry.OutRecordList[logicFace.LogicFaceId]; ok2 {
+				delete(pitEntry.OutRecordList, logicFace.LogicFaceId)
 			}
 			if ok1 || ok2 {
 				return 1
