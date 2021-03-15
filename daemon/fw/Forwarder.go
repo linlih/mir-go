@@ -1,3 +1,10 @@
+//
+// @Author: Jianming Que
+// @Description:
+// @Version: 1.0.0
+// @Date: 2021/3/13 3:57 下午
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
 package fw
 
 import (
@@ -207,20 +214,123 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	}
 }
 
+//
+// 处理一个数据包到来（ Incoming Data Pipeline ）
+//
+// @Description:
+//  1. 首先，管道使用数据匹配算法（ Data Match algorithm ，第3.4.2节）检查 Data 是否与PIT条目匹配。如果找不到匹配的PIT条目，则将 Data
+//     提供给 Data unsolicited 管道；如果找到匹配的PIT条目，则将 Data 插入到 ContentStore 中。
+//
+//     > 请注意，即使管道将 Data 插入到 ContentStore 中，该数据是否存储以及它在 ContentStore 中的停留时间也取决于 ContentStore 的接纳
+//       和替换策略（ admission andreplacement policy）。
+//
+//  2. 接着管道会将对应PIT条目的到期计时器设置为当前时间，调用对应策略的 Strategy::afterReceiveData 回调，将PIT标记为 satisfied ，并清
+//     除PIT条目的 out records 。
+// @param ingress
+// @param data
+//
 func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
-	panic("implement me")
+	// 找到对应的PIT条目
+	pitEntry := f.PIT.FindDataMatches(data)
+	if pitEntry == nil {
+		// 没有找到对应的 PIT 条目，触发 Data unsolicited 管道
+		f.OnDataUnsolicited(ingress, data)
+		return
+	}
+	// 找到对应的 PIT 条目
+	// 插入到CS缓存当中
+	f.CS.Insert(data)
+
+	// 调用对应策略的 Strategy::afterReceiveData 回调
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(data.GetName()); ste != nil {
+		// 调用策略
+		ste.GetStrategy().AfterReceiveData(ingress, data, pitEntry)
+		// 标记 PITEntry 为 satisfied
+		pitEntry.IsSatisfied = true
+		// 清除对应的出记录
+		if err := pitEntry.DeleteOutRecord(ingress.LogicFaceId); err != nil {
+			// TODO：删除出记录失败，这边输出错误
+		}
+	} else {
+		// TODO: 输出错误，数据包没有找到匹配的可用策略
+	}
 }
 
+//
+// 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
+//
+// @Description:
+//  在 Incoming data 管道处理过程中发现 Data 是未经请求的时后会触发 Data unsolicited 管道处理逻辑，它的处理过程如下：
+//   1. 根据当前配置的针对未经请求的 Data 的处理策略，决定是删除 Data 还是将其添加到 ContentStore 。默认情况下，MIR配置了 drop-all 策略，
+//      该策略会丢弃所有未经请求的 Data ，因为它们会对转发器造成安全风险。
+//   2. 在某些特殊应用场景下，如果希望MIR将未经请求的 Data 存储到 ContentStore，可以在配置文件中修改对应的策略。
+// @param ingress
+// @param data
+//
 func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) {
-	panic("implement me")
+	// TODO: 读取配置文件，是否缓存未经请求的 Data
 }
 
+//
+// 处理将一个数据包发出 （ Outgoing Data Pipeline ）
+//
+// @Description:
+//  在 Incoming Interest 管道（第4.2.1节）处理过程中在 ContentStore 中找到匹配的数据或在 Incoming Data 管道处理过程中发现传入的 Data
+//  匹配到 PIT 表项时，调用本管道，它的处理过程如下：
+//   1. 通过对应的 LogicFace 将 Data 发出
+// @param egress
+// @param data
+//
 func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
-	panic("implement me")
+	egress.SendData(data)
 }
 
+//
+// 处理一个 Nack 到来 （ Incoming Nack Pipeline ）
+//
+// @Description:
+//  1. 首先，从收到的 Nack 中提取到 Interest，然后查询是否有与之匹配的PIT条目，如果没有则丢弃，有则执行下一步；
+//  2. 接着，判断匹配到的 PIT 条目中是否有对应 LogicFace 的 out-record ，如果没有则丢弃，有则执行下一步；
+//  3. 然后，判断得到的 out-record 是否和 Nack 中的 Interest 的 Nonce 一致，不一致则丢弃，一致则执行下一步；
+//  4. 然后标记对应的 out-record 为 Nacked ；
+//  5. 如果此时对应的 PIT 条目中所有的 out-record 都已经 Nacked ，则将PIT条目的过期时间设置为当前时间（会触发 Interest finalize 管道）；
+//  6. 然后调用对应策略的 Strategy::afterReceiveNack 回调，在其中触发 Outgoing Nack 管道。
+// @param ingress
+// @param nack
+//
 func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
-	panic("implement me")
+	// 判断 PIT 中是否有对应的条目
+	pitEntry, err := f.PIT.Find(nack.Interest)
+	if err != nil || pitEntry == nil{
+		// 没有找到匹配的 PIT 条目，直接返回丢弃
+		return
+	}
+
+	outRecord, err := pitEntry.GetOutRecord(ingress.LogicFaceId)
+	if err != nil {
+		// 如果不存在对应 LogicFace 的 out-record，则丢弃
+		return
+	}
+
+	// 记录 NackHeader 到 out-record
+	if outRecord.LastNonce.GetNonce() != nack.Interest.GetNonce() {
+		// 如果 Nonce 不一致，直接丢弃
+		return
+	}
+	outRecord.NackHeader = &nack.Interest.NackHeader
+
+	// TODO: 如果所有 out-record 都超时或者被 Nack，则触发 PIT 条目过期
+	finished := true
+	for _, or := range pitEntry.GetOutRecords() {
+		if or.ExpireTime < GetCurrentTime()
+	}
+
+	// 触发 Strategy::afterReceiveNack
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(nack.Interest.GetName()); ste != nil {
+		ste.GetStrategy().AfterReceiveNack(ingress, nack, pitEntry)
+	} else {
+		// TODO: 输出错误，Nack没有找到匹配的可用策略
+	}
 }
 
 func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) {
