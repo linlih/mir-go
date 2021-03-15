@@ -301,13 +301,13 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	// 判断 PIT 中是否有对应的条目
 	pitEntry, err := f.PIT.Find(nack.Interest)
-	if err != nil || pitEntry == nil{
+	if err != nil || pitEntry == nil {
 		// 没有找到匹配的 PIT 条目，直接返回丢弃
 		return
 	}
 
 	outRecord, err := pitEntry.GetOutRecord(ingress.LogicFaceId)
-	if err != nil {
+	if err != nil || outRecord == nil {
 		// 如果不存在对应 LogicFace 的 out-record，则丢弃
 		return
 	}
@@ -319,10 +319,15 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	}
 	outRecord.NackHeader = &nack.Interest.NackHeader
 
-	// TODO: 如果所有 out-record 都超时或者被 Nack，则触发 PIT 条目过期
+	// 如果所有 out-record 都超时或者被 Nack，则触发 PIT 条目过期
 	finished := true
 	for _, or := range pitEntry.GetOutRecords() {
-		if or.ExpireTime < GetCurrentTime()
+		if or.ExpireTime > GetCurrentTime() && or.NackHeader != nil {
+			finished = false
+		}
+	}
+	if finished {
+		f.SetExpiryTime(pitEntry, 0)
 	}
 
 	// 触发 Strategy::afterReceiveNack
@@ -333,16 +338,68 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	}
 }
 
+//
+// 处理一个 Nack 发出 （ Outgoing Nack Pipeline ）
+//
+// @Description:
+//  1. 首先，在PIT条目中查询指定的传出 LogicFace （下游）的 in-record 。该记录是必要的，因为协议要求将最后一个从下游接收到的 Interest
+//    （包括其Nonce）携带在 Nack 包中，如果未找到记录，请中止此过程，因为如果没有此兴趣，将无法发送 Nack 。
+//  2. 然后构造一个 Nack 传递给下游，同时删除对应的 in-record。
+// @param egress
+// @param pitEntry
+// @param header
+//
 func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) {
-	panic("implement me")
+	// 查找对应的 in-record
+	inRecord, err := pitEntry.GetInRecord(egress.LogicFaceId)
+	if err != nil || inRecord == nil {
+		// 如果不存在对应的 in-record，丢弃包
+		return
+	}
+
+	// 构造 Nack 发出
+	nack := packet.Nack{}
+	nack.Interest = inRecord.Interest
+	nack.SetNackReason(header.GetNackReason())
+	egress.SendNack(&nack)
 }
 
+//
+// 处理一个 CPacket 到来 （Incoming CPacket Pipeline）
+//
+// @Description:
+//  1. 首先给 CPacket 的 TTL 减一，然后检查 TTL 的值是：
+//     - TTL < 0 则认为该包是一个回环的 CPacket ，直接丢弃；
+//     - TTL >= 0 则执行下一步。
+//   > 因为 CPacket 是一种推式语义的网络包，不能向 Interest 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
+//
+//  2. 接着调用对应策略的 Strategy::afterReceiveCPacket 回调，在其中触发 Outgoing CPacket 管道。
+// @param ingress
+// @param cPacket
+//
 func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
-	panic("implement me")
+	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
+	if cPacket.TTL.Minus() < 0 {
+		return
+	}
+
+	// 调用 Strategy::afterReceiveCPacket
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(cPacket.DstIdentifier()); ste != nil {
+		ste.GetStrategy().AfterReceiveCPacket(ingress, cPacket)
+	} else {
+		// TODO: 输出错误，CPacket没有找到匹配的可用策略
+	}
 }
 
+//
+// 处理一个 CPacket 发出 （Outgoing CPacket Pipeline）
+//
+// @Description:
+// @param egress
+// @param cPacket
+//
 func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
-	panic("implement me")
+	egress.SendCPacket(cPacket)
 }
 
 //
