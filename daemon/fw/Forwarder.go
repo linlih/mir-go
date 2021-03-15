@@ -244,6 +244,11 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 		"entry": pitEntry.GetIdentifier().ToUri(),
 	}, "Interest finalize")
 
+	// 如果传入的 PITEntry 已经被移除了，就直接返回
+	if pitEntry.IsDeleted() {
+		return
+	}
+
 	// 将对应的PIT条目从PIT表中移除
 	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
 		// 删除 PIT 条目失败，在这边输出提示信息
@@ -251,6 +256,9 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 			"interest": pitEntry.GetIdentifier().ToUri(),
 		}, "Delete PITEntry failed")
 	}
+
+	// 标记 PIT 条目已经被删除
+	pitEntry.SetDeleted(true)
 }
 
 //
@@ -290,7 +298,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		// 调用策略
 		ste.GetStrategy().AfterReceiveData(ingress, data, pitEntry)
 		// 标记 PITEntry 为 satisfied
-		pitEntry.IsSatisfied = true
+		pitEntry.SetSatisfied(true)
 		// 清除对应的出记录
 		if err := pitEntry.DeleteOutRecord(ingress.LogicFaceId); err != nil {
 			// 删除出记录失败，这边输出错误
@@ -411,7 +419,11 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(nack.Interest.GetName()); ste != nil {
 		ste.GetStrategy().AfterReceiveNack(ingress, nack, pitEntry)
 	} else {
-		// TODO: 输出错误，Nack没有找到匹配的可用策略
+		// 输出错误，Nack没有找到匹配的可用策略
+		common.LogErrorWithFields(logrus.Fields{
+			"nack":   nack.Interest.ToUri(),
+			"reason": nack.GetNackReason(),
+		}, "Not found matched Strategy for nack")
 	}
 }
 

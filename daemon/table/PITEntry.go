@@ -13,6 +13,7 @@ import (
 	"minlib/component"
 	"minlib/packet"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -48,13 +49,14 @@ type OutRecord struct {
 type PITEntry struct {
 	Identifier *component.Identifier //标识对象指针
 	//ExpireTime    time.Duration         //超时时间 底层设置 过期删除
-	InRecordList  map[uint64]*InRecord  //流入记录表
-	OutRecordList map[uint64]*OutRecord //流出记录表
-	InRWlock      *sync.RWMutex         //流入读写锁
-	OutRWlock     *sync.RWMutex         //流出读写锁
-	Ticker        *time.Ticker          //定时器
-	ch            chan int              //取消定时器信号
-	IsSatisfied   bool                  // 是否已满足
+	InRecordList           map[uint64]*InRecord  //流入记录表
+	OutRecordList          map[uint64]*OutRecord //流出记录表
+	InRWlock               *sync.RWMutex         //流入读写锁
+	OutRWlock              *sync.RWMutex         //流出读写锁
+	Ticker                 *time.Ticker          //定时器
+	ch                     chan int              //取消定时器信号
+	isSatisfiedAtomicValue atomic.Value          // 是否已被满足
+	isDeletedAtomicValue   atomic.Value          // 是否已经从 PIT 表中移除
 }
 
 //
@@ -70,8 +72,53 @@ func CreatePITEntry() *PITEntry {
 	p.InRWlock = new(sync.RWMutex)
 	p.OutRWlock = new(sync.RWMutex)
 	p.ch = make(chan int)
-	p.IsSatisfied = false
+	p.isSatisfiedAtomicValue.Store(false)
+	p.isDeletedAtomicValue.Store(false)
 	return p
+}
+
+//
+// 返回当前 PITEntry 是否已经被满足
+//
+// @Description:
+// @receiver p
+// @return bool
+//
+func (p *PITEntry) IsSatisfied() bool {
+	return p.isSatisfiedAtomicValue.Load().(bool)
+}
+
+//
+// 设置当前 PITEntry 是否已经被满足
+//
+// @Description:
+// @receiver p
+// @param isSatisfied
+//
+func (p *PITEntry) SetSatisfied(isSatisfied bool) {
+	p.isSatisfiedAtomicValue.Store(isSatisfied)
+}
+
+//
+// 返回当前 PITEntry 是否已经从 PIT 表中移除
+//
+// @Description:
+// @receiver p
+// @return bool
+//
+func (p *PITEntry) IsDeleted() bool {
+	return p.isDeletedAtomicValue.Load().(bool)
+}
+
+//
+// 设置当前 PITEntry 是否已经从 PIT 表中移除
+//
+// @Description:
+// @receiver p
+// @param isDeleted
+//
+func (p *PITEntry) SetDeleted(isDeleted bool) {
+	p.isDeletedAtomicValue.Store(isDeleted)
 }
 
 //
