@@ -11,7 +11,6 @@ package table
 import (
 	"fmt"
 	"minlib/component"
-	"mir-go/daemon/fw"
 )
 
 type StrategyTable struct {
@@ -51,7 +50,7 @@ func (s *StrategyTable) SetDefaultStrategy(strategyName string) {
 }
 
 // 往策略表中插入一个策略
-func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName string, istrategy *fw.IStrategy) *StrategyTableEntry {
+func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName string, istrategy *IStrategy) *StrategyTableEntry {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())

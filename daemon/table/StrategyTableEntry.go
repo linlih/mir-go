@@ -10,14 +10,13 @@ package table
 
 import (
 	"minlib/component"
-	"mir-go/daemon/fw"
 	"sync"
 )
 
 type StrategyTableEntry struct {
 	Identifier   *component.Identifier // 标识
 	StrategyName string                // 策略名称
-	IStrategy     *fw.IStrategy
+	IStrategy    *IStrategy
 	RWlock       *sync.RWMutex
 }
 
@@ -56,14 +55,14 @@ func (s *StrategyTableEntry) SetPrefix(identifier *component.Identifier) {
 }
 
 // 获取策略条目对应的策略结构体的指针
-func (s *StrategyTableEntry) GetStrategy() *fw.IStrategy {
+func (s *StrategyTableEntry) GetStrategy() *IStrategy {
 	s.RWlock.RLock()
 	defer s.RWlock.RUnlock()
 	return s.IStrategy
 }
 
 // 设置策略条目对应的策略结构体的指针
-func (s *StrategyTableEntry) SetStrategy(istrategy *fw.IStrategy) {
+func (s *StrategyTableEntry) SetStrategy(istrategy *IStrategy) {
 	s.RWlock.Lock()
 	defer s.RWlock.Unlock()
 	s.IStrategy = istrategy

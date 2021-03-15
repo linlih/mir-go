@@ -22,7 +22,6 @@ type LpmMatcher struct {
 	node
 }
 
-
 //
 // 最长前缀树的节点
 //
@@ -43,7 +42,6 @@ type nodeAndLock struct {
 	lock *sync.RWMutex
 }
 
-
 //
 // 初始化,主要是避免每次节点递归的时候都需要判断是否存在lock
 //
@@ -53,7 +51,6 @@ type nodeAndLock struct {
 func (n *node) Create() {
 	n.lock = &sync.RWMutex{}
 }
-
 
 //
 // 判断节点为空
@@ -78,7 +75,6 @@ func (n *node) empty() bool {
 
 	return count == 0
 }
-
 
 //
 // 用于返回，避免val重复的为空判断
@@ -128,7 +124,6 @@ func (n *node) FindLongestPrefixMatch(key []string) (interface{}, bool) {
 	return val, found
 }
 
-
 //
 // 精确匹配
 //
@@ -161,7 +156,6 @@ func (n *node) FindExactMatch(key []string) (interface{}, bool) {
 
 	return val, found
 }
-
 
 //
 // 添加或者更新

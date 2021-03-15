@@ -36,7 +36,7 @@ type FIBEntry struct {
 	Identifier *component.Identifier //标识对象指针
 	//Ttl         time.Duration         //表项有效期
 	NextHopList map[uint64]*NextHop //下一跳列表 用map实现是为了查找和删除方便
-	RWlock      *sync.RWMutex      //读写锁
+	RWlock      *sync.RWMutex       //读写锁
 }
 
 //

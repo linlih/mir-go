@@ -5,13 +5,12 @@
 // @Date: 2021/3/3 3:21 下午
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
-package strategy
+package table
 
 import (
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/table"
 )
 
 type IStrategy interface {
@@ -32,7 +31,7 @@ type IStrategy interface {
 	// @param interest		收到的兴趣包
 	// @param pitEntry		兴趣包对应的PIT条目
 	//
-	AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry *table.PITEntry)
+	AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry *PITEntry)
 
 	//
 	// 当兴趣包命中缓存时，会触发本触发器
@@ -43,7 +42,7 @@ type IStrategy interface {
 	// @param data			缓存中得到的可以满足 Interest 的 Data
 	// @param entry			兴趣包对应的PIT条目
 	//
-	AfterContentStoreHit(ingress *lf.LogicFace, data *packet.Data, entry *table.PITEntry)
+	AfterContentStoreHit(ingress *lf.LogicFace, data *packet.Data, entry *PITEntry)
 
 	//
 	// 当收到一个 Data 时，会触发本触发器
@@ -56,7 +55,7 @@ type IStrategy interface {
 	// @param data			收到的 Data
 	// @param pitEntry		Data 对应匹配的PIT条目
 	//
-	AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+	AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 
 	//
 	// 当收到一个 Nack 时，会触发本触发器
@@ -67,7 +66,7 @@ type IStrategy interface {
 	// @param nack			收到的 Nack
 	// @param pitEntry		Nack 对应匹配的PIT条目
 	//
-	AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *table.PITEntry)
+	AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *PITEntry)
 
 	//
 	// 当收到一个 CPacket 时，会触发本触发器
@@ -90,7 +89,7 @@ type IStrategy interface {
 	// @param interest		要转发的 Interest
 	// @param entry			Interest 对应匹配的 PIT 条目
 	//
-	sendInterest(egress *lf.LogicFace, interest *packet.Interest, pitEntry *table.PITEntry)
+	sendInterest(egress *lf.LogicFace, interest *packet.Interest, pitEntry *PITEntry)
 
 	//
 	// 将 Data 从指定的逻辑接口转发出去
@@ -100,7 +99,7 @@ type IStrategy interface {
 	// @param data			要转发的 Data
 	// @param pitEntry		Data 对应匹配的 PIT 条目
 	//
-	sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+	sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 
 	//
 	// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
@@ -110,7 +109,7 @@ type IStrategy interface {
 	// @param data			要转发的 Data
 	// @param pitEntry		Data 对应匹配的 PIT 条目
 	//
-	sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry)
+	sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 
 	//
 	// 往指定的逻辑接口发送一个 Nack
@@ -120,7 +119,7 @@ type IStrategy interface {
 	// @param nackHeader	要转发出的Nack的元信息
 	// @param pitEntry		Nack 对应匹配的 PIT 条目
 	//
-	sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+	sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
 
 	//
 	// 将 Nack 发送给对应 PIT 条目记录的所有符合条件的下游节点
@@ -130,7 +129,7 @@ type IStrategy interface {
 	// @param nackHeader	要转发出的Nack的元信息
 	// @param pitEntry		Nack 对应匹配的 PIT 条目
 	//
-	sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry)
+	sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
 
 	//
 	// 往指定的逻辑接口发送一个 CPacket

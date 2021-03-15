@@ -50,11 +50,11 @@ type PITEntry struct {
 	//ExpireTime    time.Duration         //超时时间 底层设置 过期删除
 	InRecordList  map[uint64]*InRecord  //流入记录表
 	OutRecordList map[uint64]*OutRecord //流出记录表
-	InRWlock      *sync.RWMutex        //流入读写锁
-	OutRWlock     *sync.RWMutex        //流出读写锁
-	Ticker        *time.Ticker         //定时器
-	ch            chan int             //取消定时器信号
-	IsSatisfied   bool                 // 是否已满足
+	InRWlock      *sync.RWMutex         //流入读写锁
+	OutRWlock     *sync.RWMutex         //流出读写锁
+	Ticker        *time.Ticker          //定时器
+	ch            chan int              //取消定时器信号
+	IsSatisfied   bool                  // 是否已满足
 }
 
 //
