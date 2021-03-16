@@ -150,7 +150,7 @@ type IStrategy interface {
 	// @Description:
 	// @param interest
 	//
-	lookupFibForInterest(interest *packet.Interest)
+	lookupFibForInterest(interest *packet.Interest) *FIBEntry
 
 	//
 	// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
@@ -158,5 +158,5 @@ type IStrategy interface {
 	// @Description:
 	// @param cPacket
 	//
-	lookupFibForCPacket(cPacket *packet.CPacket)
+	lookupFibForCPacket(cPacket *packet.CPacket) *FIBEntry
 }

@@ -148,7 +148,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 	}, "ContentStore miss")
 
 	// insert in-record
-	inRecord := pitEntry.InsertOrUpdateInRecord(ingress.LogicFaceId, interest)
+	inRecord := pitEntry.InsertOrUpdateInRecord(ingress, interest)
 	// TODO: 检查一下，这个设置超时时间的操作要不要放到插入 in-record 的内部进行
 	inRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
 
@@ -173,7 +173,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		// 输出错误，兴趣包没有找到匹配的可用策略
 		common.LogErrorWithFields(logrus.Fields{
 			"interest": interest.ToUri(),
-		}, "Not found effective Strategy")
+		}, "Not found effective StrategyBase")
 	}
 }
 
@@ -183,7 +183,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 // @Description:
 //  在 incoming Interest 管道中执行 ContentStore 查找并找到匹配项之后触发 ContentStore hit 管道处理逻辑。此管道执行以下步骤：
 //   1. 首先将 Interest 对应PIT条目的到期计时器设置为当前时间，这会使得计时器到期，触发 Interest finalize 管道；
-//   2. 然后触发 Interest 对应策略的 Strategy::afterContentStoreHit 回调。
+//   2. 然后触发 Interest 对应策略的 StrategyBase::afterContentStoreHit 回调。
 // @param ingress
 // @param pitEntry
 // @param interest
@@ -204,7 +204,7 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 		// 输出错误，兴趣包没有找到匹配的可用策略
 		common.LogErrorWithFields(logrus.Fields{
 			"interest": interest.ToUri(),
-		}, "Not found effective Strategy")
+		}, "Not found effective StrategyBase")
 	}
 }
 
@@ -226,7 +226,7 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 	}, "Outgoing interest")
 
 	// 插入 out-record
-	outRecord := pitEntry.InsertOrUpdateOutRecord(egress.LogicFaceId, interest)
+	outRecord := pitEntry.InsertOrUpdateOutRecord(egress, interest)
 	outRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
 
 	// 转发兴趣包
@@ -271,7 +271,7 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 //     > 请注意，即使管道将 Data 插入到 ContentStore 中，该数据是否存储以及它在 ContentStore 中的停留时间也取决于 ContentStore 的接纳
 //       和替换策略（ admission andreplacement policy）。
 //
-//  2. 接着管道会将对应PIT条目的到期计时器设置为当前时间，调用对应策略的 Strategy::afterReceiveData 回调，将PIT标记为 satisfied ，并清
+//  2. 接着管道会将对应PIT条目的到期计时器设置为当前时间，调用对应策略的 StrategyBase::afterReceiveData 回调，将PIT标记为 satisfied ，并清
 //     除PIT条目的 out records 。
 // @param ingress
 // @param data
@@ -293,14 +293,14 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	// 插入到CS缓存当中
 	f.CS.Insert(data)
 
-	// 调用对应策略的 Strategy::afterReceiveData 回调
+	// 调用对应策略的 StrategyBase::afterReceiveData 回调
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(data.GetName()); ste != nil {
 		// 调用策略
 		ste.GetStrategy().AfterReceiveData(ingress, data, pitEntry)
 		// 标记 PITEntry 为 satisfied
 		pitEntry.SetSatisfied(true)
 		// 清除对应的出记录
-		if err := pitEntry.DeleteOutRecord(ingress.LogicFaceId); err != nil {
+		if err := pitEntry.DeleteOutRecord(ingress); err != nil {
 			// 删除出记录失败，这边输出错误
 			common.LogWarnWithFields(logrus.Fields{
 				"pitEntry": pitEntry.GetIdentifier().ToUri(),
@@ -310,7 +310,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		// 输出错误，数据包没有找到匹配的可用策略
 		common.LogErrorWithFields(logrus.Fields{
 			"data": data.ToUri(),
-		}, "Not found effective Strategy")
+		}, "Not found effective StrategyBase")
 	}
 }
 
@@ -361,7 +361,7 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 //  3. 然后，判断得到的 out-record 是否和 Nack 中的 Interest 的 Nonce 一致，不一致则丢弃，一致则执行下一步；
 //  4. 然后标记对应的 out-record 为 Nacked ；
 //  5. 如果此时对应的 PIT 条目中所有的 out-record 都已经 Nacked ，则将PIT条目的过期时间设置为当前时间（会触发 Interest finalize 管道）；
-//  6. 然后调用对应策略的 Strategy::afterReceiveNack 回调，在其中触发 Outgoing Nack 管道。
+//  6. 然后调用对应策略的 StrategyBase::afterReceiveNack 回调，在其中触发 Outgoing Nack 管道。
 // @param ingress
 // @param nack
 //
@@ -383,7 +383,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 		return
 	}
 
-	outRecord, err := pitEntry.GetOutRecord(ingress.LogicFaceId)
+	outRecord, err := pitEntry.GetOutRecord(ingress)
 	if err != nil || outRecord == nil {
 		// 如果不存在对应 LogicFace 的 out-record，则丢弃
 		common.LogDebugWithFields(logrus.Fields{
@@ -415,7 +415,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 		f.SetExpiryTime(pitEntry, 0)
 	}
 
-	// 触发 Strategy::afterReceiveNack
+	// 触发 StrategyBase::afterReceiveNack
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(nack.Interest.GetName()); ste != nil {
 		ste.GetStrategy().AfterReceiveNack(ingress, nack, pitEntry)
 	} else {
@@ -423,7 +423,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 		common.LogErrorWithFields(logrus.Fields{
 			"nack":   nack.Interest.ToUri(),
 			"reason": nack.GetNackReason(),
-		}, "Not found matched Strategy for nack")
+		}, "Not found matched StrategyBase for nack")
 	}
 }
 
@@ -446,7 +446,7 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 	}, "Outgoing Nack")
 
 	// 查找对应的 in-record
-	inRecord, err := pitEntry.GetInRecord(egress.LogicFaceId)
+	inRecord, err := pitEntry.GetInRecord(egress)
 	if err != nil || inRecord == nil {
 		// 如果不存在对应的 in-record，丢弃包
 		return
@@ -468,7 +468,7 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 //     - TTL >= 0 则执行下一步。
 //   > 因为 CPacket 是一种推式语义的网络包，不能向 Interest 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
 //
-//  2. 接着调用对应策略的 Strategy::afterReceiveCPacket 回调，在其中触发 Outgoing CPacket 管道。
+//  2. 接着调用对应策略的 StrategyBase::afterReceiveCPacket 回调，在其中触发 Outgoing CPacket 管道。
 // @param ingress
 // @param cPacket
 //
@@ -487,7 +487,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 		return
 	}
 
-	// 调用 Strategy::afterReceiveCPacket
+	// 调用 StrategyBase::afterReceiveCPacket
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(cPacket.DstIdentifier()); ste != nil {
 		ste.GetStrategy().AfterReceiveCPacket(ingress, cPacket)
 	} else {
@@ -495,7 +495,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 		common.LogErrorWithFields(logrus.Fields{
 			"faceId":  ingress.LogicFaceId,
 			"cPacket": cPacket.ToUri(),
-		}, "Not found matched Strategy for CPacket")
+		}, "Not found matched StrategyBase for CPacket")
 	}
 }
 
