@@ -220,7 +220,9 @@ func (s *StrategyBase) sendNack(egress *lf.LogicFace, nackHeader *component.Nack
 func (s *StrategyBase) sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *table.PITEntry) {
 	downStreams := make([]*lf.LogicFace, len(pitEntry.GetInRecords()))
 	for index, inRecord := range pitEntry.GetInRecords() {
-		downStreams[index] = inRecord.LogicFace
+		if inRecord.LogicFace.LogicFaceId != ingress.LogicFaceId {
+			downStreams[index] = inRecord.LogicFace
+		}
 	}
 	for _, downStream := range downStreams {
 		s.sendNack(downStream, nackHeader, pitEntry)
@@ -236,6 +238,19 @@ func (s *StrategyBase) sendNackToAll(ingress *lf.LogicFace, nackHeader *componen
 //
 func (s *StrategyBase) sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
 	s.forwarder.OnOutgoingCPacket(egress, cPacket)
+}
+
+//
+// 让PIT条目触发立即过期并清除的操作
+//
+// @Description:
+//  本函数会设置 PIT 条目的超时时间为当前时间，以触发立即超时。
+//  策略模块如果发现兴趣包无法转发到上游，并且不想等待上游节点返回数据时，可以调用本方法
+// @receiver s
+// @param pitEntry
+//
+func (s *StrategyBase) rejectPendingInterest(pitEntry *table.PITEntry) {
+	s.forwarder.SetExpiryTime(pitEntry, 0)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

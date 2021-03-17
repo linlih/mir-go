@@ -36,7 +36,7 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 	// 查看 in-record
 	for _, inRecord := range pitEntry.GetInRecords() {
 		if inRecord.LastNonce.GetNonce() == nonce.GetNonce() {
-			if inRecord.LogicFaceId == ingress.LogicFaceId {
+			if inRecord.LogicFace.LogicFaceId == ingress.LogicFaceId {
 				result |= DuplicateNonceInSame
 			} else {
 				result |= DuplicateNonceInOther
@@ -47,7 +47,7 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 	// 查看 out-record
 	for _, outRecord := range pitEntry.GetOutRecords() {
 		if outRecord.LastNonce.GetNonce() == nonce.GetNonce() {
-			if outRecord.LogicFaceId == ingress.LogicFaceId {
+			if outRecord.LogicFace.LogicFaceId == ingress.LogicFaceId {
 				result |= DuplicateNonceOutSame
 			} else {
 				result |= DuplicateNonceOutOther
@@ -65,4 +65,24 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 //
 func GetCurrentTime() uint64 {
 	return uint64(time.Now().UnixNano() / 1e6)
+}
+
+//
+// 判断 PIT 条目中是否存在仍在 pending 的 out-record
+//
+// @Description:
+// @param entry
+// @return bool
+//
+func HasPendingOutRecords(entry *table.PITEntry) bool {
+	if entry == nil {
+		return false
+	}
+	now := GetCurrentTime()
+	for _, outRecord := range entry.GetOutRecords() {
+		if outRecord.ExpireTime > now && outRecord.NackHeader == nil {
+			return true
+		}
+	}
+	return false
 }
