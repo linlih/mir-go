@@ -11,6 +11,7 @@ package table
 import (
 	"fmt"
 	"minlib/component"
+	"mir-go/daemon/lf"
 )
 
 //
@@ -137,11 +138,11 @@ func (f *FIB) EraseByFIBEntry(fibEntry *FIBEntry) error {
 // @param logicFaceId
 // @return uint64
 //
-func (f *FIB) RemoveNextHopByFace(logicFaceId uint64) uint64 {
+func (f *FIB) RemoveNextHopByFace(logicFace *lf.LogicFace) uint64 {
 	return f.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if v, ok := val.(*FIBEntry); ok {
-			if v.HasNextHop(logicFaceId) {
-				v.RemoveNextHop(logicFaceId)
+			if v.HasNextHop(logicFace) {
+				v.RemoveNextHop(logicFace)
 				return 1
 			}
 		} else {

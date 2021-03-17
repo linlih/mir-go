@@ -10,6 +10,7 @@ package table
 
 import (
 	"minlib/component"
+	"mir-go/daemon/lf"
 	"sort"
 	"sync"
 )
@@ -103,14 +104,14 @@ func (f *FIBEntry) HasNextHops() bool {
 // @Description:
 // @return bool
 //
-func (f *FIBEntry) HasNextHop(logicFaceId uint64) bool {
+func (f *FIBEntry) HasNextHop(logicFace *lf.LogicFace) bool {
 	f.RWlock.RLock()
 	//for _, nextHop := range f.NextHopList {
 	//	if nextHop.LogicFaceId == logicFaceId {
 	//		return true
 	//	}
 	//}
-	_, ok := f.NextHopList[logicFaceId]
+	_, ok := f.NextHopList[logicFace.LogicFaceId]
 	f.RWlock.RUnlock()
 	return ok
 }
@@ -121,13 +122,13 @@ func (f *FIBEntry) HasNextHop(logicFaceId uint64) bool {
 // @Description:
 // @param logicFaceId,cost 下一跳信息
 //
-func (f *FIBEntry) AddOrUpdateNextHop(logicFaceId uint64, cost uint64) {
+func (f *FIBEntry) AddOrUpdateNextHop(logicFace *lf.LogicFace, cost uint64) {
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
 	//}
 	f.RWlock.Lock()
-	delete(f.NextHopList, logicFaceId)
-	f.NextHopList[logicFaceId] = &NextHop{LogicFaceId: logicFaceId, Cost: cost}
+	delete(f.NextHopList, logicFace.LogicFaceId)
+	f.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFaceId: logicFace.LogicFaceId, Cost: cost}
 	f.RWlock.Unlock()
 }
 
@@ -137,12 +138,12 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFaceId uint64, cost uint64) {
 // @Description:
 // @param logicFaceId 下一跳信息的logicFaceId
 //
-func (f *FIBEntry) RemoveNextHop(logicFaceId uint64) {
+func (f *FIBEntry) RemoveNextHop(logicFace *lf.LogicFace) {
 	//if f.NextHopList == nil {
 	//	f.NextHopList = make(map[uint64]NextHop)
 	//	return
 	//}
 	f.RWlock.Lock()
-	delete(f.NextHopList, logicFaceId)
+	delete(f.NextHopList, logicFace.LogicFaceId)
 	f.RWlock.Unlock()
 }
