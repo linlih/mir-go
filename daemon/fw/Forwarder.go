@@ -13,6 +13,7 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
 	"time"
 )
@@ -23,10 +24,11 @@ import (
 // @Description:
 //
 type Forwarder struct {
-	table.PIT           // 内嵌一个PIT表
-	table.FIB           // 内嵌一个FIB表
-	table.CS            // 内嵌一个CS表
-	table.StrategyTable // 内嵌一个策略选择表
+	table.PIT                                       // 内嵌一个PIT表
+	table.FIB                                       // 内嵌一个FIB表
+	table.CS                                        // 内嵌一个CS表
+	table.StrategyTable                             // 内嵌一个策略选择表
+	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 }
 
 //
@@ -35,12 +37,13 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init() {
+func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager) {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
 	f.CS.Init()
 	f.StrategyTable.Init()
+	f.pluginManager = pluginManager
 }
 
 //
@@ -78,6 +81,11 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "Detect Interest loop")
+
+	// 调用插件锚点
+	if f.pluginManager.OnIncomingInterest(ingress, interest) != 0 {
+		return
+	}
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环兴趣包
 	if interest.TTL.Minus() < 0 {
@@ -131,6 +139,12 @@ func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Inter
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "Detect Interest loop")
+
+	// 调用插件锚点
+	if f.pluginManager.OnInterestLoop(ingress, interest) != 0 {
+		return
+	}
+
 	// 创建一个原因为 duplicate 的Nack
 	nack := packet.Nack{
 		Interest: interest,
@@ -160,6 +174,11 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "ContentStore miss")
+
+	// 调用插件锚点
+	if f.pluginManager.OnContentStoreMiss(ingress, pitEntry, interest) != 0 {
+		return
+	}
 
 	// insert in-record
 	inRecord := pitEntry.InsertOrUpdateInRecord(ingress, interest)
@@ -209,6 +228,11 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 		"interest": interest.ToUri(),
 	}, "ContentStore hit")
 
+	// 调用插件锚点
+	if f.pluginManager.OnContentStoreHit(ingress, pitEntry, interest, data) != 0 {
+		return
+	}
+
 	// 设置超时时间为当前时间
 	f.SetExpiryTime(pitEntry, 0)
 
@@ -239,6 +263,11 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 		"interest": interest.ToUri(),
 	}, "Outgoing interest")
 
+	// 调用插件锚点
+	if f.pluginManager.OnOutgoingInterest(egress, pitEntry, interest) != 0 {
+		return
+	}
+
 	// 插入 out-record
 	outRecord := pitEntry.InsertOrUpdateOutRecord(egress, interest)
 	outRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
@@ -257,6 +286,11 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	common.LogDebugWithFields(logrus.Fields{
 		"entry": pitEntry.GetIdentifier().ToUri(),
 	}, "Interest finalize")
+
+	// 调用插件锚点
+	if f.pluginManager.OnInterestFinalize(pitEntry) != 0 {
+		return
+	}
 
 	// 如果传入的 PITEntry 已经被移除了，就直接返回
 	if pitEntry.IsDeleted() {
@@ -295,6 +329,11 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		"faceId": ingress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Incoming data")
+
+	// 调用插件锚点
+	if f.pluginManager.OnIncomingData(ingress, data) != 0 {
+		return
+	}
 
 	// 找到对应的PIT条目
 	pitEntry := f.PIT.FindDataMatches(data)
@@ -344,6 +383,11 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 		"faceId": ingress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Data unsolicited")
+
+	// 调用插件锚点
+	if f.pluginManager.OnDataUnsolicited(ingress, data) != 0 {
+		return
+	}
 	// TODO: 读取配置文件，是否缓存未经请求的 Data
 }
 
@@ -362,6 +406,11 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 		"faceId": egress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Outgoing data")
+
+	// 调用插件锚点
+	if f.pluginManager.OnOutgoingData(egress, data) != 0 {
+		return
+	}
 
 	egress.SendData(data)
 }
@@ -385,6 +434,11 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 		"interest": nack.Interest.ToUri(),
 		"reason":   nack.GetNackReason(),
 	}, "Incoming Nack")
+
+	// 调用插件锚点
+	if f.pluginManager.OnIncomingNack(ingress, nack) != 0 {
+		return
+	}
 
 	// 判断 PIT 中是否有对应的条目
 	pitEntry, err := f.PIT.Find(nack.Interest)
@@ -459,6 +513,11 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 		"reason":   header.GetNackReason(),
 	}, "Outgoing Nack")
 
+	// 调用插件锚点
+	if f.pluginManager.OnOutgoingNack(egress, pitEntry, header) != 0 {
+		return
+	}
+
 	// 查找对应的 in-record
 	inRecord, err := pitEntry.GetInRecord(egress)
 	if err != nil || inRecord == nil {
@@ -491,6 +550,11 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 		"faceId":  ingress.LogicFaceId,
 		"cPacket": cPacket.ToUri(),
 	}, "Incoming CPacket")
+
+	// 调用插件锚点
+	if f.pluginManager.OnIncomingCPacket(ingress, cPacket) != 0 {
+		return
+	}
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
 	if cPacket.TTL.Minus() < 0 {
@@ -525,6 +589,11 @@ func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPac
 		"faceId":  egress.LogicFaceId,
 		"cPacket": cPacket.ToUri(),
 	}, "Outgoing CPacket")
+
+	// 调用插件锚点
+	if f.pluginManager.OnOutgoingCPacket(egress, cPacket) != 0 {
+		return
+	}
 
 	egress.SendCPacket(cPacket)
 }
