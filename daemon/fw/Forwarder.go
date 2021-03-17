@@ -30,6 +30,20 @@ type Forwarder struct {
 }
 
 //
+// 初始化转发器
+//
+// @Description:
+// @receiver f
+//
+func (f *Forwarder) Init() {
+	// 初始化各个表
+	f.PIT.Init()
+	f.FIB.Init()
+	f.CS.Init()
+	f.StrategyTable.Init()
+}
+
+//
 // 处理一个兴趣包到来 （ Incoming Interest Pipeline）
 //
 // @Description:
