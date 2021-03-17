@@ -25,6 +25,11 @@ func CreateCS() *CS {
 	return c
 }
 
+func (c *CS) Init(){
+	c.lpm = &LpmMatcher{} //初始化
+	c.lpm.Create()        //初始化锁
+}
+
 // 获得CS的表项数
 func (c *CS) Size() uint64 {
 	return c.lpm.TraverseFunc(func(val interface{}) uint64 {

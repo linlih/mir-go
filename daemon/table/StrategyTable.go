@@ -24,6 +24,11 @@ func CreateStrategyTable() *StrategyTable {
 	return s
 }
 
+func (s *StrategyTable) Init(){
+	s.lpm = &LpmMatcher{} //初始化
+	s.lpm.Create()        //初始化锁
+}
+
 // 获得StrategyTable的大小
 func (s *StrategyTable) Size() uint64 {
 	return s.lpm.TraverseFunc(func(val interface{}) uint64 {

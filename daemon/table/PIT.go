@@ -37,6 +37,16 @@ func CreatePIT() *PIT {
 }
 
 //
+// 创建创建好的PIT表
+//
+// @Description:
+//
+func (p *PIT) Init(){
+	p.lpm = &LpmMatcher{} //初始化
+	p.lpm.Create()        //初始化锁
+}
+
+//
 // 返回PIT表中含有数据的表项数
 //
 // @Description:

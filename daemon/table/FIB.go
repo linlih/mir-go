@@ -37,6 +37,15 @@ func CreateFIB() *FIB {
 }
 
 //
+// 创建创建好的FIB表
+//
+// @Description:
+//
+func (f *FIB) Init(){
+	f.lpm = &LpmMatcher{} //初始化
+	f.lpm.Create()        //初始化锁
+}
+//
 // 通过标识在前缀树中最长前缀匹配查找对应的FIBEntry 最长前缀匹配的意思是有尽量多个Component可以匹配到结果
 //
 // @Description:
