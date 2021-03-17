@@ -25,6 +25,32 @@ type GlobalPluginManager struct {
 	plugins []IPlugin
 }
 
+type Task func(plugin IPlugin) int
+
+func (gpm *GlobalPluginManager) doInEveryPlugins(task Task) int {
+	result := 0
+	for _, plugin := range gpm.plugins {
+		result = task(plugin)
+
+		// 如果插件锚点返回值不为0，则拦截后续插件的执行
+		if result != 0 {
+			break
+		}
+	}
+	return result
+}
+
+//
+// 注册一个插件
+//
+// @Description:
+// @receiver gpm
+// @param plugin
+//
+func (gpm *GlobalPluginManager) registerPlugin(plugin IPlugin) {
+	gpm.plugins = append(gpm.plugins, plugin)
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// 管道锚点
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,30 +131,4 @@ func (gpm *GlobalPluginManager) OnOutgoingCPacket(egress *lf.LogicFace, cPacket 
 	return gpm.doInEveryPlugins(func(plugin IPlugin) int {
 		return plugin.OnOutgoingCPacket(egress, cPacket)
 	})
-}
-
-type Task func(plugin IPlugin) int
-
-func (gpm *GlobalPluginManager) doInEveryPlugins(task Task) int {
-	result := 0
-	for _, plugin := range gpm.plugins {
-		result = task(plugin)
-
-		// 如果插件锚点返回值不为0，则拦截后续插件的执行
-		if result != 0 {
-			break
-		}
-	}
-	return result
-}
-
-//
-// 注册一个插件
-//
-// @Description:
-// @receiver gpm
-// @param plugin
-//
-func (gpm *GlobalPluginManager) registerPlugin(plugin IPlugin) {
-	gpm.plugins = append(gpm.plugins, plugin)
 }
