@@ -21,7 +21,7 @@ import (
 // @Description:下一跳结构体 用于存储下一跳信息
 //
 type NextHop struct {
-	LogicFaceId uint64 //逻辑接口号
+	LogicFace *lf.LogicFace //逻辑接口号
 	Cost        uint64 //路由开销
 }
 
@@ -128,7 +128,7 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFace *lf.LogicFace, cost uint64) {
 	//}
 	f.RWlock.Lock()
 	delete(f.NextHopList, logicFace.LogicFaceId)
-	f.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFaceId: logicFace.LogicFaceId, Cost: cost}
+	f.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFace: logicFace, Cost: cost}
 	f.RWlock.Unlock()
 }
 

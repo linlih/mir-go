@@ -81,7 +81,7 @@ func (f *FIB) FindExactMatch(identifier *component.Identifier) *FIBEntry {
 // @param *component.Identifier	需要进行查找的标识 logicFaceId  cost 用来创建NextHop的参数
 // @return *FIBEntry
 //
-func (f *FIB) AddOrUpdate(identifier *component.Identifier, logicFaceId uint64, cost uint64) *FIBEntry {
+func (f *FIB) AddOrUpdate(identifier *component.Identifier, logicFace *lf.LogicFace, cost uint64) *FIBEntry {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
@@ -95,7 +95,7 @@ func (f *FIB) AddOrUpdate(identifier *component.Identifier, logicFaceId uint64, 
 		}
 		entry := (val).(*FIBEntry)
 		entry.Identifier = identifier
-		entry.NextHopList[logicFaceId] = &NextHop{LogicFaceId: logicFaceId, Cost: cost}
+		entry.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFace: logicFace, Cost: cost}
 		return entry
 	})
 	return val.(*FIBEntry)
