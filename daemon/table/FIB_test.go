@@ -11,6 +11,7 @@ package table
 import (
 	"fmt"
 	"minlib/component"
+	"mir-go/daemon/lf"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func TestFindLongestPrefixMatch(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	// 打印结果 &{0xc000056140 map[1:{1 1}] 0xc00001a258}
 	fmt.Println(fib.FindLongestPrefixMatch(identifier))
 
@@ -47,7 +48,7 @@ func TestFindLongestPrefixMatch(t *testing.T) {
 	fmt.Println(fib.FindLongestPrefixMatch(&component.Identifier{}))
 
 	// 测试异常情况 加入的标识未初始化
-	fib.AddOrUpdate(&component.Identifier{}, 1, 1)
+	fib.AddOrUpdate(&component.Identifier{}, &lf.LogicFace{1}, 1)
 }
 
 func TestFindExactMatch(t *testing.T) {
@@ -57,7 +58,7 @@ func TestFindExactMatch(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	// 打印结果 &{0xc0000d0120 map[1:{1 1}] 0xc0000ec060}
 	fmt.Println(fib.FindExactMatch(identifier))
 
@@ -90,7 +91,7 @@ func TestFindExactMatch(t *testing.T) {
 func TestAddOrUpdate(t *testing.T) {
 	fib := CreateFIB()
 	// 测试异常情况 加入的标识未初始化
-	fibEntry := fib.AddOrUpdate(&component.Identifier{}, 1, 1)
+	fibEntry := fib.AddOrUpdate(&component.Identifier{}, &lf.LogicFace{1}, 1)
 	// 打印结果 &{{} {<nil>} []}
 	fmt.Println(fibEntry.Identifier)
 
@@ -99,10 +100,10 @@ func TestAddOrUpdate(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(fib.AddOrUpdate(identifier, 1, 1))
+	fmt.Println(fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1))
 
 	// 测试update
-	fmt.Println(fib.AddOrUpdate(identifier, 0, 0))
+	fmt.Println(fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 0))
 }
 
 func TestEraseByIdentifier(t *testing.T) {
@@ -111,12 +112,12 @@ func TestEraseByIdentifier(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	// 测试删除成功
 	// 打印结果 <nil>
 	fmt.Println(fib.EraseByIdentifier(identifier))
 	// 测试删除失败
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	identifier, err = component.CreateIdentifierByString("/min/pku/edu/cn")
 	if err != nil {
 		fmt.Println(err)
@@ -143,7 +144,7 @@ func TestEraseByFIBEntry(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fibEntry := fib.AddOrUpdate(identifier, 1, 1)
+	fibEntry := fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	// 测试删除成功
 	// 打印结果 <nil>
 	fmt.Println(fib.EraseByFIBEntry(fibEntry))
@@ -155,27 +156,27 @@ func TestRemoveNextHopByFace(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	identifier, err = component.CreateIdentifierByString("/min/pku/cn")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 	// 打印结果 2 0 2 0
-	fmt.Println(fib.RemoveNextHopByFace(0))
-	fmt.Println(fib.RemoveNextHopByFace(0))
-	fmt.Println(fib.RemoveNextHopByFace(1))
-	fmt.Println(fib.RemoveNextHopByFace(1))
+	fmt.Println(fib.RemoveNextHopByFace(&lf.LogicFace{0}))
+	fmt.Println(fib.RemoveNextHopByFace(&lf.LogicFace{0}))
+	fmt.Println(fib.RemoveNextHopByFace(&lf.LogicFace{1}))
+	fmt.Println(fib.RemoveNextHopByFace(&lf.LogicFace{1}))
 }
 
 func TestFIBSize(t *testing.T) {
@@ -184,42 +185,88 @@ func TestFIBSize(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	fmt.Println(fib.Size())
 	identifier, err = component.CreateIdentifierByString("/min/pku")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	fmt.Println(fib.Size())
 	identifier, err = component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	fmt.Println(fib.Size())
 
 	identifier, err = component.CreateIdentifierByString("/min/pku/cn")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 	fmt.Println(fib.Size())
 
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	fmt.Println(fib.Size())
 
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 	fmt.Println(fib.Size())
 
+}
+
+func TestGetMaxDepth(t *testing.T){
+	fib := CreateFIB()
+	identifier, err := component.CreateIdentifierByString("/min")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku/edu")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/pku/cn")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
+
+	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator/test/test2")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
+	fmt.Println(fib.GetMaxDepth())
 }
 
 // 基准测试
@@ -233,7 +280,7 @@ func BenchmarkFindLongestPrefixMatch(b *testing.B) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	identifier, err = component.CreateIdentifierByString("/min/pku/edu/cn")
 	if err != nil {
 		fmt.Println(err)
@@ -251,7 +298,7 @@ func BenchmarkFindExactMatch(b *testing.B) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -268,7 +315,7 @@ func BenchmarkAddOrUpdate(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fib.AddOrUpdate(identifier, 1, 1)
+		fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 	}
 }
 
@@ -282,7 +329,7 @@ func BenchmarkEraseByIdentifier(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		fib.AddOrUpdate(identifier, 1, 1)
+		fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 		b.StartTimer()
 		fib.EraseByIdentifier(identifier)
 	}
@@ -298,7 +345,7 @@ func BenchmarkEraseByFIBEntry(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		fibEntry := fib.AddOrUpdate(identifier, 1, 1)
+		fibEntry := fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 		b.StartTimer()
 		fib.EraseByFIBEntry(fibEntry)
 	}
@@ -315,9 +362,9 @@ func BenchmarkRemoveNextHopByFace(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		fib.AddOrUpdate(identifier, 1, 1)
+		fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 		b.StartTimer()
-		fib.RemoveNextHopByFace(1)
+		fib.RemoveNextHopByFace(&lf.LogicFace{1})
 	}
 }
 
@@ -327,37 +374,37 @@ func BenchmarkFIBSize(b *testing.B) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 
 	identifier, err = component.CreateIdentifierByString("/min/pku")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 
 	identifier, err = component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 
 	identifier, err = component.CreateIdentifierByString("/min/pku/cn")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/mir-go")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 1, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 1)
 
 	identifier, err = component.CreateIdentifierByString("/min/gdcni15/filegator")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fib.AddOrUpdate(identifier, 0, 1)
+	fib.AddOrUpdate(identifier, &lf.LogicFace{0}, 1)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

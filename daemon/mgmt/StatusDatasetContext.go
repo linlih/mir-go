@@ -8,9 +8,18 @@
 package mgmt
 
 import (
+	"fmt"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/mgmt"
+	"minlib/packet"
+	"mir-go/daemon/utils"
+	"time"
+)
+const (
+	INITIAL = iota 	///< none of .append, .end, .reject has been invoked
+	RESPONDED 		///< .append has been invoked
+	FINALIZED 		///< .end or .reject has been invoked
 )
 
 //
@@ -18,10 +27,33 @@ import (
 //
 // @Description:
 //
+
+type DataSender func(component.Identifier,*encoding.Block,time.Duration,bool)
+
+type NackSender	func(*mgmt.ControlResponse)
+
 type StatusDatasetContext struct {
-	Prefix    component.Identifier // 要发布的数据的前缀
-	FreshTime int                  // 生成的 Data 的新鲜期，默认为 1 s
+	Prefix    			component.Identifier // 要发布的数据的前缀
+	FreshTime 			time.Duration         // 生成的 Data 的新鲜期，默认为 1 s
+	state				int
+	segmentNo   		uint64
+	encodingBuffer		*encoding.Encoder
+	interest			*packet.Interest
+	dataSender			DataSender
+	nackSender			NackSender
 }
+
+ func CreateSDC(interest *packet.Interest,dataSender DataSender,nackSender NackSender)*StatusDatasetContext{
+ 	return &StatusDatasetContext{
+ 		Prefix: *interest.GetName(),
+ 		state: INITIAL,
+		FreshTime: 100*time.Millisecond,
+ 		interest: interest,
+ 		dataSender: dataSender,
+ 		nackSender: nackSender,
+	}
+ }
+
 
 //
 // 添加一个要发送的 Block 作为响应
@@ -31,7 +63,36 @@ type StatusDatasetContext struct {
 // @param block
 //
 func (s *StatusDatasetContext) Append(block *encoding.Block) {
-
+	if  s.state == FINALIZED{
+		fmt.Errorf("state is in FINALIZED")
+		return
+	}
+	// 依次发送块 最后一块做特殊处理表示结束
+	s.state = RESPONDED
+	size,_:=block.Size()
+	byteArrLeft := size
+	for byteArrLeft>0{
+		// 延迟初始化
+		if s.encodingBuffer == nil{
+			s.encodingBuffer = &encoding.Encoder{}
+			s.encodingBuffer.EncoderReset(encoding.MaxPacketSize, 0)
+		}
+		// 每次发送的数据大小为 MaxPacketSize
+		// 如果block里面的数据量 小于这个数值
+		// 直接发送 如果大于 发送最大值
+		nBytesAppend:=utils.Min(byteArrLeft,encoding.MaxPacketSize)
+		s.encodingBuffer.AppendByteArray(block.GetRaw()[size-byteArrLeft:],nBytesAppend)
+		byteArrLeft -= nBytesAppend
+		if byteArrLeft>0{
+			dataPrefix:=s.Prefix
+			dataPrefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(s.segmentNo))
+			s.segmentNo+=1
+			// 该函数需要修改 要等待函数实现 应该根据encoder创建一个新的block 发送过去
+			s.dataSender(dataPrefix,block,s.FreshTime,false)
+			// 重置
+			s.encodingBuffer.EncoderReset(encoding.MaxPacketSize, 0)
+		}
+	}
 }
 
 //
@@ -42,7 +103,15 @@ func (s *StatusDatasetContext) Append(block *encoding.Block) {
 // @param block
 //
 func (s *StatusDatasetContext) Finish() {
-
+	if s.state == FINALIZED{
+		fmt.Errorf("state is in FINALIZED")
+		return
+	}
+	s.state = FINALIZED
+	dataPrefix:=s.Prefix
+	dataPrefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(s.segmentNo))
+	// 发送最后一个分片过去 最后一个参数指示是否为最后一个分片
+	s.dataSender(dataPrefix,block,s.FreshTime,true)
 }
 
 //
@@ -52,6 +121,11 @@ func (s *StatusDatasetContext) Finish() {
 // @receiver s
 // @param response
 //
-func (s *StatusDatasetContext) Reject(response mgmt.ControlResponse) {
-
+func (s *StatusDatasetContext) Reject(response *mgmt.ControlResponse) {
+	if s.state != INITIAL{
+		fmt.Errorf("state is in RESPONDED or FINALIZED")
+		return
+	}
+	s.state = FINALIZED
+	s.nackSender(response)
 }

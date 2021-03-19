@@ -37,7 +37,7 @@ func CreatePIT() *PIT {
 }
 
 //
-// 创建创建好的PIT表
+// 初始化创建好的PIT表
 //
 // @Description:
 //

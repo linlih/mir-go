@@ -6,14 +6,16 @@
  *@Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
  */
 
-package table
+package utils
 
 import (
 	"errors"
 	"fmt"
+	"minlib/encoding"
 	"time"
 )
 
+// 时间模块部分
 const (
 	BINano  = "2006-01-02 15:04:05.000000000"
 	BIMicro = "2006-01-02 15:04:05.000000"
@@ -120,4 +122,13 @@ func getLocationDefault(loc *time.Location) *time.Location {
 		loc, _ = time.LoadLocation("Local")
 	}
 	return loc
+}
+// 计算模块部分
+
+func Min(x , y encoding.SizeT)(min encoding.SizeT){
+	if x<y{
+		return x
+	}
+	return y
+
 }

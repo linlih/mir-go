@@ -8,9 +8,11 @@
 package mgmt
 
 import (
+	"fmt"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
+	"sync"
 )
 
 //
@@ -125,7 +127,7 @@ type IDispatcher interface {
 	// @param handler				命令处理回调
 	//
 	AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
-		handler ControlCommandHandler)
+		handler ControlCommandHandler)error
 
 	//
 	// 注册一个数据集
@@ -168,4 +170,88 @@ type IDispatcher interface {
 	// @param missStorage
 	//
 	queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler)
+}
+
+type Dispacher struct {
+	topPrefixs map[string]*component.Identifier		// 已经注册的顶级域前缀
+	commandSet	map[string]ControlCommandHandler	// 每个顶级域前缀对应的处理函数
+	RWlock	*sync.RWMutex							// 读写锁
+	sdcSet	map[string]StatusDatasetHandler
+}
+
+func CreateDispatcher(interest *packet.Interest,dataSender DataSender,nackSender NackSender)*Dispacher{
+	return &Dispacher{
+		topPrefixs: make(map[string]*component.Identifier),
+		commandSet: make(map[string]ControlCommandHandler),
+		RWlock: 	new(sync.RWMutex),
+		sdcSet:		make(map[string]StatusDatasetHandler),
+	}
+}
+
+// 顶级域加入到切片中
+func (d *Dispacher)AddTopPrefix(topPrefix *component.Identifier){
+	d.RWlock.Lock()
+	defer d.RWlock.Unlock()
+	d.topPrefixs[topPrefix.ToUri()] = topPrefix
+}
+
+// 从切片中删除顶级域
+func (d *Dispacher)RemoveTopPrefix(topPrefix *component.Identifier){
+	d.RWlock.Lock()
+	defer d.RWlock.Unlock()
+	delete(d.topPrefixs,topPrefix.ToUri())
+}
+
+//	在调度器中添加控制命令
+func (d *Dispacher)AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
+	handler ControlCommandHandler)error{
+	// 验证命令
+
+	// 验证参数
+
+	// 如果前面两个都通过的话
+	d.commandSet[relPrefix.ToUri()] = handler
+	return nil
+}
+
+
+func (d *Dispacher)AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler){
+	components:=relPrefix.GetComponents()
+	component:=components[len(components)-1]
+	// true说明是分片
+	if component.IsFragmentNumber(){
+		// 直接返回 不做请求
+		return
+	}
+	// 进行授权
+
+	//
+	d.sdcSet[relPrefix.ToUri()] = handler
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///// 错误处理
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const (
+	NotMatchTopPrefix = iota
+)
+
+type DispacherError struct {
+	msg string
+}
+
+func (d DispacherError) Error() string {
+	return fmt.Sprintf("DispacherError: %s", d.msg)
+}
+
+func createDispacherErrorByType(errorType int) (err DispacherError) {
+	switch errorType {
+	case NotMatchTopPrefix:
+		err.msg = "the command prefix not match top prefix"
+	default:
+		err.msg = "Unknown error"
+	}
+	return
 }

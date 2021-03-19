@@ -14,6 +14,8 @@ import (
 	"mir-go/daemon/lf"
 )
 
+// 树的最大深度
+const MAX_DEPTH =  10
 //
 // 储存FIBEntry的前缀树
 //
@@ -37,7 +39,7 @@ func CreateFIB() *FIB {
 }
 
 //
-// 创建创建好的FIB表
+// 初始化创建好的FIB表
 //
 // @Description:
 //
@@ -176,4 +178,13 @@ func (f *FIB) Size() uint64 {
 		}
 		return 0
 	})
+}
+
+func (f *FIB) GetDepth() int{
+	// 根节点不存储数据
+	return f.lpm.GetDepth()-1
+}
+
+func (f *FIB) GetMaxDepth() int{
+	return MAX_DEPTH
 }
