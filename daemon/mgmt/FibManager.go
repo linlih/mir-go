@@ -21,6 +21,13 @@ type FibManager struct {
 	logicfaceTable *lf.LogicFaceTable
 }
 
+func (f *FibManager)Init() {
+	identifier,_:=component.CreateIdentifierByString("/min-mir/mgmt/localhost/add")
+	dis.AddControlCommand(identifier,Auth,ValidatePara, f.AddNextHop)
+	identifier,_=component.CreateIdentifierByString("/min-mir/mgmt/localhost/delete")
+	dis.AddControlCommand(identifier,Auth,ValidatePara, f.RemoveNextHop)
+	identifier,_=component.CreateIdentifierByString("/min-mir/mgmt/localhost/list")
+}
 // 顶级域前缀 授权验证	验证命令参数	回调函数
 // 添加下一跳命令
 func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packet.Interest,

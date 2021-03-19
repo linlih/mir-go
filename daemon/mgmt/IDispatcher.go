@@ -172,6 +172,7 @@ type IDispatcher interface {
 	queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler)
 }
 
+
 type Dispacher struct {
 	topPrefixs map[string]*component.Identifier		// 已经注册的顶级域前缀
 	commandSet	map[string]ControlCommandHandler	// 每个顶级域前缀对应的处理函数
@@ -205,9 +206,6 @@ func (d *Dispacher)RemoveTopPrefix(topPrefix *component.Identifier){
 //	在调度器中添加控制命令
 func (d *Dispacher)AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
 	handler ControlCommandHandler)error{
-	// 验证命令
-
-	// 验证参数
 
 	// 如果前面两个都通过的话
 	d.commandSet[relPrefix.ToUri()] = handler

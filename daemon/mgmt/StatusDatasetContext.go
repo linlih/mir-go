@@ -16,6 +16,7 @@ import (
 	"mir-go/daemon/utils"
 	"time"
 )
+
 const (
 	INITIAL = iota 	///< none of .append, .end, .reject has been invoked
 	RESPONDED 		///< .append has been invoked
