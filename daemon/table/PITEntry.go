@@ -8,6 +8,7 @@
 
 package table
 
+
 import (
 	"fmt"
 	"minlib/component"
@@ -148,7 +149,7 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 			p.Ticker = nil
 		}()
 	} else {
-		p.Ticker.Reset(duration)
+		//p.Ticker.Reset(duration)
 	}
 }
 

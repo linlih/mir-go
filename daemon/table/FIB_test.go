@@ -16,7 +16,7 @@ import (
 )
 
 // 单元测试
-func TestFindLongestPrefixMatch(t *testing.T) {
+func TestFIBFindLongestPrefixMatch(t *testing.T) {
 	// 测试精确匹配
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
@@ -51,7 +51,7 @@ func TestFindLongestPrefixMatch(t *testing.T) {
 	fib.AddOrUpdate(&component.Identifier{}, &lf.LogicFace{1}, 1)
 }
 
-func TestFindExactMatch(t *testing.T) {
+func TestFIBFindExactMatch(t *testing.T) {
 	// 测试精确匹配 /min/pku/edu
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
@@ -88,7 +88,7 @@ func TestFindExactMatch(t *testing.T) {
 
 }
 
-func TestAddOrUpdate(t *testing.T) {
+func TestFIBAddOrUpdate(t *testing.T) {
 	fib := CreateFIB()
 	// 测试异常情况 加入的标识未初始化
 	fibEntry := fib.AddOrUpdate(&component.Identifier{}, &lf.LogicFace{1}, 1)
@@ -106,7 +106,7 @@ func TestAddOrUpdate(t *testing.T) {
 	fmt.Println(fib.AddOrUpdate(identifier, &lf.LogicFace{1}, 0))
 }
 
-func TestEraseByIdentifier(t *testing.T) {
+func TestFIBEraseByIdentifier(t *testing.T) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -138,7 +138,7 @@ func TestEraseByIdentifier(t *testing.T) {
 	fmt.Println(fib.EraseByIdentifier(identifier))
 }
 
-func TestEraseByFIBEntry(t *testing.T) {
+func TestFIBEraseByFIBEntry(t *testing.T) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -150,7 +150,7 @@ func TestEraseByFIBEntry(t *testing.T) {
 	fmt.Println(fib.EraseByFIBEntry(fibEntry))
 }
 
-func TestRemoveNextHopByFace(t *testing.T) {
+func TestFIBRemoveNextHopByFace(t *testing.T) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -273,7 +273,7 @@ func TestGetMaxDepth(t *testing.T){
 // allocs/op表示每个op(单次迭代)发生了多少个不同的内存分配.
 // B/op是每操作分配多少个字节.
 
-func BenchmarkFindLongestPrefixMatch(b *testing.B) {
+func BenchmarkFIBFindLongestPrefixMatch(b *testing.B) {
 	// 精确匹配
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
@@ -292,7 +292,7 @@ func BenchmarkFindLongestPrefixMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkFindExactMatch(b *testing.B) {
+func BenchmarkFIBFindExactMatch(b *testing.B) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -306,7 +306,7 @@ func BenchmarkFindExactMatch(b *testing.B) {
 	}
 }
 
-func BenchmarkAddOrUpdate(b *testing.B) {
+func BenchmarkFIBAddOrUpdate(b *testing.B) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -319,7 +319,7 @@ func BenchmarkAddOrUpdate(b *testing.B) {
 	}
 }
 
-func BenchmarkEraseByIdentifier(b *testing.B) {
+func BenchmarkFIBEraseByIdentifier(b *testing.B) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -335,7 +335,7 @@ func BenchmarkEraseByIdentifier(b *testing.B) {
 	}
 }
 
-func BenchmarkEraseByFIBEntry(b *testing.B) {
+func BenchmarkFIBEraseByFIBEntry(b *testing.B) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
@@ -352,7 +352,7 @@ func BenchmarkEraseByFIBEntry(b *testing.B) {
 }
 
 // b.StopTimer() 消除add函数添加的额外时间 测试时间60s左右 因为启用了定时器
-func BenchmarkRemoveNextHopByFace(b *testing.B) {
+func BenchmarkFIBRemoveNextHopByFace(b *testing.B) {
 	fib := CreateFIB()
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
