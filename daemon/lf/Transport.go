@@ -1,0 +1,72 @@
+//
+// @Author: weiguohua
+// @Description:
+// @Version: 1.0.0
+// @Date: 2021/3/16 上午11:32
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
+package lf
+
+import (
+	"log"
+	"minlib/encoding"
+	"minlib/packet"
+)
+
+//
+// @Description:  Tranport共用类
+//
+type Transport struct {
+	localUri    string
+	remoteUri   string
+	linkService *LinkService
+}
+
+//
+// @Description: 从pcap抓到的包解析出LpPacket
+// @receiver e
+// @param pkt
+// @return *packet.LpPacket	解析出的包
+// @return error		解析失败错误
+//
+func (t *Transport) parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
+	block, err := encoding.CreateBlockByBuffer(buf, true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if block.IsValid() {
+		log.Println("recv packet from face invalid")
+		return nil, err
+	}
+	var lpPacket packet.LpPacket
+	err = lpPacket.WireDecode(block)
+	if err != nil {
+		log.Println("parse to lpPacket error")
+		return nil, err
+	}
+	return &lpPacket, nil
+}
+
+//
+// @Description: 	将lpPacket编码成byte数组
+// @receiver t
+// @param lpPacket
+// @return int     编码后byte数组的长度
+// @return []byte	编码得到的byte数组
+//
+func (t *Transport) encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
+	var encoder encoding.Encoder
+	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	encodeBufLen, err := lpPacket.WireEncode(&encoder)
+	if err != nil {
+		log.Println(err)
+		return -1, nil
+	}
+	encodeBuf, err := encoder.GetBuffer()
+	if err != nil {
+		log.Println(err)
+		return -1, nil
+	}
+	return encodeBufLen, encodeBuf
+}
