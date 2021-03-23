@@ -7,7 +7,11 @@
 //
 package lf
 
-import "minlib/packet"
+import (
+	"log"
+	"minlib/encoding"
+	"minlib/packet"
+)
 
 type LogicFaceType uint32
 
@@ -18,6 +22,8 @@ const (
 	LogicFaceTypeUnix  LogicFaceType = 3
 )
 
+const MaxIdolTimeMs = 600
+
 //
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
 //
@@ -27,6 +33,8 @@ type LogicFace struct {
 	transport         ITransport
 	linkService       *LinkService
 	logicFaceCounters LogicFaceCounters
+	expireTime        int64 // 超时时间 ms
+	state             bool  //  true 为 up , false 为down
 }
 
 //
@@ -39,6 +47,8 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.transport = transport
 	lf.linkService = linkService
 	lf.logicFaceType = faceType
+	lf.state = true
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
 //
@@ -48,7 +58,20 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	//TODO 把包入到待处理缓冲区
-	//identifier, err := minPacket.GetIdentifier(0)
+	identifier, err := minPacket.GetIdentifier(0)
+	if err != nil {
+		log.Println("face ", lf.LogicFaceId, " receive packet has no identifier")
+		return
+	}
+	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
+		lf.logicFaceCounters.InCPacketN++
+	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentInterest {
+		lf.logicFaceCounters.InInterestN++
+	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentData {
+		lf.logicFaceCounters.InDataN++
+	}
+
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 
 }
 
@@ -76,7 +99,11 @@ func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
 // @param interest
 //
 func (lf *LogicFace) SendInterest(interest *packet.Interest) {
+	if !lf.state {
+		return
+	}
 	lf.linkService.SendInterest(interest)
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
 //
@@ -85,7 +112,11 @@ func (lf *LogicFace) SendInterest(interest *packet.Interest) {
 // @param data
 //
 func (lf *LogicFace) SendData(data *packet.Data) {
+	if !lf.state {
+		return
+	}
 	lf.linkService.SendData(data)
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
 //
@@ -94,7 +125,11 @@ func (lf *LogicFace) SendData(data *packet.Data) {
 // @param nack
 //
 func (lf *LogicFace) SendNack(nack *packet.Nack) {
+	if !lf.state {
+		return
+	}
 	lf.linkService.SendNack(nack)
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
 //
@@ -103,7 +138,11 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 // @param cPacket
 //
 func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
+	if !lf.state {
+		return
+	}
 	lf.linkService.SendCPacket(cPacket)
+	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
 //
@@ -129,5 +168,13 @@ func (lf *LogicFace) GetRemoteUri() string {
 // @receiver lf
 //
 func (lf *LogicFace) Shutdown() {
-	lf.transport.Close()
+
+	if lf.state == false {
+		return
+	}
+
+	if lf.logicFaceType != LogicFaceTypeUDP {
+		lf.transport.Close()
+	}
+	lf.state = false
 }

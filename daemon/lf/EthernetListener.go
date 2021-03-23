@@ -71,7 +71,6 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 		e.mDevices[name] = netIfInfo
 		e.CreateEtherLogicFace(name, macAddr, mtu) // 创建以太网类型的 LogicFace
 	}
-
 }
 
 //

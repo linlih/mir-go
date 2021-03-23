@@ -51,7 +51,7 @@ func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
 		writeRet, err := t.conn.Write(encodeBuf[:encodeBufLen])
 		if err != nil {
 			log.Println("send to tcp transport error")
-			// TODO close the face
+			t.linkService.logicFace.Shutdown()
 			return
 		}
 		writeLen += writeRet
@@ -134,13 +134,13 @@ func (t *StreamTransport) Receive() {
 		recvRet, err := t.conn.Read(t.recvBuf[t.recvLen:])
 		if err != nil {
 			log.Println("recv from tcp transport error")
-			// TODO close the face
+			t.linkService.logicFace.Shutdown()
 		}
 		t.recvLen += uint64(recvRet)
 		err = t.onReceive()
 		if err != nil {
 			log.Println("recv from tcp transport error")
-			// TODO close the face
+			t.linkService.logicFace.Shutdown()
 		}
 	}
 }
