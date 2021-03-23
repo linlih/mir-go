@@ -135,6 +135,10 @@ func (p *PITEntry) SetDeleted(isDeleted bool) {
 //
 func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 	if p.Ticker == nil {
+		if duration==0{
+			f(p)
+			return
+		}
 		p.Ticker = time.NewTicker(duration)
 		go func() {
 			select {
