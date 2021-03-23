@@ -14,8 +14,7 @@ import (
 	"mir-go/daemon/lf"
 )
 
-// 树的最大深度
-const MAX_DEPTH =  10
+
 //
 // 储存FIBEntry的前缀树
 //
@@ -185,6 +184,17 @@ func (f *FIB) GetDepth() int{
 	return f.lpm.GetDepth()-1
 }
 
-func (f *FIB) GetMaxDepth() int{
-	return MAX_DEPTH
+
+func (f *FIB) GetAllEntry() []*FIBEntry{
+	var fibEntrys []*FIBEntry
+	f.lpm.TraverseFunc(func(val interface{}) uint64 {
+		if fibEntry, ok := val.(*FIBEntry); ok {
+			fibEntrys = append(fibEntrys,fibEntry)
+			return 1
+		} else {
+			fmt.Println("FIBEntry transform fail")
+		}
+		return 0
+	})
+	return fibEntrys
 }

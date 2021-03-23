@@ -13,6 +13,9 @@ import (
 	"sync"
 )
 
+// 树的最大深度
+const MAX_DEPTH =  10
+
 //
 // 最长前缀树的表示
 // @Description:

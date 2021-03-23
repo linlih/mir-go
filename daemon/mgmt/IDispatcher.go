@@ -12,6 +12,7 @@ import (
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
+	"minlib/security"
 	"sync"
 )
 
@@ -20,14 +21,15 @@ import (
 //
 // @Description:
 //
-type AuthorizationAccept func()
+type AuthorizationAccept func(requester string,identifier *component.Identifier,
+	interest *packet.Interest, handler StatusDatasetHandler )
 
 //
 // 授权拒绝回调
 //
 // @Description:
 //
-type AuthorizationReject func()
+type AuthorizationReject func(rejectReply bool,interest *packet.Interest)
 
 //
 // 一个回调函数，用于对收到的控制命令进行授权验证
@@ -174,13 +176,16 @@ type IDispatcher interface {
 
 
 type Dispacher struct {
-	topPrefixs map[string]*component.Identifier		// 已经注册的顶级域前缀
-	commandSet	map[string]ControlCommandHandler	// 每个顶级域前缀对应的处理函数
-	RWlock	*sync.RWMutex							// 读写锁
-	sdcSet	map[string]StatusDatasetHandler
+	topPrefixs  map[string]*component.Identifier		// 已经注册的顶级域前缀 map实现 方便取
+	commandSet	map[string]ControlCommandHandler		// 每个顶级域前缀对应的处理函数add delete list
+	RWlock	    *sync.RWMutex							// 读写锁
+	sdcSet	    map[string]StatusDatasetHandler
+	keyChain	*security.KeyChain						// 网络包签名和验签 发送数据包的时候使用
+	signInfo	*component.SignatureInfo				// 表示签名的元数据
+	cache	    *Cache
 }
 
-func CreateDispatcher(interest *packet.Interest,dataSender DataSender,nackSender NackSender)*Dispacher{
+func CreateDispatcher()*Dispacher{
 	return &Dispacher{
 		topPrefixs: make(map[string]*component.Identifier),
 		commandSet: make(map[string]ControlCommandHandler),
@@ -213,27 +218,38 @@ func (d *Dispacher)AddControlCommand(relPrefix *component.Identifier, authorizat
 }
 
 
-func (d *Dispacher)AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler){
-	components:=relPrefix.GetComponents()
-	component:=components[len(components)-1]
-	// true说明是分片
-	if component.IsFragmentNumber(){
-		// 直接返回 不做请求
-		return
+func (d *Dispacher)AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler)error{
+	// 顶级域空 返回错误
+	if len(d.topPrefixs) == 0{
+		return createDispacherErrorByType(TopPrefixsEmpty)
 	}
-	// 进行授权
-
-	//
+	// 注册状态数据集
 	d.sdcSet[relPrefix.ToUri()] = handler
+	return nil
+}
+
+func (d *Dispacher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler){
+	// 如果在缓存中找到分片
+	if v,ok:=d.cache.Get(interest.ToUri());ok{
+		// 发送分片
+		d.sendData(v.(*packet.Data))
+	}else{
+		// 没找到 发起请求数据 并添加到缓存中
+		missStorage(topPrefix,interest)
+	}
 }
 
 
+func (d *Dispacher) sendData(data *packet.Data){
+
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///// 错误处理
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const (
 	NotMatchTopPrefix = iota
+	TopPrefixsEmpty
 )
 
 type DispacherError struct {
@@ -248,6 +264,8 @@ func createDispacherErrorByType(errorType int) (err DispacherError) {
 	switch errorType {
 	case NotMatchTopPrefix:
 		err.msg = "the command prefix not match top prefix"
+	case TopPrefixsEmpty:
+		err.msg = "the top prefixs is empty"
 	default:
 		err.msg = "Unknown error"
 	}

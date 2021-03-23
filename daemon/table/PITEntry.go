@@ -149,7 +149,7 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 			p.Ticker = nil
 		}()
 	} else {
-		//p.Ticker.Reset(duration)
+		p.Ticker.Reset(duration)
 	}
 }
 
@@ -160,7 +160,11 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 //
 func (p *PITEntry) CancelTimer() {
 	//定时器设置空
-	<-p.ch
+	if p.Ticker!=nil{
+		<-p.ch
+		return
+	}
+	fmt.Println("the ticker not start")
 }
 
 //
