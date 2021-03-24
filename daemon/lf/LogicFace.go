@@ -15,6 +15,9 @@ import (
 
 type LogicFaceType uint32
 
+//
+// @Description:  LogicFace的类型
+//
 const (
 	LogicFaceTypeTCP   LogicFaceType = 0
 	LogicFaceTypeUDP   LogicFaceType = 1
@@ -22,19 +25,26 @@ const (
 	LogicFaceTypeUnix  LogicFaceType = 3
 )
 
-const MaxIdolTimeMs = 600
+//
+// @Description:  超过 600s 没有接收数据或发送数据的logicFace会被logicFaceSystem的face cleaner销毁
+//
+const MaxIdolTimeMs = 600000
 
 //
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
+//		LogicFace-LinkService-Transport是一个 一一对应的关系，他们相互绑定
+//		在一个收包流程中网络数据最开始是通过transport流入的，由transport调用LinkService的 receive函数处理接收到的网络包，
+//		再由linkService调用logicFace的receive函数。
+//		在一个发送包的流程中，由logicFace调用linkService的发包函数，再由linkService调用transport的发包函数
 //
 type LogicFace struct {
-	LogicFaceId       uint64
+	LogicFaceId       uint64 // logicFaceID
 	logicFaceType     LogicFaceType
-	transport         ITransport
-	linkService       *LinkService
-	logicFaceCounters LogicFaceCounters
-	expireTime        int64 // 超时时间 ms
-	state             bool  //  true 为 up , false 为down
+	transport         ITransport        // 与logicFace绑定的transport
+	linkService       *LinkService      // 与logicFace绑定的linkService
+	logicFaceCounters LogicFaceCounters // logicFace 流量统计对象
+	expireTime        int64             // 超时时间 ms
+	state             bool              //  true 为 up , false 为down
 }
 
 //
@@ -42,6 +52,7 @@ type LogicFace struct {
 // @receiver lf
 // @param transport	transport对象指针
 // @param linkService
+// @param faceType   face类型
 //
 func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceType LogicFaceType) {
 	lf.transport = transport

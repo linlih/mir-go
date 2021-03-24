@@ -26,7 +26,7 @@ func (u *UdpListener) Init() {
 }
 
 //
-// @Description: 创建一个udp类型的logicFace
+// @Description: 创建一个udp类型的logicFace，并启动logicFace，启动一个协程负责接收UDP包
 // @receiver t
 // @param conn	新udp 句柄
 //

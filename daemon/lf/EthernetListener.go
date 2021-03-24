@@ -28,7 +28,7 @@ type NetIfInfo struct {
 // @Description: 监听所有网卡信息，使用协程来从每个网卡读取包
 //
 type EthernetListener struct {
-	mDevices map[string]NetIfInfo
+	mDevices map[string]NetIfInfo // 用于保存，已经打开了的网卡的信息，以及相应的logicFace号
 }
 
 //
@@ -48,6 +48,20 @@ func (e *EthernetListener) Start() {
 }
 
 //
+// @Description: 从全局logicFaceTable中删除网卡对应的logicFace，从设备列表中删除网卡信息
+// @receiver e
+// @param netInfo	网卡信息结构体
+//
+func (e *EthernetListener) deleteEtherFace(netInfo *NetIfInfo) {
+	logicFace := gLogicFaceTable.GetLogicFacePtrById(netInfo.logicFaceId)
+	if logicFace != nil {
+		logicFace.Shutdown()
+	}
+	gLogicFaceTable.RemoveByLogicFaceId(netInfo.logicFaceId)
+	delete(e.mDevices, netInfo.name)
+}
+
+//
 // @Description: 更新网卡信息，如果网卡不存在列表里，则往列表里添加网卡，并创建一个协程，添加一个Ether类型的LogicFace。
 //					如果网卡存在列表里，但是当前状态是关闭的，则关闭协程，并从列表里删除网卡
 // @receiver e
@@ -60,15 +74,11 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 	netInfo, ok := e.mDevices[name]
 	if ok {
 		if netInfo.state && (flag&net.FlagUp) == 0 {
-			delete(e.mDevices, name)
+			e.deleteEtherFace(&netInfo)
 		}
-	} else {
-		var netIfInfo NetIfInfo
-		netIfInfo.name = name
-		netIfInfo.macAddr = macAddr
-		netIfInfo.state = true
-		netIfInfo.mtu = mtu
-		e.mDevices[name] = netIfInfo
+		return
+	}
+	if (flag & net.FlagUp) != 0 {
 		e.CreateEtherLogicFace(name, macAddr, mtu) // 创建以太网类型的 LogicFace
 	}
 }
@@ -82,9 +92,16 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 // @return uint64	返回分配的logicFaceId
 //
 func (e *EthernetListener) CreateEtherLogicFace(ifName string, macAddr net.HardwareAddr, mtu int) uint64 {
+	var netIfInfo NetIfInfo
+	netIfInfo.name = ifName
+	netIfInfo.macAddr = macAddr
+	netIfInfo.state = true
+	netIfInfo.mtu = mtu
 	remoteMacAddr, _ := net.ParseMAC("01:00:5e:00:17:aa")
 	logicFacePtr, logicFaceId := createEtherLogicFace(ifName, macAddr, remoteMacAddr, mtu)
 	logicFacePtr.Start()
+	netIfInfo.logicFaceId = logicFaceId
+	e.mDevices[ifName] = netIfInfo
 	return logicFaceId
 }
 

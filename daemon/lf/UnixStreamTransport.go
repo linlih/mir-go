@@ -15,8 +15,10 @@ type UnixStreamTransport struct {
 
 func (u *UnixStreamTransport) Init(conn net.Conn) {
 	u.conn = conn
-	u.localUri = "unix://" + conn.LocalAddr().String()
-	u.remoteUri = "unix://" + conn.RemoteAddr().String()
+	u.localAddr = conn.LocalAddr().String()
+	u.localUri = "unix://" + u.localAddr
+	u.remoteAddr = conn.RemoteAddr().String()
+	u.remoteUri = "unix://" + u.remoteAddr
 	u.recvBuf = make([]byte, 1024*1028*4)
 	u.recvLen = 0
 }

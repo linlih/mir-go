@@ -15,6 +15,10 @@ import (
 
 //
 // @Description:  链路服务层，用于分包发送，把接收到的包分片合并
+//		LinkService-LogicFace-Transport是一个一一对应的关系，他们相互绑定
+//		在一个收包流程中网络数据最开始是通过transport流入的，由transport调用LinkService的 receive函数处理接收到的网络包，
+//		再由linkService调用logicFace的receive函数。
+//		在一个发送包的流程中，由logicFace调用linkService的发包函数，再由linkService调用transport的发包函数
 //
 type LinkService struct {
 	transport    ITransport   // 传输通道

@@ -22,6 +22,7 @@ type LogicFaceTable struct {
 func (l *LogicFaceTable) Init() {
 	l.lastId = 0
 	l.mLogicFaceTable = make(map[uint64]*LogicFace)
+	l.mSize = 0
 }
 
 //
@@ -34,6 +35,7 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 	lfid := l.lastId
 	l.tableLock.Lock()
 	l.mLogicFaceTable[l.lastId] = logicFacePtr
+	l.mSize++
 	l.tableLock.Unlock()
 	logicFacePtr.LogicFaceId = l.lastId
 	l.lastId++
@@ -47,7 +49,7 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 // @return *LogicFace	LogicFace对象指针
 //
 func (l *LogicFaceTable) GetLogicFacePtrById(logicFaceId uint64) *LogicFace {
-	var logicFacePtr *LogicFace
+	var logicFacePtr *LogicFace = nil
 	l.tableLock.Lock()
 	logicFacePtr = l.mLogicFaceTable[logicFaceId]
 	l.tableLock.Unlock()
@@ -71,6 +73,7 @@ func (l *LogicFaceTable) Size() uint64 {
 func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	l.tableLock.Lock()
 	delete(l.mLogicFaceTable, logicFaceId)
+	l.mSize--
 	l.tableLock.Unlock()
 
 }

@@ -23,7 +23,7 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 	var logicFace LogicFace
 	var linkService LinkService
 
-	etherTransport.Init(ifName, localMacAddr, remoteMacAddr)
+	etherTransport.Init(ifName, localMacAddr, remoteMacAddr, gEtherAddrFaceMap)
 	linkService.Init(mtu)
 	linkService.transport = &etherTransport
 	linkService.logicFace = &logicFace
