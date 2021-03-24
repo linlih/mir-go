@@ -48,7 +48,7 @@ type StrategyBase struct {
 // @param pitEntry		兴趣包对应的PIT条目
 //
 func (s *StrategyBase) AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry *table.PITEntry) {
-	panic("implement me")
+	// 收到一个兴趣包
 }
 
 //
