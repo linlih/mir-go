@@ -16,20 +16,22 @@ import (
 	"sync"
 )
 
+// 全局模块锁
+var moduleLock sync.RWMutex
+
 //
 // 授权通过回调
 //
 // @Description:
 //
-type AuthorizationAccept func(requester string,identifier *component.Identifier,
-	interest *packet.Interest, handler StatusDatasetHandler )
+type AuthorizationAccept func()
 
 //
 // 授权拒绝回调
 //
 // @Description:
 //
-type AuthorizationReject func(rejectReply bool,interest *packet.Interest)
+type AuthorizationReject func(errorType int)
 
 //
 // 一个回调函数，用于对收到的控制命令进行授权验证
@@ -51,7 +53,7 @@ type AuthorizationReject func(rejectReply bool,interest *packet.Interest)
 type Authorization func(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters,
 	accept AuthorizationAccept,
-	reject AuthorizationReject)
+	reject AuthorizationReject) bool
 
 //
 // 一个回调函数，用于对收到的控制命令参数进行验证
@@ -129,7 +131,7 @@ type IDispatcher interface {
 	// @param handler				命令处理回调
 	//
 	AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
-		handler ControlCommandHandler)error
+		handler ControlCommandHandler) error
 
 	//
 	// 注册一个数据集
@@ -174,75 +176,110 @@ type IDispatcher interface {
 	queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler)
 }
 
-
-type Dispacher struct {
-	topPrefixs  map[string]*component.Identifier		// 已经注册的顶级域前缀 map实现 方便取
-	commandSet	map[string]ControlCommandHandler		// 每个顶级域前缀对应的处理函数add delete list
-	RWlock	    *sync.RWMutex							// 读写锁
-	sdcSet	    map[string]StatusDatasetHandler
-	keyChain	*security.KeyChain						// 网络包签名和验签 发送数据包的时候使用
-	signInfo	*component.SignatureInfo				// 表示签名的元数据
-	cache	    *Cache
+type Module struct {
+	relPrefix          *component.Identifier
+	validateParameters ValidateParameters
+	authorization      Authorization
+	ccHandler          ControlCommandHandler
+	sdHandler          StatusDatasetHandler
+	missStorage        InterestHandler
 }
 
-func CreateDispatcher()*Dispacher{
+type Dispacher struct {
+	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取
+	module        map[string]*Module
+	topLock       *sync.RWMutex // 读写锁
+	moduleLock    *sync.RWMutex
+	KeyChain      *security.KeyChain       // 网络包签名和验签 发送数据包的时候使用
+	SignInfo      *component.SignatureInfo // 表示签名的元数据
+	Cache         *Cache
+}
+
+func CreateDispatcher() *Dispacher {
 	return &Dispacher{
-		topPrefixs: make(map[string]*component.Identifier),
-		commandSet: make(map[string]ControlCommandHandler),
-		RWlock: 	new(sync.RWMutex),
-		sdcSet:		make(map[string]StatusDatasetHandler),
+		topPrefixList: make(map[string]*component.Identifier),
+		module:        make(map[string]*Module),
+		topLock:       new(sync.RWMutex),
+		moduleLock:    new(sync.RWMutex),
+		Cache:         New(100, nil),
 	}
 }
 
 // 顶级域加入到切片中
-func (d *Dispacher)AddTopPrefix(topPrefix *component.Identifier){
-	d.RWlock.Lock()
-	defer d.RWlock.Unlock()
-	d.topPrefixs[topPrefix.ToUri()] = topPrefix
+func (d *Dispacher) AddTopPrefix(topPrefix *component.Identifier) {
+	d.topLock.Lock()
+	defer d.topLock.Unlock()
+	d.topPrefixList[topPrefix.ToUri()] = topPrefix
 }
 
 // 从切片中删除顶级域
-func (d *Dispacher)RemoveTopPrefix(topPrefix *component.Identifier){
-	d.RWlock.Lock()
-	defer d.RWlock.Unlock()
-	delete(d.topPrefixs,topPrefix.ToUri())
+func (d *Dispacher) RemoveTopPrefix(topPrefix *component.Identifier) {
+	d.topLock.Lock()
+	defer d.topLock.Unlock()
+	delete(d.topPrefixList, topPrefix.ToUri())
 }
 
-//	在调度器中添加控制命令
-func (d *Dispacher)AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
-	handler ControlCommandHandler)error{
-
-	// 如果前面两个都通过的话
-	d.commandSet[relPrefix.ToUri()] = handler
-	return nil
-}
-
-
-func (d *Dispacher)AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler)error{
-	// 顶级域空 返回错误
-	if len(d.topPrefixs) == 0{
+//	在调度器中添加控制命令 add/delete ...
+func (d *Dispacher) AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
+	handler ControlCommandHandler) error {
+	if len(d.topPrefixList) == 0 {
 		return createDispacherErrorByType(TopPrefixsEmpty)
 	}
-	// 注册状态数据集
-	d.sdcSet[relPrefix.ToUri()] = handler
+	if _, ok := d.module[relPrefix.ToUri()]; ok {
+		return createDispacherErrorByType(CommandExisted)
+	}
+	moduleLock.Lock()
+	defer moduleLock.Unlock()
+	d.module[relPrefix.ToUri()] = &Module{
+		relPrefix:          relPrefix,
+		authorization:      authorization,
+		validateParameters: validateParameters,
+		ccHandler:          handler}
+
 	return nil
 }
 
-func (d *Dispacher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler){
+// list...命令
+func (d *Dispacher) AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler) error {
+	// 顶级域空 返回错误
+	if len(d.topPrefixList) == 0 {
+		return createDispacherErrorByType(TopPrefixsEmpty)
+	}
+	if _, ok := d.module[relPrefix.ToUri()]; ok {
+		fmt.Println("the command is existed!")
+		return createDispacherErrorByType(CommandExisted)
+	}
+
+	moduleLock.Lock()
+	defer moduleLock.Unlock()
+	d.module[relPrefix.ToUri()] = &Module{
+		relPrefix:     relPrefix,
+		authorization: authorization,
+		sdHandler:     handler}
+	return nil
+
+}
+
+// 查找数据包切片 并发送
+func (d *Dispacher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
-	if v,ok:=d.cache.Get(interest.ToUri());ok{
+	if v, ok := d.Cache.Get(interest.ToUri()); ok {
 		// 发送分片
 		d.sendData(v.(*packet.Data))
-	}else{
+	} else {
 		// 没找到 发起请求数据 并添加到缓存中
-		missStorage(topPrefix,interest)
+		missStorage(topPrefix, interest)
 	}
 }
 
-
-func (d *Dispacher) sendData(data *packet.Data){
+func (d *Dispacher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
 
 }
+
+func (d *Dispacher) sendData(data *packet.Data) {
+
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///// 错误处理
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,6 +287,7 @@ func (d *Dispacher) sendData(data *packet.Data){
 const (
 	NotMatchTopPrefix = iota
 	TopPrefixsEmpty
+	CommandExisted
 )
 
 type DispacherError struct {
@@ -266,6 +304,8 @@ func createDispacherErrorByType(errorType int) (err DispacherError) {
 		err.msg = "the command prefix not match top prefix"
 	case TopPrefixsEmpty:
 		err.msg = "the top prefixs is empty"
+	case CommandExisted:
+		err.msg = "the command is already existed"
 	default:
 		err.msg = "Unknown error"
 	}
