@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"minlib/component"
 	"minlib/packet"
@@ -193,10 +194,18 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 			maxTime = inRecord.ExpireTime
 		}
 	}
-	duration := maxTime - GetCurrentTime()
+	fmt.Println("yb test1", maxTime)
+	var duration uint64
+	if maxTime > GetCurrentTime() {
+		duration = maxTime - GetCurrentTime()
+	} else {
+		duration = GetCurrentTime() - maxTime
+	}
+	fmt.Println("duration", duration)
 	if duration < 0 {
 		duration = 0
 	}
+	fmt.Println("jkdasdk:", time.Duration(duration))
 	f.SetExpiryTime(pitEntry, time.Duration(duration))
 
 	// 查询当前兴趣包所匹配的策略，执行 AfterReceiveInterest 钩子
@@ -611,7 +620,6 @@ func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Durati
 
 	// 首先取消之前的定时任务
 	pitEntry.CancelTimer()
-
 	// 接着设置新的定时任务
 	pitEntry.SetExpiryTimer(duration, func(entry *table.PITEntry) {
 		f.OnInterestFinalize(entry)

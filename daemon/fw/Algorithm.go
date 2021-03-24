@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"fmt"
 	"minlib/component"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
@@ -64,6 +65,8 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 // @return uint64
 //
 func GetCurrentTime() uint64 {
+	newtime := uint64(time.Now().UnixNano() / 1e6)
+	fmt.Println("yb test", newtime)
 	return uint64(time.Now().UnixNano() / 1e6)
 }
 
