@@ -7,6 +7,8 @@
 //
 package lf
 
+import "time"
+
 var gLogicFaceTable *LogicFaceTable
 var gUdpAddrFaceMap *map[string]*LogicFace
 var gEtherAddrFaceMap *map[string]*LogicFace
@@ -55,4 +57,29 @@ func (l *LogicFaceSystem) Start() {
 	l.tcpListener.Start()
 	l.udpListener.Start()
 	l.unixListener.Start()
+	go l.faceCleaner()
+}
+
+func (l *LogicFaceSystem) doFaceClean() {
+	curTime := getTimestampMS()
+	for k, v := range gLogicFaceTable.mLogicFaceTable {
+		if v.state == false {
+			delete(gLogicFaceTable.mLogicFaceTable, k)
+		} else if v.expireTime < curTime {
+			v.Shutdown()
+			delete(gLogicFaceTable.mLogicFaceTable, k)
+		}
+	}
+}
+
+func (l *LogicFaceSystem) faceCleaner() {
+	for true {
+		l.doFaceClean()
+		time.Sleep(time.Second * 300)
+	}
+}
+
+func getTimestampMS() int64 {
+	curTime := time.Now().UnixNano() / 1000000
+	return curTime
 }

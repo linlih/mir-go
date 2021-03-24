@@ -8,7 +8,6 @@
 package table
 
 import (
-	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/lf"
 )
@@ -77,97 +76,97 @@ type IStrategy interface {
 	//
 	AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-	//// Actions
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////// Actions
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
-	// 将 Interest 从指定的逻辑接口转发出去
+	////
+	//// 将 Interest 从指定的逻辑接口转发出去
+	////
+	//// @Description:
+	//// @param egress		转发 Interest 的出口 LogicFace
+	//// @param interest		要转发的 Interest
+	//// @param entry			Interest 对应匹配的 PIT 条目
+	////
+	//sendInterest(egress *lf.LogicFace, interest *packet.Interest, pitEntry *PITEntry)
 	//
-	// @Description:
-	// @param egress		转发 Interest 的出口 LogicFace
-	// @param interest		要转发的 Interest
-	// @param entry			Interest 对应匹配的 PIT 条目
+	////
+	//// 将 Data 从指定的逻辑接口转发出去
+	////
+	//// @Description:
+	//// @param egress		转发 Data 的出口 LogicFace
+	//// @param data			要转发的 Data
+	//// @param pitEntry		Data 对应匹配的 PIT 条目
+	////
+	//sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 	//
-	sendInterest(egress *lf.LogicFace, interest *packet.Interest, pitEntry *PITEntry)
-
+	////
+	//// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
+	////
+	//// @Description:
+	//// @param ingress		Data 到来的入口 LogicFace => 主要是用来避免往收到 Data 包的 LogicFace 转发 Data
+	//// @param data			要转发的 Data
+	//// @param pitEntry		Data 对应匹配的 PIT 条目
+	////
+	//sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 	//
-	// 将 Data 从指定的逻辑接口转发出去
+	////
+	//// 往指定的逻辑接口发送一个 Nack
+	////
+	//// @Description:
+	//// @param egress		转发 Nack 的出口 LogicFace
+	//// @param nackHeader	要转发出的Nack的元信息
+	//// @param pitEntry		Nack 对应匹配的 PIT 条目
+	////
+	//sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
 	//
-	// @Description:
-	// @param egress		转发 Data 的出口 LogicFace
-	// @param data			要转发的 Data
-	// @param pitEntry		Data 对应匹配的 PIT 条目
+	////
+	//// 将 Nack 发送给对应 PIT 条目记录的所有符合条件的下游节点
+	////
+	//// @Description:
+	//// @param ingress		收到 Nack 的入口 LogicFace
+	//// @param nackHeader	要转发出的Nack的元信息
+	//// @param pitEntry		Nack 对应匹配的 PIT 条目
+	////
+	//sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
 	//
-	sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
-
+	////
+	//// 往指定的逻辑接口发送一个 CPacket
+	////
+	//// @Description:
+	//// @param egress		转发 CPacket 的出口 LogicFace
+	//// @param cPacket		要转发出的 CPacket
+	////
+	//sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
 	//
-	// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
+	////
+	//// 让PIT条目触发立即过期并清除的操作
+	////
+	//// @Description:
+	////  本函数会设置 PIT 条目的超时时间为当前时间，以触发立即超时。
+	////  策略模块如果发现兴趣包无法转发到上游，并且不想等待上游节点返回数据时，可以调用本方法
+	//// @receiver s
+	//// @param pitEntry
+	////
+	//rejectPendingInterest(pitEntry *PITEntry)
 	//
-	// @Description:
-	// @param ingress		Data 到来的入口 LogicFace => 主要是用来避免往收到 Data 包的 LogicFace 转发 Data
-	// @param data			要转发的 Data
-	// @param pitEntry		Data 对应匹配的 PIT 条目
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////// 其它辅助函数
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
-	sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
-
+	////
+	//// 在 FIB 表中查询可用于转发 Interest 的 FIB 条目
+	////
+	//// @Description:
+	//// @param interest
+	////
+	//lookupFibForInterest(interest *packet.Interest) *FIBEntry
 	//
-	// 往指定的逻辑接口发送一个 Nack
-	//
-	// @Description:
-	// @param egress		转发 Nack 的出口 LogicFace
-	// @param nackHeader	要转发出的Nack的元信息
-	// @param pitEntry		Nack 对应匹配的 PIT 条目
-	//
-	sendNack(egress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
-
-	//
-	// 将 Nack 发送给对应 PIT 条目记录的所有符合条件的下游节点
-	//
-	// @Description:
-	// @param ingress		收到 Nack 的入口 LogicFace
-	// @param nackHeader	要转发出的Nack的元信息
-	// @param pitEntry		Nack 对应匹配的 PIT 条目
-	//
-	sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
-
-	//
-	// 往指定的逻辑接口发送一个 CPacket
-	//
-	// @Description:
-	// @param egress		转发 CPacket 的出口 LogicFace
-	// @param cPacket		要转发出的 CPacket
-	//
-	sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
-
-	//
-	// 让PIT条目触发立即过期并清除的操作
-	//
-	// @Description:
-	//  本函数会设置 PIT 条目的超时时间为当前时间，以触发立即超时。
-	//  策略模块如果发现兴趣包无法转发到上游，并且不想等待上游节点返回数据时，可以调用本方法
-	// @receiver s
-	// @param pitEntry
-	//
-	rejectPendingInterest(pitEntry *PITEntry)
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-	//// 其它辅助函数
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//
-	// 在 FIB 表中查询可用于转发 Interest 的 FIB 条目
-	//
-	// @Description:
-	// @param interest
-	//
-	lookupFibForInterest(interest *packet.Interest) *FIBEntry
-
-	//
-	// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
-	//
-	// @Description:
-	// @param cPacket
-	//
-	lookupFibForCPacket(cPacket *packet.CPacket) *FIBEntry
+	////
+	//// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+	////
+	//// @Description:
+	//// @param cPacket
+	////
+	//lookupFibForCPacket(cPacket *packet.CPacket) *FIBEntry
 }
