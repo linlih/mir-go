@@ -606,7 +606,7 @@ func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPac
 // @Description:
 // @receiver f
 // @param pitEntry
-// @param duration
+// @param duration			单位 ms
 //
 func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Duration) {
 	// TODO: 这边要check一下，是不是调用 SetExpiryTime 的时候之前的定时任务还没有触发，如果已经触发过了，是不是会有问题
@@ -615,7 +615,7 @@ func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Durati
 	pitEntry.CancelTimer()
 
 	// 接着设置新的定时任务
-	pitEntry.SetExpiryTimer(duration, func(entry *table.PITEntry) {
+	pitEntry.SetExpiryTimer(duration*time.Millisecond, func(entry *table.PITEntry) {
 		f.OnInterestFinalize(entry)
 	})
 }
