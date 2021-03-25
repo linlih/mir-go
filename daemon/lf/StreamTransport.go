@@ -17,12 +17,13 @@ import (
 
 //
 // @Description: 流式通道共用类， TcpTransport, UnixStreamTransport
+//			流式传输通信的通用类，主要是提供了一套解决粘包问题的接收方法
 //
 type StreamTransport struct {
 	Transport
 	conn    net.Conn
-	recvBuf []byte
-	recvLen uint64
+	recvBuf []byte // 数据接收缓冲区
+	recvLen uint64 // 当前数据接收缓冲区中的有效数据的长度
 }
 
 //
@@ -37,13 +38,13 @@ func (t *StreamTransport) Close() {
 }
 
 //
-// @Description:
+// @Description: 将lpPacket对象编码成字节数组后，通过流式通道发送出去
 // @receiver t
 // @param lpPacket
 //
 func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
 	encodeBufLen, encodeBuf := t.encodeLpPacket2ByteArray(lpPacket)
-	if encodeBufLen < 0 {
+	if encodeBufLen <= 0 {
 		return
 	}
 	writeLen := 0
@@ -60,6 +61,14 @@ func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
 
 //
 // @Description: 从接收缓冲区中读取包并调用linkService的ReceivePacket函数处理包
+//			每次收到数据时会调用这个函数从数据接收缓冲区中尝试读出一个LpPacket包。
+//			工作流程：
+//			（1） 首先，如果数据缓冲区中收到的字节数不足以构成了一个TLV的Type字段，则返回 nil,0 表示还需要等待数据接收
+//			（2） 如果解析出来的Type值不等于TlvLpPacket， 表示接收的数据出错了，需要提示调用者关闭Face
+//			（3） 如果接收到的数据还小于一个LpPacket的最小长度（不含负载的只含头部的长度）， 表示还需要等待数据接收
+//			（4） 如果长度足够，TLV的Length部分，并计算一个LpPacket的总长度 totalPktLen
+//			（5） 如果接收到的数据长度小于 totalPktLen ， 则还需要等待后面数据接收
+//			（6） 从[]byte中解析出LpPacket，并调用linkService.ReceivePacket(lpPacket) 处理一个完整的LpPacket包
 // @receiver t
 // @param buf	接收缓冲区分片
 // @return error	错误信息
@@ -101,6 +110,14 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 
 //
 // @Description: 接收到数据后，处理包
+//			（1） 调用 readPktAndDeal ，传入当前接收的到数据的[]byte，以及接收到的数据长度
+//			（2） 如果readPktAndDeal 返回错误，则将错误抛给上层调用者
+//			（3） 如果readPktAndDeal没返回错误，且返回的已经被处理的LpPacket长度pktLen大于0, 则循环做以下操作
+//					a） 统计已经处理的数据长度dealLen（等于每次处理包长度的总和），如果已经处理的长度小接收数据长度t.recvLen，
+//					而且 readPktAndDeal返回的错误为nil，且返回的pktLen > 0 ， 再次调用readPktAndDeal去处理数据
+//					b） 如果循环中readPktAndDeal返回的错误不为nil，则终止循环，并将错误报给调用者
+//			（4） 如果统计到的总处理长度 dealLen 大小0, 则将已经处理的数据从数据接收缓冲区中删除。删除的方法是将recvBuf[dealLen:t.recvLen]
+//				移到 t.recvBuf[:] ， 即将未处理的数据移到接收缓冲区开关，并将接收数据长度t.recvLen 送去 已经处理的长度 dealLen
 // @receiver t
 // @return error	如果处理包出错，则返回错误信息
 //
@@ -109,11 +126,11 @@ func (t *StreamTransport) onReceive() error {
 	if err != nil {
 		return err
 	}
-	var dealLen uint64 = 0
+	var dealLen = pktLen
 	// 循环多次尝试从接收缓冲区中读出包并处理
-	for err == nil && pktLen > 0 {
-		dealLen += pktLen
+	for err == nil && pktLen > 0 && dealLen < t.recvLen {
 		err, pktLen = t.readPktAndDeal(t.recvBuf[dealLen:t.recvLen-dealLen], t.recvLen-dealLen)
+		dealLen += pktLen
 	}
 	if err != nil {
 		return err
@@ -126,7 +143,10 @@ func (t *StreamTransport) onReceive() error {
 }
 
 //
-// @Description:  用协程调用，不断地从Tcp通道中读出数据
+// @Description:  用协程调用，不断地从流式通道中读出数据
+//			（1） 从流式通道中读出数据，如果读出错，则关闭face
+//			（2） 如果读到数据，则调用onReceive尝试处理接收到的数据
+//			（3） 如果数据处理出错， 则关闭face
 // @receiver t
 //
 func (t *StreamTransport) Receive() {
@@ -143,22 +163,4 @@ func (t *StreamTransport) Receive() {
 			t.linkService.logicFace.Shutdown()
 		}
 	}
-}
-
-//
-// @Description:
-// @receiver t
-// @return string
-//
-func (t *StreamTransport) GetRemoteUri() string {
-	return t.remoteUri
-}
-
-//
-// @Description:
-// @receiver t
-// @return string
-//
-func (t *StreamTransport) GetLocalUri() string {
-	return t.localUri
 }

@@ -15,7 +15,7 @@ import (
 const MaxFragmentNum = 1000
 
 //
-// @Description: 包重组表项
+// @Description: 包重组哈希表的表项，主要用于保存接收到的包分片和记录超时时间
 //
 type PartialPacket struct {
 	fragments          []*packet.LpPacket // 包分片数组
@@ -35,7 +35,7 @@ func (p *PartialPacket) AddLpPacket(lpPacket *packet.LpPacket, curTime int64) {
 		log.Println("exceed max fragment number")
 		return
 	}
-	if len(p.fragments) <= 0 {
+	if len(p.fragments) <= 0 { // 添加第一个包
 		p.fragments = make([]*packet.LpPacket, lpPacket.GetFragmentNum())
 		p.fragments[lpPacket.GetFragmentSeq()] = lpPacket
 		p.dropTime = curTime + ReassembleTimeout
@@ -76,8 +76,8 @@ func (p *PartialPacket) DoReassemble() *packet.LpPacket {
 // @Description: 超时事件
 //
 type TimeoutEvent struct {
-	key         string
-	timeoutTime int64
+	key         string // 重组器哈希表的key
+	timeoutTime int64  // 超时时间
 }
 
 //

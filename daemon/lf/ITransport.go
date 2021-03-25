@@ -10,7 +10,7 @@ package lf
 import "minlib/packet"
 
 //
-// @Description:  Tranport 接口， 便于LogicFace声明成员
+// @Description:  Tranport 接口， 便于LogicFace声明成员。logicFace模块中的每一种tranport都必须实现ITransport声明的方法
 //
 type ITransport interface {
 	//
@@ -28,12 +28,41 @@ type ITransport interface {
 	Receive()
 	//
 	// @Description: 获得Transport的对端地址
+	//			格式 ：
+	//			TCP  tcp://192.238.3.3:7890
+	//			UDP  udp://192.238.3.3:7890
+	//			ether  ether://fc:aa:14:cf:a6:97
+	//			unix  unix:///tmp/mirsock
 	// @return string	对端地址
 	//
 	GetRemoteUri() string
 	//
 	// @Description: 获得Transport的本机地址
+	//			格式 ：
+	//			TCP  tcp://192.238.3.3:7890
+	//			UDP  udp://192.238.3.3:7890
+	//			ether  ether://fc:aa:14:cf:a6:97
+	//			unix  unix:///tmp/mirsock
 	// @return string	本机地址
 	//
 	GetLocalUri() string
+	// @Description: 获得Transport的对端地址
+	//			格式 ：
+	//			TCP  192.238.3.3:7890
+	//			UDP  192.238.3.3:7890
+	//			ether  fc:aa:14:cf:a6:97
+	//			unix  /tmp/mirsock
+	// @return string	对端地址
+	//
+	GetRemoteAddr() string
+	//
+	// @Description: 获得Transport的本机地址
+	//			格式 ：
+	//			TCP  192.238.3.3:7890
+	//			UDP  192.238.3.3:7890
+	//			ether  fc:aa:14:cf:a6:97
+	//			unix  /tmp/mirsock
+	// @return string	本机地址
+	//
+	GetLocalAddr() string
 }

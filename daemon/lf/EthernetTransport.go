@@ -27,7 +27,6 @@ const PcapFilter = "ether proto 0x8600"
 //
 type EthernetTransport struct {
 	Transport
-
 	deviceName        string
 	localMacAddr      net.HardwareAddr       // MAC地址
 	remoteMacAddr     net.HardwareAddr       // MAC地址
@@ -46,7 +45,8 @@ type EthernetTransport struct {
 // @param ifName	网卡名称
 // @param localMacAddr	本地Mac地址
 // @param remoteMacAddr	对端Mac地址
-// @param etherTransportMap	对端mac地址和face对象映射表
+// @param etherTransportMap	对端mac地址和face对象映射表，通过以太网接收到以太网帧时，通过以太网帧的源MAC地址，
+//			在 etherTransportMap 查找，确定用哪个logicFace来处理收到的包
 //
 func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr,
 	etherTransportMap *map[string]*LogicFace) {
@@ -57,6 +57,12 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 
 	e.localMacAddr = localMacAddr
 	e.remoteMacAddr = remoteMacAddr
+
+	e.localAddr = localMacAddr.String()
+	e.remoteAddr = remoteMacAddr.String()
+	e.localUri = "ether://" + e.localAddr
+	e.remoteUri = "ether://" + e.remoteAddr
+
 	e.etherTransportMap = etherTransportMap
 	// 设置以太网包头部
 	copy(e.sendPacket[0:6], remoteMacAddr)
@@ -70,11 +76,13 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	if err != nil {
 		log.Println(err)
 		e.status = false
+		e.linkService.logicFace.state = false
 	}
 	err = e.handle.SetBPFFilter(PcapFilter)
 	if err != nil {
 		log.Println(err)
 		e.status = false
+		e.linkService.logicFace.state = false
 	}
 }
 
@@ -102,7 +110,7 @@ func (e *EthernetTransport) Close() {
 //
 func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 	encodeBufLen, encodeBuf := e.encodeLpPacket2ByteArray(lpPacket)
-	if encodeBufLen < 0 {
+	if encodeBufLen <= 0 {
 		return
 	}
 	copy(e.sendPacket[14:], encodeBuf[0:encodeBufLen])
@@ -118,8 +126,7 @@ func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 // @param lpPacket	收到的包
 //
 func (e *EthernetTransport) onReceive(lpPacket *packet.LpPacket, srcMacAddr string) {
-
-	logicFace, ok := (*e.etherTransportMap)[srcMacAddr]
+	logicFace, ok := (*e.etherTransportMap)[e.localMacAddr.String()+"-"+srcMacAddr]
 	if ok {
 		logicFace.linkService.ReceivePacket(lpPacket)
 		return
@@ -142,22 +149,4 @@ func (e *EthernetTransport) Receive() {
 			e.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
 		}
 	}
-}
-
-//
-// @Description: 获得对端Mac地址
-// @receiver e
-// @return string  对端Mac地址，格式 "00:50:56:c0:00:08"
-//
-func (e *EthernetTransport) GetLocalUri() string {
-	return e.localMacAddr.String()
-}
-
-//
-// @Description:  获得本网卡Mac地址
-// @receiver e
-// @return string   本网卡Mac地址，格式 "00:50:56:c0:00:08"
-//
-func (e *EthernetTransport) GetRemoteUri() string {
-	return e.remoteMacAddr.String()
 }

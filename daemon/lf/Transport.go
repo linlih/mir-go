@@ -17,6 +17,8 @@ import (
 // @Description:  Tranport共用类
 //
 type Transport struct {
+	localAddr   string
+	remoteAddr  string
 	localUri    string
 	remoteUri   string
 	linkService *LinkService
@@ -69,4 +71,40 @@ func (t *Transport) encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []
 		return -1, nil
 	}
 	return encodeBufLen, encodeBuf
+}
+
+//
+// @Description:
+// @receiver t
+// @return string
+//
+func (t *Transport) GetRemoteUri() string {
+	return t.remoteUri
+}
+
+//
+// @Description:
+// @receiver t
+// @return string
+//
+func (t *Transport) GetLocalUri() string {
+	return t.localUri
+}
+
+//
+// @Description:
+// @receiver t
+// @return string
+//
+func (t *Transport) GetRemoteAddr() string {
+	return t.remoteAddr
+}
+
+//
+// @Description:
+// @receiver t
+// @return string
+//
+func (t *Transport) GetLocalAddr() string {
+	return t.localAddr
 }
