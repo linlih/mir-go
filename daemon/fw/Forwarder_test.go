@@ -43,15 +43,16 @@ func TestForwarder_Init(t *testing.T) {
 func TestForwarder_OnOutgoingInterest(t *testing.T) {
 	//strategy:=new(table.StrategyTable)
 	//strategy.SetDefaultStrategy("/")
-	//newName1,_:=component.CreateIdentifierByString("/min")
+	newName1, _ := component.CreateIdentifierByString("/min")
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
 	forwarder.Init(newPlugin)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
 
-	//brs:=&BestRouteStrategy{}
-	//forwarder.StrategyTable.Insert(newName1,"/min",brs)
+	brs := BestRouteStrategy{StrategyBase{forwarder: forwarder}}
+	forwarder.StrategyTable.Insert(newName1, "best", &brs)
+
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	face := new(lf.LogicFace)
 	face.LogicFaceId = 234
@@ -60,13 +61,17 @@ func TestForwarder_OnOutgoingInterest(t *testing.T) {
 	newName, _ := component.CreateIdentifierByString("/min/pkusz")
 	interest.SetName(newName)
 	interest.Nonce.SetNonce(13451310354534135)
-	interest.InterestLifeTime.SetInterestLifeTime(4)
+	interest.InterestLifeTime.SetInterestLifeTime(4*10 ^ 18)
+	forwarder.FIB.AddOrUpdate(newName1, face, 233)
 	forwarder.OnIncomingInterest(face, interest)
 	pitEntry, piterr := forwarder.PIT.Find(interest)
-	if piterr != nil {
+	if pitEntry != nil {
+		fmt.Println("pitEntry empty")
+	}
+	if piterr == nil {
 		fmt.Println("piterr", piterr)
 	}
-	fmt.Println("pit entry", pitEntry.Identifier.ToUri(), pitEntry.InRecordList, pitEntry.OutRecordList)
+	//fmt.Println("pit entry", pitEntry)
 	fmt.Println("PIT", forwarder.PIT.Size())
 	fmt.Println("FIB", forwarder.FIB.Size())
 }
