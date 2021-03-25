@@ -77,3 +77,15 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	l.tableLock.Unlock()
 
 }
+
+//
+// @Description:  获取所有face表项
+// @return []*LogicFace 逻辑face列表
+//
+func (l *LogicFaceTable) GetAllFaceList()[]*LogicFace{
+	var faceList  []*LogicFace
+	for _,v := range l.mLogicFaceTable{
+		faceList = append(faceList, v)
+	}
+	return faceList
+}
