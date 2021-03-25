@@ -1,5 +1,5 @@
 //
-// @Author: Jianming Que
+// @Author: yzy
 // @Description:
 // @Version: 1.0.0
 // @Date: 2021/3/10 3:13 下午
@@ -22,11 +22,8 @@ type FaceManager struct {
 func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
 
-
-
+	return nil
 }
-
-
 
 func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse{
@@ -41,10 +38,7 @@ func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *pac
 func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packet.Interest,
 	context *StatusDatasetContext){
 
-	faceList:=[]*lf.LogicFace
-	for _,v:=range lf.GLogicFaceTable{
-
-	}
+	faceList:=lf.GLogicFaceTable.GetAllFaceList()
 	data, err := json.Marshal(faceList)
 	if err != nil {
 		res := &mgmt.ControlResponse{Code: 400, Msg: "mashal fibEntrys fail , the err is:" + err.Error()}
