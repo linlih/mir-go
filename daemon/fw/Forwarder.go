@@ -180,10 +180,12 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		return
 	}
 
+	currentTime := GetCurrentTime()
+
 	// insert in-record
 	inRecord := pitEntry.InsertOrUpdateInRecord(ingress, interest)
 	// TODO: 检查一下，这个设置超时时间的操作要不要放到插入 in-record 的内部进行
-	inRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
+	inRecord.ExpireTime = currentTime + interest.InterestLifeTime.GetInterestLifeTime()
 
 	// Set PIT Entry ExpiryTimer
 	// 设置超时时间为所有 in-record 中最迟的超时时间
@@ -193,7 +195,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 			maxTime = inRecord.ExpireTime
 		}
 	}
-	duration := maxTime - GetCurrentTime()
+	duration := maxTime - currentTime
 	if duration < 0 {
 		duration = 0
 	}
