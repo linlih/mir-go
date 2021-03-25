@@ -88,10 +88,11 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 	}
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环兴趣包
-	if interest.TTL.Minus() < 0 {
+	if interest.TTL.Ttl() == 0 {
 		f.OnInterestLoop(ingress, interest)
 		return
 	}
+	interest.TTL.Minus()
 
 	// PIT insert
 	// 此时如果PIT条目已存在，则返回之前创建的PIT条目；
@@ -559,13 +560,14 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 	}
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
-	if cPacket.TTL.Minus() < 0 {
+	if cPacket.TTL.Ttl() == 0 {
 		common.LogDebugWithFields(logrus.Fields{
 			"faceId":  ingress.LogicFaceId,
 			"cPacket": cPacket.ToUri(),
 		}, "CPacket TTL < 0")
 		return
 	}
+	cPacket.TTL.Minus()
 
 	// 调用 StrategyBase::afterReceiveCPacket
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(cPacket.DstIdentifier()); ste != nil {
