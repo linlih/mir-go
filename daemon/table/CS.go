@@ -80,10 +80,13 @@ func (c *CS) Find(interest *packet.Interest) *CSEntry {
 	for _, v := range interest.GetName().GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
 	}
+
 	if v, ok := c.lpm.FindExactMatch(PrefixList); ok {
 		if csEntry, ok := v.(*CSEntry); ok {
+			c.Hits++
 			return csEntry
 		}
 	}
+	c.Misses++
 	return nil
 }
