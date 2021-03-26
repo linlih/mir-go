@@ -171,7 +171,7 @@ func TestEraseByLogicFace(t *testing.T) {
 	interest := &packet.Interest{}
 	interest.SetName(identifier)
 	pitEntry := pit.Insert(interest)
-	pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{0}}
+	pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{LogicFaceId: 0}}
 
 	identifier, err = component.CreateIdentifierByString("/min/pku")
 	if err != nil {
@@ -179,7 +179,7 @@ func TestEraseByLogicFace(t *testing.T) {
 	}
 	interest.SetName(identifier)
 	pitEntry = pit.Insert(interest)
-	pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{0}}
+	pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{LogicFaceId: 0}}
 
 	// 删除存在
 	fmt.Println(pit.EraseByLogicFace(&lf.LogicFace{LogicFaceId: 0}))
@@ -332,7 +332,7 @@ func BenchmarkEraseByLogicFace(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		pitEntry := pit.Insert(interest)
-		pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{0}}
+		pitEntry.InRecordList[0] = &InRecord{LogicFace: &lf.LogicFace{LogicFaceId: 0}}
 		b.StartTimer()
 		pit.EraseByLogicFace(&lf.LogicFace{LogicFaceId: 0})
 	}
