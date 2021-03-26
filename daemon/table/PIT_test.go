@@ -6,6 +6,7 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/lf"
 	"testing"
+	"strconv"
 )
 
 func TestInsert(t *testing.T) {
@@ -338,3 +339,40 @@ func BenchmarkEraseByLogicFace(b *testing.B) {
 	}
 
 }
+
+/*
+//插入、查询性能测试
+func BenchmarkInsert(b *testing.B) {
+	pit := CreatePIT()
+	identifierString := "/test"
+	for i := 1; i <= 100; i++ {
+		for j := 1; j <= 100; j++ {
+			identifierString = identifierString + strconv.Itoa(j)
+			identifier, err := component.CreateIdentifierByString(identifierString)
+			if err != nil {
+				fmt.Println(err)
+			}
+			interest := &packet.Interest{}
+			interest.SetName(identifier)
+			pit.Insert(interest)
+		}
+		identifierString = identifierString + "/test"
+		identifier, err := component.CreateIdentifierByString(identifierString)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	identifier, err := component.CreateIdentifierByString("/test1/test/test2")
+	if err != nil {
+		fmt.Println(err)
+	}
+	interest := &packet.Interest{}
+	interest.SetName(identifier)
+	for i := 0; i < b.N; i++ {
+		pit.Insert(interest)
+	}
+}
+*/
