@@ -29,6 +29,7 @@ type Forwarder struct {
 	table.CS                                        // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
+	packetQueue         *BlockQueue                 // 包队列
 }
 
 //
@@ -44,6 +45,20 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager) {
 	f.CS.Init()
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
+}
+
+//
+// 启动转发处理流程
+//
+// @Description:
+// @param block		是否阻塞启动
+//
+func (f *Forwarder) Start(block bool) {
+	if block {
+		for true {
+			f.packetQueue.read()
+		}
+	}
 }
 
 //
