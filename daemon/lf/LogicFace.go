@@ -8,8 +8,8 @@
 package lf
 
 import (
+	"fmt"
 	"log"
-	"minlib/encoding"
 	"minlib/packet"
 )
 
@@ -74,13 +74,14 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 		log.Println("face ", lf.LogicFaceId, " receive packet has no identifier")
 		return
 	}
-	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
-		lf.logicFaceCounters.InCPacketN++
-	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentInterest {
-		lf.logicFaceCounters.InInterestN++
-	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentData {
-		lf.logicFaceCounters.InDataN++
-	}
+	fmt.Println(identifier)
+	//if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
+	//	lf.logicFaceCounters.InCPacketN++
+	//} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentInterest {
+	//	lf.logicFaceCounters.InInterestN++
+	//} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentData {
+	//	lf.logicFaceCounters.InDataN++
+	//}
 
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 

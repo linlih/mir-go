@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"minlib/component"
 	"minlib/packet"
@@ -50,7 +51,9 @@ func (brs *BestRouteStrategy) findLowestCostNextHop(ingress *lf.LogicFace, fibEn
 
 func (brs *BestRouteStrategy) AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry *table.PITEntry) {
 	// 首先判断是否有正在pending的 out-record
+
 	if HasPendingOutRecords(pitEntry) {
+		fmt.Println("end")
 		// 不是新的 Interest ，不转发被聚合
 		common.LogDebugWithFields(logrus.Fields{
 			"ingress":  ingress.LogicFaceId,
@@ -59,23 +62,25 @@ func (brs *BestRouteStrategy) AfterReceiveInterest(ingress *lf.LogicFace, intere
 		}, "PITEntry already has pending interest, drop")
 		return
 	}
-
+	fmt.Println("end1")
 	// 尝试找到可用的下一跳进行转发
 	fibEntry := brs.lookupFibForInterest(interest)
-
+	fmt.Println("end2")
 	miniHop := brs.findLowestCostNextHop(ingress, fibEntry)
-
+	fmt.Println("end3")
 	if miniHop == nil {
+		fmt.Println("end5")
 		// 如果没有找到下一跳路由信息，直接返回一个原因为 no-route 的 Nack
 		var nh component.NackHeader
 		nh.SetNackReason(component.NackReasonNoRoute)
 		brs.sendNack(ingress, &nh, pitEntry)
-
+		fmt.Println("end6")
 		// 同时触发 PITEntry 移除
 		brs.rejectPendingInterest(pitEntry)
+		fmt.Println("end7")
 		return
 	}
-
+	fmt.Println("end4")
 	// 将兴趣包转发到可用的下一跳
 	brs.sendInterest(miniHop.LogicFace, interest, pitEntry)
 }

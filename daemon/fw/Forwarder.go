@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"minlib/component"
 	"minlib/packet"
@@ -86,7 +87,7 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 	if f.pluginManager.OnIncomingInterest(ingress, interest) != 0 {
 		return
 	}
-
+	fmt.Println("interest", interest.TTL)
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环兴趣包
 	if interest.TTL.Ttl() == 0 {
 		f.OnInterestLoop(ingress, interest)
@@ -181,10 +182,12 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		return
 	}
 
+	currentTime := GetCurrentTime()
+
 	// insert in-record
 	inRecord := pitEntry.InsertOrUpdateInRecord(ingress, interest)
 	// TODO: 检查一下，这个设置超时时间的操作要不要放到插入 in-record 的内部进行
-	inRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
+	inRecord.ExpireTime = currentTime + interest.InterestLifeTime.GetInterestLifeTime()
 
 	// Set PIT Entry ExpiryTimer
 	// 设置超时时间为所有 in-record 中最迟的超时时间
@@ -194,11 +197,15 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 			maxTime = inRecord.ExpireTime
 		}
 	}
-	duration := maxTime - GetCurrentTime()
+	fmt.Println("yb test1", maxTime)
+	duration := maxTime - currentTime
+	fmt.Println("duration", duration)
 	if duration < 0 {
 		duration = 0
 	}
-	f.SetExpiryTime(pitEntry, time.Duration(duration))
+
+	fmt.Println("jkdasdk:", time.Duration(duration)*time.Millisecond)
+	f.SetExpiryTime(pitEntry, time.Duration(duration)*time.Millisecond)
 
 	// 查询当前兴趣包所匹配的策略，执行 AfterReceiveInterest 钩子
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
@@ -613,7 +620,6 @@ func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Durati
 
 	// 首先取消之前的定时任务
 	pitEntry.CancelTimer()
-
 	// 接着设置新的定时任务
 	pitEntry.SetExpiryTimer(duration*time.Millisecond, func(entry *table.PITEntry) {
 		f.OnInterestFinalize(entry)
