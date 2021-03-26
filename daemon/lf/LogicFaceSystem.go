@@ -12,7 +12,7 @@ import "time"
 //
 // @Description:  全局logicFace表指针
 //
-var gLogicFaceTable *LogicFaceTable
+var GLogicFaceTable *LogicFaceTable
 
 //
 // @Description:  用于保存IP：PORT信息和logicFace的映射关系
@@ -75,7 +75,7 @@ func (l *LogicFaceSystem) Init(table *LogicFaceTable) {
 	l.unixListener.Init()
 	l.udpAddrFaceMap = make(map[string]*LogicFace)
 	l.etherAddrFaceMap = make(map[string]*LogicFace)
-	gLogicFaceTable = table
+	GLogicFaceTable = table
 	gUdpAddrFaceMap = &l.udpAddrFaceMap
 	gEtherAddrFaceMap = &l.etherAddrFaceMap
 
@@ -111,7 +111,7 @@ func (l *LogicFaceSystem) destroyFace(logicFaceId uint64, logicFace *LogicFace) 
 //
 func (l *LogicFaceSystem) doFaceClean() {
 	curTime := getTimestampMS()
-	for k, v := range gLogicFaceTable.mLogicFaceTable {
+	for k, v := range GLogicFaceTable.mLogicFaceTable {
 		if v.state == false {
 			l.destroyFace(k, v)
 		} else if v.expireTime < curTime { // logicFace已经超时

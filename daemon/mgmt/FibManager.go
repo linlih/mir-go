@@ -1,5 +1,5 @@
 //
-// @Author: Jianming Que
+// @Author: yzy
 // @Description:
 // @Version: 1.0.0
 // @Date: 2021/3/10 3:13 下午
@@ -30,17 +30,17 @@ func CreateFibManager() *FibManager {
 
 // 注册命令 一个前缀对应一个命令
 func (f *FibManager) Init() {
-	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/fib-mgmt/localhost/add")
+	identifier, _ := component.CreateIdentifierByString("/fib-mgmt/add")
 	err := dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.AddNextHop)
 	if err != nil {
 		fmt.Println("add add-command fail,the err is:", err)
 	}
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/fib-mgmt/delete")
+	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/delete")
 	err = dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.RemoveNextHop)
 	if err != nil {
 		fmt.Println("add delete-command fail,the err is:", err)
 	}
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/fib-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, authorization, f.ListEntries)
 	if err != nil {
 		fmt.Println("add list-command fail,the err is:", err)
@@ -60,7 +60,8 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 		return &mgmt.ControlResponse{Code: 414, Msg: "the prefix is too long ,cannot exceed " + strconv.Itoa(table.MAX_DEPTH) + "components"}
 	}
 	// 根据Id从table中取出 logicface
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	//face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	face := &lf.LogicFace{LogicFaceId: 1}
 	if face == nil {
 		fmt.Println(prefix.ToUri()+ " logicfaceId:"+strconv.FormatUint(logicfaceId,10)+"failed!")
 		return &mgmt.ControlResponse{Code: 410, Msg: "the face is not found"}

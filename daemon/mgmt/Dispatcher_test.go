@@ -2,6 +2,7 @@ package mgmt
 
 import (
 	"encoding/json"
+	"fmt"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
@@ -22,14 +23,15 @@ func Test(t *testing.T) {
 	if module.authorization(topPrefix, interest, para, authorizationAccept, authorizationReject) {
 		//普通查询
 		res := module.ccHandler(topPrefix, interest, para)
+		fmt.Println(res)
 		dispatcher.sendControlResponse(res, interest)
-		//表项查询 数据量大需要分片 自定义没有找到进行的操作
-		dispatcher.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
-			var context = CreateSDC(interest, dispatcher.sendData, dispatcher.sendControlResponse)
-			module.sdHandler(topPrefix, interest, context)
-			// 放入缓存
-			context.Append()
-			// 发送Data数据包
-		})
+		////表项查询 数据量大需要分片 自定义没有找到进行的操作
+		//dispatcher.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
+		//	var context = CreateSDC(interest, dispatcher.sendData, dispatcher.sendControlResponse)
+		//	module.sdHandler(topPrefix, interest, context)
+		//	// 放入缓存
+		//	context.Append()
+		//	// 发送Data数据包
+		//})
 	}
 }

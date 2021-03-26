@@ -53,11 +53,11 @@ func (e *EthernetListener) Start() {
 // @param netInfo	网卡信息结构体
 //
 func (e *EthernetListener) deleteEtherFace(netInfo *NetIfInfo) {
-	logicFace := gLogicFaceTable.GetLogicFacePtrById(netInfo.logicFaceId)
+	logicFace := GLogicFaceTable.GetLogicFacePtrById(netInfo.logicFaceId)
 	if logicFace != nil {
 		logicFace.Shutdown()
 	}
-	gLogicFaceTable.RemoveByLogicFaceId(netInfo.logicFaceId)
+	GLogicFaceTable.RemoveByLogicFaceId(netInfo.logicFaceId)
 	delete(e.mDevices, netInfo.name)
 }
 

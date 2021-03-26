@@ -12,6 +12,8 @@ var fibManager = CreateFibManager()
 
 // 初始化函数
 func init() {
+	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
+	dispatcher.AddTopPrefix(topPrefix)
 	//注册add/delete/list命令
 	fibManager.Init()
 }
