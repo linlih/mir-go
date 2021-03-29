@@ -274,7 +274,7 @@ func BenchmarkCSInsert(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cs.Insert(interest)
+		cs.Insert(data1)
 	}
 }
 
