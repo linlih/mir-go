@@ -6,6 +6,7 @@ import (
 	"minlib/packet"
 	//"mir-go/daemon/lf"
 	"testing"
+	"strconv"
 )
 
 func TestCSSize(t *testing.T) {
@@ -211,36 +212,7 @@ func BenchmarkCSSize(b *testing.B) {
 }
 
 
-func BenchmarkCSInsert(b *testing.B) {
-	cs := CreateCS()
-	identifier, err := component.CreateIdentifierByString("/min/pku/edu")
-	if err != nil {
-		fmt.Println(err)
-	}
-	data := &packet.Data{}
-	data.SetName(identifier)
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		cs.Insert(data)
-	}
-}
 
-func BenchmarkCSFind(b *testing.B) {
-	cs := CreateCS()
-	identifier, err := component.CreateIdentifierByString("/min")
-	if err != nil {
-		fmt.Println(err)
-	}
-	interest := &packet.Interest{}
-	interest.SetName(identifier)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		cs.Find(interest)
-	}
-}
 
 func BenchmarkCSEraseByIdentifier(b *testing.B) {
 	cs := CreateCS()
@@ -258,5 +230,69 @@ func BenchmarkCSEraseByIdentifier(b *testing.B) {
 		cs.Insert(data)
 		b.StartTimer()
 		cs.EraseByIdentifier(identifier)
+	}
+}
+
+func BenchmarkCSInsert(b *testing.B) {
+	cs := CreateCS()
+	//构造一个足够大、足够深的前缀树
+	identifierString := "/test"
+	for i := 1; i <= 100; i++ {
+		for j := 1; j <= 100; j++ {
+			identifierString = identifierString + strconv.Itoa(j)
+			identifier, err := component.CreateIdentifierByString(identifierString)
+			if err != nil {
+				fmt.Println(err)
+			}
+			
+			data := &packet.Data{}
+			data.SetName(identifier)
+			cs.Insert(data)
+		}
+		identifierString = identifierString + "/test"
+		identifier, err := component.CreateIdentifierByString(identifierString)
+		if err != nil {
+			fmt.Println(err)
+		}
+		interest := &packet.Interest{}
+		interest.SetName(identifier)
+		data := &packet.Data{}
+		data.SetName(identifier)
+		cs.Insert(data)
+	}
+
+	fmt.Println(cs.Size())
+	identifier1, err := component.CreateIdentifierByString("/test/test2/test/test")
+	if err != nil {
+		fmt.Println(err)
+	}
+	interest := &packet.Interest{}
+	interest.SetName(identifier1)
+	data1 := &packet.Data{}
+	data1.SetName(identifier1)
+	cs.Insert(data1)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		cs.Insert(interest)
+	}
+}
+
+func BenchmarkCSFind(b *testing.B) {
+	cs := CreateCS()
+	identifier, err := component.CreateIdentifierByString("/min")
+	if err != nil {
+		fmt.Println(err)
+	}
+	interest := &packet.Interest{}
+	interest.SetName(identifier)
+	data := &packet.Data{}
+	data.SetName(identifier)
+	cs.Insert(data)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		cs.Find(interest)
 	}
 }
