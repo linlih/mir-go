@@ -18,7 +18,6 @@ type CS struct {
 	lpm 	*LpmMatcher //	最长前缀匹配器
 	Hits 	uint64  //	命中缓存次数
 	Misses 	uint64	//	没有命中缓存次数
-
 }
 
 func CreateCS() *CS {
