@@ -4,10 +4,10 @@ package table
 import (
 	"fmt"
 	"minlib/component"
-	"minlib/packet"
-	"mir-go/daemon/lf"
+	//"minlib/packet"
+	//"mir-go/daemon/lf"
 	"testing"
-	"strconv"
+	//"strconv"
 )
 
 func TestStrategyTableSize(t *testing.T) {
