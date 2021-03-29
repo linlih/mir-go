@@ -16,7 +16,6 @@ import (
 )
 
 type FaceManager struct {
-
 }
 
 func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
@@ -26,19 +25,18 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 }
 
 func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse{
-	face:=lf.GLogicFaceTable.GetLogicFacePtrById(parameters.LogicfaceId)
-	if face == nil{
-		return &mgmt.ControlResponse{Code: 400,Msg: "the face is not existed"}
+	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	face := lf.GLogicFaceTable.GetLogicFacePtrById(parameters.LogicfaceId)
+	if face == nil {
+		return &mgmt.ControlResponse{Code: 400, Msg: "the face is not existed"}
 	}
 	lf.GLogicFaceTable.RemoveByLogicFaceId(parameters.LogicfaceId)
-	return &mgmt.ControlResponse{Code: 200,Msg: "ok"}
+	return &mgmt.ControlResponse{Code: 200, Msg: "ok"}
 }
 
 func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packet.Interest,
-	context *StatusDatasetContext){
-
-	faceList:=lf.GLogicFaceTable.GetAllFaceList()
+	context *StatusDatasetContext) {
+	faceList := lf.GLogicFaceTable.GetAllFaceList()
 	data, err := json.Marshal(faceList)
 	if err != nil {
 		res := &mgmt.ControlResponse{Code: 400, Msg: "mashal fibEntrys fail , the err is:" + err.Error()}
@@ -54,4 +52,3 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 	}
 	context.data = newData
 }
-

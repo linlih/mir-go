@@ -144,4 +144,3 @@ func createDispacherErrorByType(errorType int) (err DispacherError) {
 	}
 	return
 }
-

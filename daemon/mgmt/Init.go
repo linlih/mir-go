@@ -50,4 +50,3 @@ func authorizationAccept() {
 func authorizationReject(errorType int) {
 
 }
-

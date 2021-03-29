@@ -6,7 +6,7 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/lf"
 	"testing"
-	"strconv"
+	//"strconv"
 )
 
 func TestInsert(t *testing.T) {

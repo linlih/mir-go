@@ -19,7 +19,7 @@ import (
 )
 
 type FibManager struct {
-	fib            *table.FIB
+	fib *table.FIB
 }
 
 func CreateFibManager() *FibManager {
@@ -49,6 +49,7 @@ func (f *FibManager) Init() {
 
 // 在 FIB 表中添加一个到指定前缀的路由
 // mirc fib add identifier <IDENTIFIER> nexthop <LFID> [cost <COST>]
+
 func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
 	prefix := parameters.Prefix
@@ -60,10 +61,9 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 		return &mgmt.ControlResponse{Code: 414, Msg: "the prefix is too long ,cannot exceed " + strconv.Itoa(table.MAX_DEPTH) + "components"}
 	}
 	// 根据Id从table中取出 logicface
-	//face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
-	face := &lf.LogicFace{LogicFaceId: 1}
+	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
-		fmt.Println(prefix.ToUri()+ " logicfaceId:"+strconv.FormatUint(logicfaceId,10)+"failed!")
+		fmt.Println(prefix.ToUri() + " logicfaceId:" + strconv.FormatUint(logicfaceId, 10) + "failed!")
 		return &mgmt.ControlResponse{Code: 410, Msg: "the face is not found"}
 	}
 	// 执行添加下一跳命令 放入表中
