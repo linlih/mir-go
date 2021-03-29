@@ -173,4 +173,3 @@ type IDispatcher interface {
 	//
 	queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler)
 }
-
