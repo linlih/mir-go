@@ -4,9 +4,10 @@ package table
 import (
 	"fmt"
 	"minlib/component"
-	//"minlib/packet"
-	//"mir-go/daemon/lf"
+	"minlib/packet"
+	"mir-go/daemon/lf"
 	"testing"
+	"strconv"
 )
 
 func TestStrategyTableSize(t *testing.T) {
@@ -256,3 +257,41 @@ func BenchmarkSetDefaultStrategy(b *testing.B) {
 		strategyTable.SetDefaultStrategy(strategyName)
 	}
 }
+
+
+/*
+//插入、查询性能测试
+func BenchmarkStrategyTableInsert(b *testing.B) {
+//func BenchmarkFindEffectiveStrategyEntry(b *testing.B) {
+	strategyTable := CreateStrategyTable()
+	var istrategy IStrategy
+	strategyName := "strategyName"
+	identifierString := "/test"
+	for i := 1; i <= 100; i++ {
+		for j := 1; j <= 100; j++ {
+			identifierString = identifierString + strconv.Itoa(j)
+			identifier, err := component.CreateIdentifierByString(identifierString)
+			if err != nil {
+				fmt.Println(err)
+			}
+			strategyTable.Insert(identifier, strategyName, istrategy)
+		}
+		identifierString = identifierString + "/test"
+		identifier, err := component.CreateIdentifierByString(identifierString)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	identifier, err := component.CreateIdentifierByString("/test/4/test/test2")
+	if err != nil {
+		fmt.Println(err)
+	}
+	for i := 0; i < b.N; i++ {
+		strategyTable.Insert(identifier, strategyName, istrategy)
+	}
+
+}
+*/

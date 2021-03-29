@@ -10,6 +10,7 @@ package fw
 import (
 	"github.com/sirupsen/logrus"
 	"minlib/component"
+	"minlib/encoding"
 	"minlib/packet"
 	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
@@ -29,6 +30,7 @@ type Forwarder struct {
 	table.CS                                        // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
+	packetQueue         *BlockQueue                 // 包队列
 }
 
 //
@@ -37,13 +39,104 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager) {
+func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *BlockQueue) {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
 	f.CS.Init()
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
+	f.packetQueue = packetQueue
+}
+
+//
+// 启动转发处理流程
+//
+// @Description:
+//
+func (f *Forwarder) Start() {
+	for true {
+		data := f.packetQueue.read()
+		ipd, ok := data.(*lf.IncomingPacketData)
+		if !ok {
+			continue
+		}
+		f.OnReceiveMINPacket(ipd)
+	}
+}
+
+//
+// 处理收到一个 MINPacket
+//
+// @Description:
+// 	1. 解析MINPacket，提取出标识区的第一个标识，根据第一个标识的类型对包进行分类
+// @receiver f
+// @param lf.IncomingPacketData
+//
+func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
+	common.LogDebugWithFields(logrus.Fields{
+		"faceId": ipd.LogicFace.LogicFaceId,
+	}, "On Receive MINPacket")
+
+	ingress := ipd.LogicFace
+	minPacket := ipd.MinPacket
+
+	// 首先获取 MINPacket 标识区中的第一个标识，根据第一个标识区分不同的网络包
+	identifyWrapper, err := minPacket.GetIdentifier(0)
+	if err != nil {
+		common.LogWarnWithFields(logrus.Fields{
+			"faceId": ingress.LogicFaceId,
+		}, "Get Identifier failed")
+		return
+	}
+
+	// 根据标识的类型区分不同的网络包
+	switch identifyWrapper.GetIdentifierType() {
+	case encoding.TlvIdentifierCommon: // CPacket
+		if cPacket, err := packet.CreateCPacketByMINPacket(minPacket); err != nil {
+			common.LogWarnWithFields(logrus.Fields{
+				"faceId":     ingress.LogicFaceId,
+				"identifier": identifyWrapper.ToUri(),
+			}, "Create CPacket by MINPacket failed")
+			return
+		} else {
+			f.OnIncomingCPacket(ingress, cPacket)
+		}
+	case encoding.TlvIdentifierContentInterest: // Interest
+		if interest, err := packet.CreateInterestByMINPacket(minPacket); err != nil {
+			common.LogWarnWithFields(logrus.Fields{
+				"faceId":     ingress.LogicFaceId,
+				"identifier": identifyWrapper.ToUri(),
+			}, "Create Interest by MINPacket failed")
+			return
+		} else {
+			if interest.NackHeader.IsInitial() {
+				if nack, err := packet.CreateNackByInterest(interest); err != nil {
+					common.LogWarnWithFields(logrus.Fields{
+						"faceId":     ingress.LogicFaceId,
+						"identifier": identifyWrapper.ToUri(),
+					}, "Create Nack by Interest failed")
+					return
+				} else {
+					// Nack
+					f.OnIncomingNack(ingress, nack)
+				}
+			} else {
+				// Interest
+				f.OnIncomingInterest(ingress, interest)
+			}
+		}
+	case encoding.TlvIdentifierContentData: // Data
+		if data, err := packet.CreateDataByMINPacket(minPacket); err != nil {
+			common.LogWarnWithFields(logrus.Fields{
+				"faceId":     ingress.LogicFaceId,
+				"identifier": identifyWrapper.ToUri(),
+			}, "Create Data by MINPacket failed")
+			return
+		} else {
+			f.OnIncomingData(ingress, data)
+		}
+	}
 }
 
 //
@@ -80,7 +173,7 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 	common.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
-	}, "Detect Interest loop")
+	}, "Incoming Interest")
 
 	// 调用插件锚点
 	if f.pluginManager.OnIncomingInterest(ingress, interest) != 0 {
