@@ -46,6 +46,7 @@ func CreateBlockQueue(size uint) *BlockQueue {
 // @return error
 //
 func (b *BlockQueue) read() interface{} {
+	//fmt.Println("read",len(b.bufChan))
 	return <-b.bufChan
 }
 
@@ -80,6 +81,8 @@ func (b *BlockQueue) readUntil(waitTime uint) (interface{}, error) {
 //
 func (b *BlockQueue) write(data interface{}) {
 	b.bufChan <- data
+	//fmt.Println("read",len(b.bufChan))
+	//fmt.Println(data)
 }
 
 //
