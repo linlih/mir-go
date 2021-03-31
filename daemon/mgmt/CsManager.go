@@ -24,6 +24,14 @@ type CsManager struct {
 
 const ERASE_LIMIT = 256
 
+func CreateCsManager() *CsManager {
+	return &CsManager{
+		cs:          new(table.CS),
+		enableServe: false,
+		enableAdd:   false,
+	}
+}
+
 func (c *CsManager) Init() {
 	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/delete")
 	err := dispatcher.AddControlCommand(identifier, authorization, c.ValidateParameters, c.changeConfig)
