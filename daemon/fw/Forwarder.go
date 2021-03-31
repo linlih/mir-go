@@ -211,8 +211,10 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 	} else {
 		// CS Lookup
 		if csEntry := f.CS.Find(interest); csEntry == nil {
+			f.CS.Misses += 1
 			f.OnContentStoreMiss(ingress, pitEntry, interest)
 		} else {
+			f.CS.Hits += 1
 			f.OnContentStoreHit(ingress, pitEntry, interest, csEntry)
 		}
 	}
