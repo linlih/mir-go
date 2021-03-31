@@ -34,8 +34,13 @@ func (u *UdpTransport) Init(conn *net.UDPConn, udpTransportMap *map[string]*Logi
 	u.conn = conn
 	u.localAddr = conn.LocalAddr().String()
 	u.localUri = "udp://" + u.localAddr
-	u.remoteAddr = conn.RemoteAddr().String()
-	u.remoteUri = "udp://" + u.remoteAddr
+	if conn.RemoteAddr() == nil {
+		u.remoteAddr = "nil"
+		u.remoteUri = "udp://" + u.remoteAddr
+	} else {
+		u.remoteAddr = conn.RemoteAddr().String()
+		u.remoteUri = "udp://" + u.remoteAddr
+	}
 	u.recvBuf = make([]byte, 9000)
 	u.udpTransportMap = udpTransportMap
 }
