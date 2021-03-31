@@ -17,11 +17,6 @@ import (
 )
 
 //
-// @Description: 以太网包过滤规则
-//
-const PcapFilter = "ether proto 0x8600"
-
-//
 // @Description:  用来发送和接收以太网帧
 //   |---- 8字节目的Mac地址----|---- 8字节源Mac地址----|-2字节协议号-|-LpPacket-|
 //
@@ -76,13 +71,16 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	if err != nil {
 		log.Println(err)
 		e.status = false
-		e.linkService.logicFace.state = false
+		//e.linkService.logicFace.state = false
+		log.Fatal("open default net device error")
 	}
-	err = e.handle.SetBPFFilter(PcapFilter)
+	//mPcapFilter := "ether proto 0x8600"
+	err = e.handle.SetBPFFilter("ether proto 0x8888")
 	if err != nil {
 		log.Println(err)
 		e.status = false
-		e.linkService.logicFace.state = false
+		//e.linkService.logicFace.state = false
+		log.Fatal("open default net device error")
 	}
 }
 
