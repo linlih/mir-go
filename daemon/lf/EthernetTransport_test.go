@@ -37,7 +37,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 
 	interest.InterestLifeTime.SetInterestLifeTime(4000)
 	fmt.Println("-----------------------------")
-	face, faceid := createEtherLogicFace("enp3s0", localAddr, remoteAddr, 8000)
+	face, faceid := createEtherLogicFace("enp3s0", localAddr, remoteAddr, 1500)
 	fmt.Println(faceid)
 	fmt.Println(face.GetRemoteUri())
 	fmt.Println(face.GetLocalUri())

@@ -114,7 +114,7 @@ func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 	copy(e.sendPacket[14:], encodeBuf[0:encodeBufLen])
 	err := e.handle.WritePacketData(e.sendPacket[0 : 14+encodeBufLen])
 	if err != nil {
-		log.Println(err)
+		log.Println(err, ", packet len = ", 14+encodeBufLen)
 	}
 }
 

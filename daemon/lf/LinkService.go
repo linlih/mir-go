@@ -39,12 +39,15 @@ func (l *LinkService) calculateLpPacketHeadSize() {
 	lpPacket.SetId(0)
 	lpPacket.SetFragmentSeq(0)
 	lpPacket.SetFragmentNum(2)
+	var buf [encoding.MaxPacketSize]byte
+	lpPacket.SetValue(buf[:])
 	var encoder encoding.Encoder
-	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	err := encoder.EncoderReset(encoding.MaxPacketSize+1000, 0)
 	if err != nil {
 		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
 	l.lpPacketHeadSize, err = lpPacket.WireEncode(&encoder)
+	l.lpPacketHeadSize -= encoding.MaxPacketSize
 	if err != nil {
 		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
@@ -137,7 +140,7 @@ func (l *LinkService) sendFragment(buf []byte, bufLen int, fragmentId, fragmentN
 // @param bufLen	数据长度
 //
 func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
-	fragmentLen := l.mtu - l.lpPacketHeadSize
+	fragmentLen := l.mtu - l.lpPacketHeadSize - 10
 	startIdx := 0
 	fragmentSeq := 0
 	fragmentNum := bufLen / fragmentLen
