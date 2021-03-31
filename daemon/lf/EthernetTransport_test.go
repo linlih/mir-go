@@ -1,3 +1,13 @@
+<<<<<<< HEAD
+=======
+//
+// @Author: weiguohua
+// @Description: 
+// @Version: 1.0.0
+// @Date: 2021/3/31 上午11:15  
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
+>>>>>>> master
 package lf
 
 import (
@@ -14,8 +24,15 @@ func TestEthernetTransport_Send(t *testing.T) {
 	var Fsystem LogicFaceSystem
 	Fsystem.Init(&LfTb)
 	Fsystem.Start()
+<<<<<<< HEAD
 	str := "00:0c:29:fa:de:18"
 	remote := "ff:ff:ff:ff:ff:ff"
+=======
+
+	str := "00:0c:29:fa:de:18"
+	remote := "ff:ff:ff:ff:ff:ff"
+
+>>>>>>> master
 	interest := new(packet.Interest)
 	token := make([]byte, 7000)
 	interest.Payload.SetValue(token)
