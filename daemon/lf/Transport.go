@@ -25,7 +25,7 @@ type Transport struct {
 }
 
 //
-// @Description: 从pcap抓到的包解析出LpPacket
+// @Description: 从[]byte中解析出LpPacket
 // @receiver e
 // @param pkt
 // @return *packet.LpPacket	解析出的包
