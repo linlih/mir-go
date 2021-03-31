@@ -9,6 +9,8 @@ import (
 // 初始化全局调度器
 var dispatcher = CreateDispatcher()
 var fibManager = CreateFibManager()
+var csManager = CreateCsManager()
+var faceManager = CreateFaceManager()
 
 // 初始化函数
 func init() {
@@ -16,6 +18,8 @@ func init() {
 	dispatcher.AddTopPrefix(topPrefix)
 	//注册add/delete/list命令
 	fibManager.Init()
+	csManager.Init()
+	faceManager.Init()
 }
 
 func authorization(topPrefix *component.Identifier, interest *packet.Interest,
@@ -38,7 +42,10 @@ func authorization(topPrefix *component.Identifier, interest *packet.Interest,
 		reject(6)
 		return false
 	}
+	// 验证签名不通过
+	if err:=dispatcher.KeyChain.VerifyInterest(interest);err!=nil{
 
+	}
 	accept()
 	return true
 }
