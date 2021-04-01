@@ -8,8 +8,8 @@
 package lf
 
 import (
-	"log"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 )
 
@@ -48,7 +48,7 @@ func (u *UdpTransport) Init(conn *net.UDPConn, remoteUdpAddr *net.UDPAddr) {
 func (u *UdpTransport) Close() {
 	err := u.conn.Close()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 	}
 }
 
@@ -64,7 +64,7 @@ func (u *UdpTransport) Send(lpPacket *packet.LpPacket) {
 	}
 	_, err := u.conn.WriteToUDP(encodeBuf, &u.remoteUdpAddr)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 	}
 }
 

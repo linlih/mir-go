@@ -8,7 +8,7 @@
 package lf
 
 import (
-	"log"
+	"mir-go/daemon/common"
 	"net"
 	"time"
 )
@@ -92,7 +92,7 @@ func (e *EthernetListener) monitorDev() {
 	for true {
 		interfaces, err := net.Interfaces()
 		if err != nil {
-			log.Fatal(err)
+			common.LogFatal(err)
 		}
 		for _, d := range interfaces {
 			e.updateDev(d.Name, d.HardwareAddr, d.MTU, d.Flags)

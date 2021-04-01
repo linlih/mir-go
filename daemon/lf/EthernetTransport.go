@@ -9,8 +9,8 @@ package lf
 
 import (
 	"github.com/google/gopacket/pcap"
-	"log"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 	"time"
 )
@@ -67,18 +67,14 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	var err error
 	e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
 	if err != nil {
-		log.Println(err)
 		e.status = false
-		//e.linkService.logicFace.state = false
-		log.Fatal("open default net device error")
+		common.LogFatal("open default net device error")
 	}
 	//mPcapFilter := "ether proto 0x8600"
 	err = e.handle.SetBPFFilter("ether proto 0x8888")
 	if err != nil {
-		log.Println(err)
 		e.status = false
-		//e.linkService.logicFace.state = false
-		log.Fatal("open default net device error")
+		common.LogFatal("open default net device error")
 	}
 }
 
@@ -112,7 +108,7 @@ func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 	copy(e.sendPacket[14:], encodeBuf[0:encodeBufLen])
 	err := e.handle.WritePacketData(e.sendPacket[0 : 14+encodeBufLen])
 	if err != nil {
-		log.Println(err, ", packet len = ", 14+encodeBufLen)
+		common.LogWarn(err, ", packet len = ", 14+encodeBufLen)
 	}
 }
 

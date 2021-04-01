@@ -8,8 +8,8 @@
 package lf
 
 import (
-	"log"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 	"strconv"
 )
@@ -53,12 +53,12 @@ func (u *UdpListener) createUdpLogicFace(conn *net.UDPConn) {
 func (u *UdpListener) Start() {
 	udpAddr, err := net.ResolveUDPAddr("udp4", "0.0.0.0:"+strconv.Itoa(int(u.udpPort)))
 	if err != nil {
-		log.Fatal(err)
+		common.LogFatal(err)
 		return
 	}
 	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		log.Fatal(err)
+		common.LogFatal(err)
 	}
 	u.conn = conn
 	u.createUdpLogicFace(conn)
@@ -91,13 +91,13 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 func (u *UdpListener) doReceive() {
 	readLen, remoteUdpAddr, err := u.conn.ReadFromUDP(u.recvBuf)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
-	log.Println("recv from : ", remoteUdpAddr)
+	common.LogDebug("recv from : ", remoteUdpAddr)
 	lpPacket, err := parseByteArray2LpPacket(u.recvBuf[:readLen])
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	u.onReceive(lpPacket, remoteUdpAddr)

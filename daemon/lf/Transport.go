@@ -8,9 +8,9 @@
 package lf
 
 import (
-	"log"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 //
@@ -34,17 +34,17 @@ type Transport struct {
 func parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
 	block, err := encoding.CreateBlockByBuffer(buf, true)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return nil, err
 	}
 	if !block.IsValid() {
-		log.Println("recv packet from face invalid")
+		common.LogWarn("recv packet from face invalid")
 		return nil, err
 	}
 	var lpPacket packet.LpPacket
 	err = lpPacket.WireDecode(block)
 	if err != nil {
-		log.Println("parse to lpPacket error")
+		common.LogWarn("parse to lpPacket error")
 		return nil, err
 	}
 	return &lpPacket, nil
@@ -62,12 +62,12 @@ func encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	encodeBufLen, err := lpPacket.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return -1, nil
 	}
 	encodeBuf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return -1, nil
 	}
 	return encodeBufLen, encodeBuf

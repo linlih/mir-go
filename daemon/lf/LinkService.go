@@ -8,9 +8,10 @@
 package lf
 
 import (
-	"log"
+	"math"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 //
@@ -36,20 +37,20 @@ type LinkService struct {
 //
 func (l *LinkService) calculateLpPacketHeadSize() {
 	var lpPacket packet.LpPacket
-	lpPacket.SetId(0)
-	lpPacket.SetFragmentSeq(0)
-	lpPacket.SetFragmentNum(2)
+	lpPacket.SetId(math.MaxInt64)
+	lpPacket.SetFragmentSeq(math.MaxInt64)
+	lpPacket.SetFragmentNum(math.MaxInt64)
 	var buf [encoding.MaxPacketSize]byte
 	lpPacket.SetValue(buf[:])
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize+1000, 0)
 	if err != nil {
-		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
+		common.LogFatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
 	l.lpPacketHeadSize, err = lpPacket.WireEncode(&encoder)
 	l.lpPacketHeadSize -= encoding.MaxPacketSize
 	if err != nil {
-		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
+		common.LogFatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
 }
 
@@ -97,7 +98,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if lpPacket.GetFragmentNum() == 1 {
 		minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
 		if err != nil {
-			log.Println(err)
+			common.LogWarn(err)
 			return
 		}
 		l.logicFace.ReceivePacket(minPacket)
@@ -109,7 +110,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	}
 	minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.logicFace.ReceivePacket(minPacket)
@@ -167,17 +168,17 @@ func (l *LinkService) SendInterest(interest *packet.Interest) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := interest.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -193,17 +194,17 @@ func (l *LinkService) SendData(data *packet.Data) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := data.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -219,17 +220,17 @@ func (l *LinkService) SendNack(nack *packet.Nack) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := nack.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -245,17 +246,17 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := cPacket.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)

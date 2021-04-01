@@ -10,8 +10,8 @@ package lf
 import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"log"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 )
 
@@ -110,7 +110,7 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 	}
 	remoteMacAddr, err := net.ParseMAC(srcMacAddr)
 	if err != nil {
-		log.Println("create ethernet face error")
+		common.LogWarn(err)
 		return
 	}
 	// TODO 先验证用户身份再创建face
