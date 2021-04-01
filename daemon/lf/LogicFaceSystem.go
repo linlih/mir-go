@@ -7,7 +7,11 @@
 //
 package lf
 
-import "time"
+import (
+	"minlib/security"
+	"mir-go/daemon/common"
+	"time"
+)
 
 //
 // @Description:  全局logicFace表指针
@@ -18,6 +22,8 @@ var GLogicFaceTable *LogicFaceTable
 // @Description: 全局logicFace系统
 //
 var gLogicFaceSystem *LogicFaceSystem
+
+var gkeyChain *security.KeyChain
 
 //
 // @Description: 启动所有类型的Face监听
@@ -43,6 +49,11 @@ func (l *LogicFaceSystem) Init(table *LogicFaceTable) {
 	l.unixListener.Init()
 	GLogicFaceTable = table
 	gLogicFaceSystem = l
+	mkeyChain, err := security.CreateKeyChain()
+	if err != nil {
+		common.LogFatal(err)
+	}
+	gkeyChain = mkeyChain
 }
 
 //

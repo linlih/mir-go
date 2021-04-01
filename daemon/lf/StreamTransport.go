@@ -155,12 +155,14 @@ func (t *StreamTransport) Receive() {
 		if err != nil {
 			common.LogError("recv from tcp transport error")
 			t.linkService.logicFace.Shutdown()
+			break
 		}
 		t.recvLen += uint64(recvRet)
 		err = t.onReceive()
 		if err != nil {
 			common.LogError("recv from tcp transport error")
 			t.linkService.logicFace.Shutdown()
+			break
 		}
 	}
 }

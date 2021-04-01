@@ -68,12 +68,11 @@ func (l *LinkService) Init(mtu int) {
 
 //
 // @Description: 从lpPacket中提取出MINPacket对象
-// @receiver l
 // @param lpPacket  LpPacket 对象指针
 // @return *packet.MINPacket	MINPacket对象指针
 // @return error	提取失败错误信息
 //
-func (l *LinkService) getMINPacketFromLpPacket(lpPacket *packet.LpPacket) (*packet.MINPacket, error) {
+func getMINPacketFromLpPacket(lpPacket *packet.LpPacket) (*packet.MINPacket, error) {
 	payload := lpPacket.GetValue()
 	block, err := encoding.CreateBlockByBuffer(payload, true)
 	if err != nil {
@@ -96,7 +95,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 
 	// 未分包，只有一个包
 	if lpPacket.GetFragmentNum() == 1 {
-		minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
+		minPacket, err := getMINPacketFromLpPacket(lpPacket)
 		if err != nil {
 			common.LogWarn(err)
 			return
@@ -108,7 +107,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if reassembleLpPacket == nil {
 		return
 	}
-	minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
+	minPacket, err := getMINPacketFromLpPacket(lpPacket)
 	if err != nil {
 		common.LogWarn(err)
 		return
@@ -260,4 +259,20 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
+}
+
+//
+// @Description:  通过LpPacket验证用户身份
+// @param lpPacket
+// @return bool
+//
+func checkIdentity(lpPacket *packet.LpPacket) bool {
+	// TODO 先验证用户身份再创建face,待 完善 代码逻辑
+	return true
+	minPacket, err := getMINPacketFromLpPacket(lpPacket)
+	if err != nil {
+		return false
+	}
+	err = gkeyChain.Verify(minPacket)
+	return err == nil
 }

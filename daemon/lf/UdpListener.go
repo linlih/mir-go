@@ -80,6 +80,10 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 		return
 	}
 	// TODO 先验证再添加LogicFace
+	if checkIdentity(lpPacket) == false {
+		common.LogInfo("user identity check no pass")
+		return
+	}
 	logicFace, _ = createUdpLogicFace(u.conn, remoteUdpAddr)
 	logicFace.linkService.ReceivePacket(lpPacket)
 }

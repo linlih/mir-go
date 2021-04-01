@@ -113,7 +113,10 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 		common.LogWarn(err)
 		return
 	}
-	// TODO 先验证用户身份再创建face
+	if checkIdentity(lpPacket) == false {
+		common.LogInfo("user identify verify no pass")
+		return
+	}
 	logicFacePtr, _ := createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
 	i.etherFaceMap[srcMacAddr] = logicFacePtr
 	logicFacePtr.transport.Receive()
