@@ -7,7 +7,10 @@
 //
 package lf
 
-import "minlib/packet"
+import (
+	"github.com/sirupsen/logrus"
+	"minlib/packet"
+)
 
 //
 // 包装了一个 LogicFace 和 MINPacket 的指针，主要用于 LogicFace 和 Forwarder 进行通信
@@ -18,4 +21,18 @@ import "minlib/packet"
 type IncomingPacketData struct {
 	LogicFace *LogicFace
 	MinPacket *packet.MINPacket
+}
+
+func (ipd *IncomingPacketData) ToFields() logrus.Fields {
+	firstIdentifier, err := ipd.MinPacket.GetIdentifier(0)
+	if err != nil {
+		return logrus.Fields{
+			"LogicFace": ipd.LogicFace.LogicFaceId,
+			"MINPacket": nil,
+		}
+	}
+	return logrus.Fields{
+		"LogicFace": ipd.LogicFace.LogicFaceId,
+		"MINPacket": firstIdentifier.ToUri(),
+	}
 }
