@@ -8,11 +8,21 @@
 package lf
 
 import (
+	"fmt"
 	"minlib/component"
 	"minlib/packet"
 	"testing"
+	"time"
 )
 
+/**************************************************************
+ * 测试场景说明：
+ * 两台虚拟机，VM1和VM2
+ * IP信息： VM1 192.168.0.9,  VM2 192.168.0.8
+ * VM1 先执行 TestUdpTransport_Receive 函数进行13899端口的UDP收包监听
+ * VM2 后执行 TestUdpTransport_Init    函数向VM1的13899发送一个兴趣包
+ * VM1 会在终端中打印 "recv from :" 等信息，并正确解码相应的兴趣包
+ ***************************************************************/
 func TestUdpTransport_Init(t *testing.T) {
 	var LfTb LogicFaceTable
 	LfTb.Init()
@@ -20,7 +30,7 @@ func TestUdpTransport_Init(t *testing.T) {
 	Fsystem.Init(&LfTb)
 	Fsystem.Start()
 
-	id, err := CreateUdpLogicFace("192.168.0.2:9090")
+	id, err := CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		t.Fatal("Create UDP logic face failed", err.Error())
 	}
@@ -38,6 +48,19 @@ func TestUdpTransport_Init(t *testing.T) {
 	var buf []byte = []byte("hello world!")
 	interest.Payload.SetValue(buf[:])
 
-	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 9090
+	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	logicFace.SendInterest(&interest)
+}
+
+func TestUdpTransport_Receive(t *testing.T) {
+	var LfTb LogicFaceTable
+	LfTb.Init()
+	var Fsystem LogicFaceSystem
+	Fsystem.Init(&LfTb)
+	Fsystem.Start()
+
+	for true {
+		time.Sleep(10*time.Second)
+		fmt.Println("等待收包")
+	}
 }
