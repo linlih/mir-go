@@ -7,7 +7,10 @@
 //
 package lf
 
-import "net"
+import (
+	"github.com/google/gopacket/pcap"
+	"net"
+)
 
 //
 // @Description: 创建一个以太网类型的LogicFace，并将创建的logicFace加入logicFace表中
@@ -16,22 +19,22 @@ import "net"
 // @param remoteMacAddr		对端Mac地址
 // @param mtu				网卡Mtu
 // @return *LogicFace 		LogicFace指针
-// @return uint64		    LogicFace ID号
+// @return *pcap.Handle		    pcap IO 句柄
 //
-func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr, mtu int) (*LogicFace, uint64) {
+func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr, mtu int) (*LogicFace, *pcap.Handle) {
 	var etherTransport EthernetTransport
 	var logicFace LogicFace
 	var linkService LinkService
 
-	etherTransport.Init(ifName, localMacAddr, remoteMacAddr, gEtherAddrFaceMap)
+	etherTransport.Init(ifName, localMacAddr, remoteMacAddr)
 	linkService.Init(mtu)
 	linkService.transport = &etherTransport
 	linkService.logicFace = &logicFace
 	etherTransport.linkService = &linkService
 	logicFace.Init(&etherTransport, &linkService, LogicFaceTypeEther)
-	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
+	GLogicFaceTable.AddLogicFace(&logicFace)
 
-	return &logicFace, logicFaceId
+	return &logicFace, etherTransport.handle
 }
 
 //
@@ -83,17 +86,18 @@ func createUnixLogicFace(conn net.Conn) (*LogicFace, uint64) {
 }
 
 //
-// @Description: 创建一个Udp类型的LogicFace
+// @Description: 创建一个Udp类型的LogicFace，UDP类型的logicFace都是只能用来发包
 // @param conn	Udp句柄
+// @param remoteAddr	对端udp地址
 // @return *LogicFace	LogicFace 指针
 // @return uint64		LogicFace ID号
 //
-func createUdpLogicFace(conn *net.UDPConn) (*LogicFace, uint64) {
+func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace, uint64) {
 	var udpTransport UdpTransport
 	var linkService LinkService
 	var logicFace LogicFace
 
-	udpTransport.Init(conn, gUdpAddrFaceMap)
+	udpTransport.Init(conn, remoteAddr)
 	linkService.Init(9000)
 
 	linkService.transport = &udpTransport
@@ -103,30 +107,5 @@ func createUdpLogicFace(conn *net.UDPConn) (*LogicFace, uint64) {
 
 	logicFace.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
 	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
-	return &logicFace, logicFaceId
-}
-
-//
-// @Description: 创建一个只用于发送数据的Udp类型的LogicFace
-// @param conn	Udp句柄
-// @return *LogicFace	LogicFace 指针
-// @return uint64		LogicFace ID号
-//
-func createHalfUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace, uint64) {
-	var udpTransport UdpTransport
-	var linkService LinkService
-	var logicFace LogicFace
-
-	udpTransport.InitHalf(conn, remoteAddr)
-	linkService.Init(9000)
-
-	linkService.transport = &udpTransport
-	linkService.logicFace = &logicFace
-
-	udpTransport.linkService = &linkService
-
-	logicFace.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
-	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
-	(*gUdpAddrFaceMap)[remoteAddr.String()] = &logicFace
 	return &logicFace, logicFaceId
 }

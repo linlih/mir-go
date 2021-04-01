@@ -43,7 +43,7 @@ func (t *StreamTransport) Close() {
 // @param lpPacket
 //
 func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
-	encodeBufLen, encodeBuf := t.encodeLpPacket2ByteArray(lpPacket)
+	encodeBufLen, encodeBuf := encodeLpPacket2ByteArray(lpPacket)
 	if encodeBufLen <= 0 {
 		return
 	}
@@ -97,7 +97,7 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 	pktLen, err := encoding.ReadVarNumber(buf, encoding.VlInt(pktTypeLen))
 	totalPktLen := uint64(pktTypeLen) + uint64(encoding.SizeOfVarNumber(pktLen)) + uint64(pktLen)
 	if bufLen >= totalPktLen {
-		lpPacket, err := t.parseByteArray2LpPacket(buf[:totalPktLen])
+		lpPacket, err := parseByteArray2LpPacket(buf[:totalPktLen])
 		if err != nil {
 			log.Println("parse lpPacket error")
 		} else {

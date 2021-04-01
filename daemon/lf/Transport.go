@@ -31,13 +31,13 @@ type Transport struct {
 // @return *packet.LpPacket	解析出的包
 // @return error		解析失败错误
 //
-func (t *Transport) parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
+func parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
 	block, err := encoding.CreateBlockByBuffer(buf, true)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	if block.IsValid() {
+	if !block.IsValid() {
 		log.Println("recv packet from face invalid")
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (t *Transport) parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error
 // @return int     编码后byte数组的长度
 // @return []byte	编码得到的byte数组
 //
-func (t *Transport) encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
+func encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	encodeBufLen, err := lpPacket.WireEncode(&encoder)
