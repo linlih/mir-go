@@ -1,12 +1,20 @@
 package main
 
 import (
+	"encoding/json"
+	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/plugin"
 )
 
 func main() {
-	InitForwarder()
+	mirConfig, err := common.ParseConfig("/usr/local/etc/mir/mirconf.ini")
+	if err != nil {
+		common.LogFatal(err)
+	}
+	data, err := json.Marshal(mirConfig)
+	println(string(data))
+	//InitForwarder()
 }
 
 func InitForwarder() {
