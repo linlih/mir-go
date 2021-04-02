@@ -119,7 +119,7 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 	}
 	logicFacePtr, _ := createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
 	i.etherFaceMap[srcMacAddr] = logicFacePtr
-	logicFacePtr.transport.Receive()
+	logicFacePtr.linkService.ReceivePacket(lpPacket)
 }
 
 //
