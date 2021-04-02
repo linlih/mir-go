@@ -34,7 +34,10 @@ type LogConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// Log
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	LogLevel string `ini:"LogLevel"` // 日志等级
+	LogLevel     string `ini:"LogLevel"`     // 日志等级
+	ReportCaller bool   `ini:"ReportCaller"` // 日志输出时是否添加文件名和函数名
+	LogFormat    string `ini:"LogFormat"`    // 输出日志的格式 "json" | "text"
+	LogFilePath  string `ini:"LogFilePath"`  // 日志输出文件路径，为空则输出至控制台
 }
 
 type TableConfig struct {
@@ -80,9 +83,9 @@ func ParseConfig(configPath string) (*MIRConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	mirConfig := MIRConfig{}
+	mirConfig := new(MIRConfig)
 	if err = cfg.MapTo(&mirConfig); err != nil {
 		return nil, err
 	}
-	return &mirConfig, nil
+	return mirConfig, nil
 }

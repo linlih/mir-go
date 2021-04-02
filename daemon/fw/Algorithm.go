@@ -9,9 +9,9 @@ package fw
 
 import (
 	"minlib/component"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
-	"time"
 )
 
 const (
@@ -58,16 +58,6 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 }
 
 //
-// 获取当前的时间戳（单位为 ms）
-//
-// @Description:
-// @return uint64
-//
-func GetCurrentTime() uint64 {
-	return uint64(time.Now().UnixNano() / 1e6)
-}
-
-//
 // 判断 PIT 条目中是否存在仍在 pending 的 out-record
 //
 // @Description:
@@ -78,7 +68,7 @@ func HasPendingOutRecords(entry *table.PITEntry) bool {
 	if entry == nil {
 		return false
 	}
-	now := GetCurrentTime()
+	now := common.GetCurrentTime()
 	for _, outRecord := range entry.GetOutRecords() {
 		if outRecord.ExpireTime > now && outRecord.NackHeader == nil {
 			return true

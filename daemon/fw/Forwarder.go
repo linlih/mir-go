@@ -272,7 +272,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		return
 	}
 
-	currentTime := GetCurrentTime()
+	currentTime := common.GetCurrentTime()
 
 	// insert in-record
 	inRecord := pitEntry.InsertOrUpdateInRecord(ingress, interest)
@@ -364,7 +364,7 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 
 	// 插入 out-record
 	outRecord := pitEntry.InsertOrUpdateOutRecord(egress, interest)
-	outRecord.ExpireTime = GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
+	outRecord.ExpireTime = common.GetCurrentTime() + interest.InterestLifeTime.GetInterestLifeTime()
 
 	// 转发兴趣包
 	egress.SendInterest(interest)
@@ -569,7 +569,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	// 如果所有 out-record 都超时或者被 Nack，则触发 PIT 条目过期
 	finished := true
 	for _, or := range pitEntry.GetOutRecords() {
-		if or.ExpireTime > GetCurrentTime() && or.NackHeader != nil {
+		if or.ExpireTime > common.GetCurrentTime() && or.NackHeader != nil {
 			finished = false
 		}
 	}
