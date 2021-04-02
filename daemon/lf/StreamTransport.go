@@ -129,7 +129,7 @@ func (t *StreamTransport) onReceive() error {
 	var dealLen = pktLen
 	// 循环多次尝试从接收缓冲区中读出包并处理
 	for err == nil && pktLen > 0 && dealLen < t.recvLen {
-		err, pktLen = t.readPktAndDeal(t.recvBuf[dealLen:t.recvLen-dealLen], t.recvLen-dealLen)
+		err, pktLen = t.readPktAndDeal(t.recvBuf[dealLen:t.recvLen], t.recvLen-dealLen)
 		dealLen += pktLen
 	}
 	if err != nil {
