@@ -20,6 +20,7 @@ type MIRConfig struct {
 	TableConfig     `ini:"Table"`
 	LogicFaceConfig `ini:"LogicFace"`
 	SecurityConfig  `ini:"Security"`
+	ForwarderConfig `ini:"Forwarder"`
 }
 
 type GeneralConfig struct {
@@ -68,6 +69,13 @@ type SecurityConfig struct {
 	Log2BlockChain        bool `ini:"Log2BlockChain"`        // 是否发送日志到区块链
 	MiddleRouterSignature bool `ini:"MiddleRouterSignature"` //是否开启中间路由器签名
 	MaxRouterSignatureNum int  `ini:"MaxRouterSignatureNum"` // 最大中间路由器签名数量
+}
+
+type ForwarderConfig struct {
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//// Forwarder
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	PacketQueueSize int `ini:"PacketQueueSize"` // 包缓冲队列大小
 }
 
 //
