@@ -11,6 +11,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"minlib/encoding"
 	"time"
 )
@@ -130,5 +131,54 @@ func Min(x , y encoding.SizeT)(min encoding.SizeT){
 		return x
 	}
 	return y
+}
 
+
+//
+// @Description:  生成随机用的Byte数组，因为go中没有默认参数的设置方法，所以这里使用可变长参数的方式来实现
+//                使用默认的种子0  -> RandomBytes(1000)
+//                使用时间作为种子 -> RandomBytes(1000, time.Now().Unix())
+// @param n		  要生成的数组长度
+// @param seed	  随机种子
+// @return []byte 返回随机的Byte数组
+//
+func RandomBytes(n int, seed ...int64) []byte {
+	if (len(seed) > 1) {
+		panic("输入参数错误, 仅接受一个参数")
+	}
+	var s int64 = 0
+	if (len(seed) != 0) {
+		s = seed[0]
+	}
+	rand := rand.New(rand.NewSource(s))
+	r := make([]byte, n)
+	if _, err := rand.Read(r); err != nil {
+		panic("rand.Read failed: " + err.Error())
+	}
+	return r
+}
+
+//
+// @Description:  生成随机用的字符串，字符串组成由letterBytes组成
+//                使用默认的种子0  -> RandomString(1000)
+//                使用时间作为种子 -> RandomString(1000, time.Now().Unix())
+// @param n		  要生成的字符串长度
+// @param seed	  随机种子
+// @return []byte 返回随机字符串
+//
+func RandomString(n int, seed ...int64) string {
+	if (len(seed) > 1) {
+		panic("输入参数错误, 仅接受一个参数")
+	}
+	var s int64 = 0
+	if (len(seed) != 0) {
+		s = seed[0]
+	}
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	rand := rand.New(rand.NewSource(s))
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
