@@ -21,6 +21,8 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	common.InitLogger(mirConfig)
 
 	common.LogInfo("hhhhhh")
+	common.LogError("Error xixix")
+	common.LogWarn("Warning")
 
 	// 初始化插件管理器
 	pluginManager := new(plugin.GlobalPluginManager)

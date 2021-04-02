@@ -12,11 +12,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 )
 
 var (
-	_logger = logrus.New()
+	_logger       = logrus.New()
+	_reportCaller = false
 )
 
 //
@@ -101,9 +104,19 @@ func ensureDirExists(dirPath string) error {
 // @param config		配置文件
 //
 func InitLogger(config *MIRConfig) {
-	_logger.SetReportCaller(config.LogConfig.ReportCaller)                 // 日志输出时添加文件名和函数名
+	_reportCaller = config.LogConfig.ReportCaller
+	_logger.SetReportCaller(false)                                         // 日志输出时添加文件名和函数名
 	_logger.SetLevel(getLogLevelByString(config.LogConfig.LogLevel))       // 设置日志等级
 	_logger.SetFormatter(getLogFormatByString(config.LogConfig.LogFormat)) // 设置日志输出格式
+
+	// 处理指定的文件夹路劲是用户目录开头的情况，例如：~/.mir
+	if strings.HasPrefix(config.LogConfig.LogFilePath, "~") {
+		homePath, err := Home()
+		if err != nil {
+			LogFatal("Get current user home path failed!")
+		}
+		config.LogConfig.LogFilePath = homePath + config.LogConfig.LogFilePath[1:]
+	}
 
 	// 设置日志的输出目标
 	if config.LogConfig.LogFilePath == "" {
@@ -126,62 +139,74 @@ func InitLogger(config *MIRConfig) {
 	}
 }
 
+func prepareLogger() *logrus.Entry {
+	_, file, line, ok := runtime.Caller(2)
+	if _reportCaller && ok {
+		return _logger.WithFields(logrus.Fields{
+			"file": file,
+			"line": line,
+		})
+	} else {
+		return _logger.WithFields(logrus.Fields{})
+	}
+}
+
 // LogLevel: Trace < Debug < Info < Warn < Error < Fatal < Panic
 
 func LogTrace(args ...interface{}) {
-	_logger.Trace(args)
+	prepareLogger().Trace(args)
 }
 
 func LogTraceWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Trace(args)
+	prepareLogger().WithFields(fields).Trace(args)
 }
 
 func LogDebug(args ...interface{}) {
-	_logger.Debug(args)
+	prepareLogger().Debug(args)
 }
 
 func LogDebugWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Debug(args)
+	prepareLogger().WithFields(fields).Debug(args)
 }
 
 func LogInfo(args ...interface{}) {
-	_logger.Info(args)
+	prepareLogger().Info(args)
 }
 
 func LogInfoWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Info(args)
+	prepareLogger().WithFields(fields).Info(args)
 }
 
 func LogWarn(args ...interface{}) {
-	_logger.Warn(args)
+	prepareLogger().Warn(args)
 }
 
 func LogWarnWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Warn(args)
+	prepareLogger().WithFields(fields).Warn(args)
 }
 
 func LogError(args ...interface{}) {
-	_logger.Error(args)
+	prepareLogger().Error(args)
 }
 
 func LogErrorWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Error(args)
+	prepareLogger().WithFields(fields).Error(args)
 }
 
 func LogFatal(args ...interface{}) {
-	_logger.Fatal(args)
+	prepareLogger().Fatal(args)
 }
 
 func LogFatalWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Fatal(args)
+	prepareLogger().WithFields(fields).Fatal(args)
 }
 
 func LogPanic(args ...interface{}) {
-	_logger.Panic(args)
+	prepareLogger().Panic(args)
 }
 
 func LogPanicWithFields(fields logrus.Fields, args ...interface{}) {
-	_logger.WithFields(fields).Panic(args)
+	prepareLogger().WithFields(fields).Panic(args)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
