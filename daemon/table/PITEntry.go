@@ -8,11 +8,11 @@
 
 package table
 
-
 import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"sync"
 	"sync/atomic"
@@ -135,7 +135,7 @@ func (p *PITEntry) SetDeleted(isDeleted bool) {
 //
 func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 	if p.Ticker == nil {
-		if duration==0{
+		if duration == 0 {
 			f(p)
 			return
 		}
@@ -143,10 +143,10 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 		go func() {
 			select {
 			case <-p.Ticker.C:
-				fmt.Println("执行回调函数")
+				common.LogInfo("执行回调函数")
 				f(p)
 			case p.ch <- 1:
-				fmt.Println("取消定时器 直接退出") //如果取消 则直接退出select
+				common.LogInfo("取消定时器 直接退出")
 				p.ch = make(chan int)
 			}
 			p.Ticker.Stop()
@@ -164,11 +164,11 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 //
 func (p *PITEntry) CancelTimer() {
 	//定时器设置空
-	if p.Ticker!=nil{
+	if p.Ticker != nil {
 		<-p.ch
 		return
 	}
-	fmt.Println("the ticker not start")
+	common.LogWarn("the ticker not start")
 }
 
 //

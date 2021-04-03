@@ -9,11 +9,11 @@
 package table
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"minlib/component"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 )
-
 
 //
 // 储存FIBEntry的前缀树
@@ -42,10 +42,11 @@ func CreateFIB() *FIB {
 //
 // @Description:
 //
-func (f *FIB) Init(){
+func (f *FIB) Init() {
 	f.lpm = &LpmMatcher{} //初始化
 	f.lpm.Create()        //初始化锁
 }
+
 //
 // 通过标识在前缀树中最长前缀匹配查找对应的FIBEntry 最长前缀匹配的意思是有尽量多个Component可以匹配到结果
 //
@@ -156,7 +157,9 @@ func (f *FIB) RemoveNextHopByFace(logicFace *lf.LogicFace) uint64 {
 				return 1
 			}
 		} else {
-			fmt.Println("FIBEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "FIBEntry transform fail")
 		}
 		return 0
 	})
@@ -173,26 +176,29 @@ func (f *FIB) Size() uint64 {
 		if _, ok := val.(*FIBEntry); ok {
 			return 1
 		} else {
-			fmt.Println("FIBEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "FIBEntry transform fail")
 		}
 		return 0
 	})
 }
 
-func (f *FIB) GetDepth() int{
+func (f *FIB) GetDepth() int {
 	// 根节点不存储数据
-	return f.lpm.GetDepth()-1
+	return f.lpm.GetDepth() - 1
 }
 
-
-func (f *FIB) GetAllEntry() []*FIBEntry{
+func (f *FIB) GetAllEntry() []*FIBEntry {
 	var fibEntrys []*FIBEntry
 	f.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if fibEntry, ok := val.(*FIBEntry); ok {
-			fibEntrys = append(fibEntrys,fibEntry)
+			fibEntrys = append(fibEntrys, fibEntry)
 			return 1
 		} else {
-			fmt.Println("FIBEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "FIBEntry transform fail")
 		}
 		return 0
 	})

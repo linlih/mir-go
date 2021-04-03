@@ -9,8 +9,9 @@
 package table
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"minlib/component"
+	"mir-go/daemon/common"
 )
 
 type StrategyTable struct {
@@ -24,7 +25,7 @@ func CreateStrategyTable() *StrategyTable {
 	return s
 }
 
-func (s *StrategyTable) Init(){
+func (s *StrategyTable) Init() {
 	s.lpm = &LpmMatcher{} //初始化
 	s.lpm.Create()        //初始化锁
 }
@@ -35,7 +36,9 @@ func (s *StrategyTable) Size() uint64 {
 		if _, ok := val.(*StrategyTableEntry); ok {
 			return 1
 		} else {
-			fmt.Println("StrategyTableEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "StrategyTableEntry transform fail")
 		}
 		return 0
 	})
@@ -48,7 +51,9 @@ func (s *StrategyTable) SetDefaultStrategy(strategyName string) {
 			strategyTableEntry.StrategyName = strategyName
 			return 1
 		} else {
-			fmt.Println("StrategyTableEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "StrategyTableEntry transform fail")
 		}
 		return 0
 	})

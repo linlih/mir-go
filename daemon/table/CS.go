@@ -9,15 +9,16 @@
 package table
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 type CS struct {
-	lpm 	*LpmMatcher //	最长前缀匹配器
-	Hits 	uint64  //	命中缓存次数
-	Misses 	uint64	//	没有命中缓存次数
+	lpm    *LpmMatcher //	最长前缀匹配器
+	Hits   uint64      //	命中缓存次数
+	Misses uint64      //	没有命中缓存次数
 }
 
 func CreateCS() *CS {
@@ -27,7 +28,7 @@ func CreateCS() *CS {
 	return c
 }
 
-func (c *CS) Init(){
+func (c *CS) Init() {
 	c.lpm = &LpmMatcher{} //初始化
 	c.lpm.Create()        //初始化锁
 }
@@ -38,7 +39,9 @@ func (c *CS) Size() uint64 {
 		if _, ok := val.(*CSEntry); ok {
 			return 1
 		} else {
-			fmt.Println("CSEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "CSEntry transform fail")
 		}
 		return 0
 	})

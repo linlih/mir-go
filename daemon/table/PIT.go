@@ -10,7 +10,9 @@ package table
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 )
 
@@ -41,7 +43,7 @@ func CreatePIT() *PIT {
 //
 // @Description:
 //
-func (p *PIT) Init(){
+func (p *PIT) Init() {
 	p.lpm = &LpmMatcher{} //初始化
 	p.lpm.Create()        //初始化锁
 }
@@ -57,7 +59,9 @@ func (p *PIT) Size() uint64 {
 		if _, ok := val.(*PITEntry); ok {
 			return 1
 		} else {
-			fmt.Println("PITEntry transform fail")
+			common.LogErrorWithFields(logrus.Fields{
+				"value": val,
+			}, "PITEntry transform fail")
 		}
 		return 0
 	})
@@ -165,7 +169,9 @@ func (p *PIT) EraseByLogicFace(logicFace *lf.LogicFace) uint64 {
 			}
 			return 0
 		}
-		fmt.Println("PITEntry transform fail")
+		common.LogErrorWithFields(logrus.Fields{
+			"value": val,
+		}, "PITEntry transform fail")
 		return 0
 	})
 }
