@@ -38,6 +38,7 @@ func (u *UdpTransport) Init(conn *net.UDPConn, remoteUdpAddr *net.UDPAddr) {
 	} else {
 		u.remoteAddr = remoteUdpAddr.String()
 		u.remoteUri = "udp://" + u.remoteAddr
+		u.remoteUdpAddr = *remoteUdpAddr
 	}
 }
 
