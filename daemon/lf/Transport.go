@@ -8,9 +8,9 @@
 package lf
 
 import (
-	"log"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 //
@@ -31,20 +31,20 @@ type Transport struct {
 // @return *packet.LpPacket	解析出的包
 // @return error		解析失败错误
 //
-func (t *Transport) parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
+func parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error) {
 	block, err := encoding.CreateBlockByBuffer(buf, true)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return nil, err
 	}
-	if block.IsValid() {
-		log.Println("recv packet from face invalid")
+	if !block.IsValid() {
+		common.LogWarn("recv packet from face invalid")
 		return nil, err
 	}
 	var lpPacket packet.LpPacket
 	err = lpPacket.WireDecode(block)
 	if err != nil {
-		log.Println("parse to lpPacket error")
+		common.LogWarn("parse to lpPacket error")
 		return nil, err
 	}
 	return &lpPacket, nil
@@ -57,17 +57,17 @@ func (t *Transport) parseByteArray2LpPacket(buf []byte) (*packet.LpPacket, error
 // @return int     编码后byte数组的长度
 // @return []byte	编码得到的byte数组
 //
-func (t *Transport) encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
+func encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	encodeBufLen, err := lpPacket.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return -1, nil
 	}
 	encodeBuf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return -1, nil
 	}
 	return encodeBufLen, encodeBuf

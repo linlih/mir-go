@@ -8,9 +8,10 @@
 package lf
 
 import (
-	"log"
+	"math"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 //
@@ -36,17 +37,20 @@ type LinkService struct {
 //
 func (l *LinkService) calculateLpPacketHeadSize() {
 	var lpPacket packet.LpPacket
-	lpPacket.SetId(0)
-	lpPacket.SetFragmentSeq(0)
-	lpPacket.SetFragmentNum(2)
+	lpPacket.SetId(math.MaxInt64)
+	lpPacket.SetFragmentSeq(math.MaxInt64)
+	lpPacket.SetFragmentNum(math.MaxInt64)
+	var buf [encoding.MaxPacketSize]byte
+	lpPacket.SetValue(buf[:])
 	var encoder encoding.Encoder
-	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	err := encoder.EncoderReset(encoding.MaxPacketSize+1000, 0)
 	if err != nil {
-		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
+		common.LogFatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
 	l.lpPacketHeadSize, err = lpPacket.WireEncode(&encoder)
+	l.lpPacketHeadSize -= encoding.MaxPacketSize
 	if err != nil {
-		log.Fatal("cannot calculate lpPacketHeadSize in LinkService init", err)
+		common.LogFatal("cannot calculate lpPacketHeadSize in LinkService init", err)
 	}
 }
 
@@ -64,12 +68,11 @@ func (l *LinkService) Init(mtu int) {
 
 //
 // @Description: 从lpPacket中提取出MINPacket对象
-// @receiver l
 // @param lpPacket  LpPacket 对象指针
 // @return *packet.MINPacket	MINPacket对象指针
 // @return error	提取失败错误信息
 //
-func (l *LinkService) getMINPacketFromLpPacket(lpPacket *packet.LpPacket) (*packet.MINPacket, error) {
+func getMINPacketFromLpPacket(lpPacket *packet.LpPacket) (*packet.MINPacket, error) {
 	payload := lpPacket.GetValue()
 	block, err := encoding.CreateBlockByBuffer(payload, true)
 	if err != nil {
@@ -92,9 +95,9 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 
 	// 未分包，只有一个包
 	if lpPacket.GetFragmentNum() == 1 {
-		minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
+		minPacket, err := getMINPacketFromLpPacket(lpPacket)
 		if err != nil {
-			log.Println(err)
+			common.LogWarn(err)
 			return
 		}
 		l.logicFace.ReceivePacket(minPacket)
@@ -104,9 +107,9 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if reassembleLpPacket == nil {
 		return
 	}
-	minPacket, err := l.getMINPacketFromLpPacket(lpPacket)
+	minPacket, err := getMINPacketFromLpPacket(lpPacket)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.logicFace.ReceivePacket(minPacket)
@@ -137,7 +140,7 @@ func (l *LinkService) sendFragment(buf []byte, bufLen int, fragmentId, fragmentN
 // @param bufLen	数据长度
 //
 func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
-	fragmentLen := l.mtu - l.lpPacketHeadSize
+	fragmentLen := l.mtu - l.lpPacketHeadSize - 10
 	startIdx := 0
 	fragmentSeq := 0
 	fragmentNum := bufLen / fragmentLen
@@ -150,6 +153,7 @@ func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
 		}
 		l.sendFragment(buf[startIdx:startIdx+fragmentLen], fragmentLen, l.lpPacketId, uint64(fragmentNum),
 			uint64(fragmentSeq))
+		startIdx += fragmentLen
 	}
 	l.lpPacketId++
 }
@@ -163,17 +167,17 @@ func (l *LinkService) SendInterest(interest *packet.Interest) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := interest.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -189,17 +193,17 @@ func (l *LinkService) SendData(data *packet.Data) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := data.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -215,17 +219,17 @@ func (l *LinkService) SendNack(nack *packet.Nack) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := nack.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
@@ -241,18 +245,34 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	bufLen, err := cPacket.WireEncode(&encoder)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	buf, err := encoder.GetBuffer()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return
 	}
 	l.sendByteBuffer(buf, bufLen)
+}
+
+//
+// @Description:  通过LpPacket验证用户身份
+// @param lpPacket
+// @return bool
+//
+func checkIdentity(lpPacket *packet.LpPacket) bool {
+	// TODO 先验证用户身份再创建face,待 完善 代码逻辑
+	return true
+	minPacket, err := getMINPacketFromLpPacket(lpPacket)
+	if err != nil {
+		return false
+	}
+	err = gkeyChain.Verify(minPacket)
+	return err == nil
 }

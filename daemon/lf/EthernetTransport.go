@@ -8,18 +8,12 @@
 package lf
 
 import (
-	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"log"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 	"time"
 )
-
-//
-// @Description: 以太网包过滤规则
-//
-const PcapFilter = "ether proto 0x8600"
 
 //
 // @Description:  用来发送和接收以太网帧
@@ -27,16 +21,16 @@ const PcapFilter = "ether proto 0x8600"
 //
 type EthernetTransport struct {
 	Transport
-	deviceName        string
-	localMacAddr      net.HardwareAddr       // MAC地址
-	remoteMacAddr     net.HardwareAddr       // MAC地址
-	snapshotLen       int32                  // 抓包长度
-	promiscuous       bool                   // 混杂模式
-	timeout           time.Duration          // 超时时间 <= 0表示不超时
-	handle            *pcap.Handle           // 文件描述符
-	status            bool                   // 状态
-	sendPacket        [10000]byte            // 发包缓冲区
-	etherTransportMap *map[string]*LogicFace // 对端mac地址和face对象映射表
+	deviceName    string
+	localMacAddr  net.HardwareAddr // MAC地址
+	remoteMacAddr net.HardwareAddr // MAC地址
+	snapshotLen   int32            // 抓包长度
+	promiscuous   bool             // 混杂模式
+	timeout       time.Duration    // 超时时间 <= 0表示不超时
+	handle        *pcap.Handle     // 文件描述符
+	status        bool             // 状态
+	sendPacket    [10000]byte      // 发包缓冲区
+
 }
 
 //
@@ -48,11 +42,10 @@ type EthernetTransport struct {
 // @param etherTransportMap	对端mac地址和face对象映射表，通过以太网接收到以太网帧时，通过以太网帧的源MAC地址，
 //			在 etherTransportMap 查找，确定用哪个logicFace来处理收到的包
 //
-func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr,
-	etherTransportMap *map[string]*LogicFace) {
+func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr) {
 	e.deviceName = ifName
 	e.snapshotLen = 10240 // 抓包的大小
-	e.promiscuous = true  // 混杂模式
+	e.promiscuous = false // 混杂模式
 	e.timeout = -1        // 超时时间
 
 	e.localMacAddr = localMacAddr
@@ -63,7 +56,7 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	e.localUri = "ether://" + e.localAddr
 	e.remoteUri = "ether://" + e.remoteAddr
 
-	e.etherTransportMap = etherTransportMap
+	//e.etherTransportMap = etherTransportMap
 	// 设置以太网包头部
 	copy(e.sendPacket[0:6], remoteMacAddr)
 	copy(e.sendPacket[6:12], localMacAddr)
@@ -74,15 +67,14 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	var err error
 	e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
 	if err != nil {
-		log.Println(err)
 		e.status = false
-		e.linkService.logicFace.state = false
+		common.LogFatal("open default net device error")
 	}
-	err = e.handle.SetBPFFilter(PcapFilter)
+	//mPcapFilter := "ether proto 0x8600"
+	err = e.handle.SetBPFFilter("ether proto 0x8888")
 	if err != nil {
-		log.Println(err)
 		e.status = false
-		e.linkService.logicFace.state = false
+		common.LogFatal("open default net device error")
 	}
 }
 
@@ -109,14 +101,14 @@ func (e *EthernetTransport) Close() {
 // @param lpPacket	以太网包对象
 //
 func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
-	encodeBufLen, encodeBuf := e.encodeLpPacket2ByteArray(lpPacket)
+	encodeBufLen, encodeBuf := encodeLpPacket2ByteArray(lpPacket)
 	if encodeBufLen <= 0 {
 		return
 	}
 	copy(e.sendPacket[14:], encodeBuf[0:encodeBufLen])
 	err := e.handle.WritePacketData(e.sendPacket[0 : 14+encodeBufLen])
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err, ", packet len = ", 14+encodeBufLen)
 	}
 }
 
@@ -126,12 +118,7 @@ func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 // @param lpPacket	收到的包
 //
 func (e *EthernetTransport) onReceive(lpPacket *packet.LpPacket, srcMacAddr string) {
-	logicFace, ok := (*e.etherTransportMap)[e.localMacAddr.String()+"-"+srcMacAddr]
-	if ok {
-		logicFace.linkService.ReceivePacket(lpPacket)
-		return
-	}
-	e.linkService.ReceivePacket(lpPacket)
+	// TODO 暂时不用这个函数
 }
 
 //
@@ -139,14 +126,5 @@ func (e *EthernetTransport) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 // @receiver e
 //
 func (e *EthernetTransport) Receive() {
-	if e.status == false {
-		return
-	}
-	pktSrc := gopacket.NewPacketSource(e.handle, e.handle.LinkType())
-	for pkt := range pktSrc.Packets() {
-		lpPacket, err := e.parseByteArray2LpPacket(pkt.Data()[14:])
-		if err != nil {
-			e.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
-		}
-	}
+	// TODO 暂时不用这个函数
 }

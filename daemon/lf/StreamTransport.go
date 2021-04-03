@@ -9,9 +9,9 @@ package lf
 
 import (
 	"errors"
-	"log"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 )
 
@@ -33,7 +33,7 @@ type StreamTransport struct {
 func (t *StreamTransport) Close() {
 	err := t.conn.Close()
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 	}
 }
 
@@ -43,7 +43,7 @@ func (t *StreamTransport) Close() {
 // @param lpPacket
 //
 func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
-	encodeBufLen, encodeBuf := t.encodeLpPacket2ByteArray(lpPacket)
+	encodeBufLen, encodeBuf := encodeLpPacket2ByteArray(lpPacket)
 	if encodeBufLen <= 0 {
 		return
 	}
@@ -51,7 +51,7 @@ func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
 	for writeLen < encodeBufLen {
 		writeRet, err := t.conn.Write(encodeBuf[:encodeBufLen])
 		if err != nil {
-			log.Println("send to tcp transport error")
+			common.LogError(err, "send to tcp transport error")
 			t.linkService.logicFace.Shutdown()
 			return
 		}
@@ -81,12 +81,12 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 	}
 	pktType, err := encoding.ReadVarNumber(buf, 0)
 	if err != nil {
-		log.Println(err)
+		common.LogWarn(err)
 		return err, 0
 	}
 	// 如果数据类型的 TLV 和 type值不等于   encoding.TlvLpPacket， 则接收出错，应该关闭当前logicFace
 	if pktType != encoding.TlvLpPacket {
-		log.Println("receive error pkt")
+		common.LogWarn("receive lpPacket from tcp type error")
 		return errors.New("receive lpPacket from tcp type error"), 0
 	}
 	// 如果接收到的数据长度小于 LpPacket 的小于长度 则要等待
@@ -97,9 +97,9 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 	pktLen, err := encoding.ReadVarNumber(buf, encoding.VlInt(pktTypeLen))
 	totalPktLen := uint64(pktTypeLen) + uint64(encoding.SizeOfVarNumber(pktLen)) + uint64(pktLen)
 	if bufLen >= totalPktLen {
-		lpPacket, err := t.parseByteArray2LpPacket(buf[:totalPktLen])
+		lpPacket, err := parseByteArray2LpPacket(buf[:totalPktLen])
 		if err != nil {
-			log.Println("parse lpPacket error")
+			common.LogWarn("parse lpPacket error")
 		} else {
 			t.linkService.ReceivePacket(lpPacket)
 		}
@@ -129,7 +129,7 @@ func (t *StreamTransport) onReceive() error {
 	var dealLen = pktLen
 	// 循环多次尝试从接收缓冲区中读出包并处理
 	for err == nil && pktLen > 0 && dealLen < t.recvLen {
-		err, pktLen = t.readPktAndDeal(t.recvBuf[dealLen:t.recvLen-dealLen], t.recvLen-dealLen)
+		err, pktLen = t.readPktAndDeal(t.recvBuf[dealLen:t.recvLen], t.recvLen-dealLen)
 		dealLen += pktLen
 	}
 	if err != nil {
@@ -153,14 +153,16 @@ func (t *StreamTransport) Receive() {
 	for true {
 		recvRet, err := t.conn.Read(t.recvBuf[t.recvLen:])
 		if err != nil {
-			log.Println("recv from tcp transport error")
+			common.LogError("recv from tcp transport error")
 			t.linkService.logicFace.Shutdown()
+			break
 		}
 		t.recvLen += uint64(recvRet)
 		err = t.onReceive()
 		if err != nil {
-			log.Println("recv from tcp transport error")
+			common.LogError("recv from tcp transport error")
 			t.linkService.logicFace.Shutdown()
+			break
 		}
 	}
 }

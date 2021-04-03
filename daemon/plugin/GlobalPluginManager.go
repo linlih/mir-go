@@ -47,7 +47,7 @@ func (gpm *GlobalPluginManager) doInEveryPlugins(task Task) int {
 // @receiver gpm
 // @param plugin
 //
-func (gpm *GlobalPluginManager) registerPlugin(plugin IPlugin) {
+func (gpm *GlobalPluginManager) RegisterPlugin(plugin IPlugin) {
 	gpm.plugins = append(gpm.plugins, plugin)
 }
 

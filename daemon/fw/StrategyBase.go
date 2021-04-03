@@ -192,7 +192,7 @@ func (s *StrategyBase) sendData(egress *lf.LogicFace, data *packet.Data, pitEntr
 // @param pitEntry		Data 对应匹配的 PIT 条目
 //
 func (s *StrategyBase) sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
-	now := GetCurrentTime()
+	now := common.GetCurrentTime()
 	downStreams := make([]*lf.LogicFace, 0)
 
 	// 找到所有还没有过期，且不是 Data 到来的下游，并向所有符合条件的下游转发一个 Data 的备份

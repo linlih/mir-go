@@ -8,9 +8,9 @@
 package lf
 
 import (
-	"log"
 	"minlib/encoding"
 	"minlib/packet"
+	"mir-go/daemon/common"
 )
 
 type LogicFaceType uint32
@@ -71,7 +71,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	//TODO 把包入到待处理缓冲区
 	identifier, err := minPacket.GetIdentifier(0)
 	if err != nil {
-		log.Println("face ", lf.LogicFaceId, " receive packet has no identifier")
+		common.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
 		return
 	}
 	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
