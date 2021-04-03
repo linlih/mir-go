@@ -10,7 +10,12 @@ package mgmt
 import "container/list"
 
 //
-
+// 分片缓存结构体
+//
+// @Description:分片缓存结构体 包含允许存入的最大包数、当前存入的包数、
+//				实现缓存的双链表结构和哈希map结构
+// 				最后一个是删除数据的回调函数，暂时保留
+//
 type Cache struct {
 	max       int64                               //允许存入的最大数据包的个数
 	count     int64                               //当前已存入的数据包个数
@@ -19,13 +24,21 @@ type Cache struct {
 	OnEvicted func(key string, value interface{}) // 某条记录被移除时的回调函数，可以为 nil
 }
 
-// 存储在链表中的数据
+//
+// 缓存中存储的具体内容
+//
+// @Description:缓存中存储的具体内容，第一个内容索引方便删除数据，第二个参数存储的具体内容
+//
 type entry struct {
 	key   string // 淘汰队首节点时，需要用 key 从字典中删除对应的映射
 	value interface{}
 }
 
-// 实例化函数
+//
+// 缓存初始化函数
+//
+// @Description:缓存初始化函数
+//
 func New(max int64, onEvicted func(string, interface{})) *Cache {
 	return &Cache{
 		max:       max,
@@ -35,8 +48,13 @@ func New(max int64, onEvicted func(string, interface{})) *Cache {
 	}
 }
 
-// 查找函数 通过map找到对应的节点元素 取出 value 将该节点元素 放到队列尾
-// 对尾 队首 相对 这里约定 front 为队尾
+//
+// 从缓存中获取数据
+//
+// @Description:从缓存中获取数据，规则遵循LRU
+// @receiver c
+// Return:interface{},bool
+//
 func (c *Cache) Get(key string) (value interface{}, ok bool) {
 	if ele, ok := c.cache[key]; ok { //取map
 		c.ll.MoveToFront(ele)                 //元素移动到队首
@@ -47,7 +65,12 @@ func (c *Cache) Get(key string) (value interface{}, ok bool) {
 	return
 }
 
-// 删除函数 删除最少被访问的节点 队首节点 back 删除节点函数
+//
+// 从缓存中删除数据
+//
+// @Description:从缓存中删除数据，删除的规则遵循LRU
+// @receiver c
+//
 func (c *Cache) RemoveOldest() {
 	// 获取front
 	if ele := c.ll.Back(); ele != nil {
@@ -62,7 +85,12 @@ func (c *Cache) RemoveOldest() {
 	}
 }
 
-// 新增和修改函数
+//
+// 在缓存中添加数据
+//
+// @Description:在缓存中添加数据，规则遵循LRU
+// @receiver c
+//
 func (c *Cache) Add(key string, value interface{}) {
 	// 如果存在 则修改
 	if ele, ok := c.cache[key]; ok {
@@ -87,6 +115,13 @@ func (c *Cache) Add(key string, value interface{}) {
 		c.RemoveOldest()
 	}
 }
+
+//
+// 获取缓存中数据包个数
+//
+// @Description:获取缓存中数据包个数
+// @receiver c
+//
 func (c *Cache) Len() int {
 	return c.ll.Len()
 }

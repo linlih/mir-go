@@ -12,7 +12,7 @@ import (
 func Test(t *testing.T) {
 	interest := &packet.Interest{}
 	Prefix, _ := component.CreateIdentifierByString("/fib-mgmt/add")
-	para := &mgmt.ControlParameters{LogicfaceId: 1, Cost: 1, Prefix: Prefix}
+	para := &mgmt.ControlParameters{}
 	byteArrary, _ := json.Marshal(para)
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
 	identifier := *topPrefix

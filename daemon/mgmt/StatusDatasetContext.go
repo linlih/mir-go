@@ -8,11 +8,11 @@
 package mgmt
 
 import (
-	"fmt"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/mgmt"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/utils"
 	"strconv"
 	"time"
@@ -25,26 +25,41 @@ const (
 )
 
 //
-// 数据集上下文，由 Dispatcher 创建，传递给具体的管理模块，管理模块调用本上下文对象将数据通过 Dispatcher 发出
+// 发送数据包回调
 //
-// @Description:
+// @Description:发送数据包回调
 //
-
 type DataSender func(data *packet.Data)
 
+//
+// 发送错误信息回调
+//
+// @Description:发送错误信息回调
+//
 type NackSender func(response *mgmt.ControlResponse, interest *packet.Interest)
 
+//
+// 分片数据集上下文结构体
+//
+// @Description:分片数据集上下文结构体
+// @receiver s
+//
 type StatusDatasetContext struct {
-	interest   *packet.Interest
+	interest   *packet.Interest     // 兴趣包指针
 	Prefix     component.Identifier // 要发布的数据的前缀
 	FreshTime  time.Duration        // 生成的 Data 的新鲜期，默认为 1 s
-	state      int
-	segmentNo  int
-	data       []byte
-	dataSender DataSender
-	nackSender NackSender
+	state      int                  // 兴趣包状态
+	segmentNo  int                  // 分片号
+	data       []byte               // 分片数据
+	dataSender DataSender           // 发送数据包回调
+	nackSender NackSender           // 发送错误信息回调
 }
 
+//
+// 创建数据集上下文函数
+//
+// @Description:创建数据集上下文函数
+//
 func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender NackSender) *StatusDatasetContext {
 	return &StatusDatasetContext{
 		Prefix:     *interest.GetName(),
@@ -56,15 +71,14 @@ func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender Nack
 }
 
 //
-// 添加一个要发送的 Block 作为响应
+// 对数据集分片并缓存和发送
 //
 // @Description:
 // @receiver s
-// @param block
 //
 func (s *StatusDatasetContext) Append() {
 	if s.state == FINALIZED {
-		fmt.Println("state is in FINALIZED")
+		common.LogWarn("state is in FINALIZED")
 		return
 	}
 	s.state = RESPONDED
@@ -99,7 +113,7 @@ func (s *StatusDatasetContext) Append() {
 //
 func (s *StatusDatasetContext) Reject(response *mgmt.ControlResponse) {
 	if s.state != INITIAL {
-		fmt.Println("state is in RESPONDED or FINALIZED")
+		common.LogWarn("state is in RESPONDED or FINALIZED")
 		return
 	}
 	s.state = FINALIZED

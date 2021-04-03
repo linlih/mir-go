@@ -9,52 +9,70 @@ package mgmt
 
 import (
 	"encoding/json"
-	"fmt"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 	"strconv"
 )
 
+//
+// fib管理模块结构体
+//
+// @Description:fib管理模块结构体
+//
 type FibManager struct {
-	fib *table.FIB
+	fib *table.FIB //fib表
 }
 
+//
+// 创建fib管理模块函数
+//
+// @Description:创建fib管理模块函数并返回指针
+//
 func CreateFibManager() *FibManager {
 	return &FibManager{
 		fib: table.CreateFIB(),
 	}
 }
 
-// 注册命令 一个前缀对应一个命令
+//
+// fib管理模块初始化注册命令函数
+//
+// @Description:fib管理模块初始化注册命令函数
+// @receiver f
+//
 func (f *FibManager) Init() {
 	identifier, _ := component.CreateIdentifierByString("/fib-mgmt/add")
 	err := dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.AddNextHop)
 	if err != nil {
-		fmt.Println("add add-command fail,the err is:", err)
+		common.LogError("add add-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/delete")
 	err = dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.RemoveNextHop)
 	if err != nil {
-		fmt.Println("add delete-command fail,the err is:", err)
+		common.LogError("add delete-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, authorization, f.ListEntries)
 	if err != nil {
-		fmt.Println("add list-command fail,the err is:", err)
+		common.LogError("add list-command fail,the err is:", err)
 	}
 }
 
-// 在 FIB 表中添加一个到指定前缀的路由
-// mirc fib add identifier <IDENTIFIER> nexthop <LFID> [cost <COST>]
-
+//
+// fib表中添加下一跳
+//
+// @Description:fib表中添加下一跳并返回添加结果
+// @receiver f
+//
 func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
-	prefix := parameters.Prefix
-	logicfaceId := parameters.LogicfaceId
-	cost := parameters.Cost
+	prefix := parameters.ControlParameterPrefix.Prefix()
+	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
+	cost := parameters.ControlParameterCost.Cost()
 	// 标识前缀 不能太长 太长返回错误信息
 	if prefix.Size() > table.MAX_DEPTH {
 		// 返回前缀太长的错误信息
@@ -63,7 +81,7 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 	// 根据Id从table中取出 logicface
 	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
-		fmt.Println(prefix.ToUri() + " logicfaceId:" + strconv.FormatUint(logicfaceId, 10) + "failed!")
+		common.LogError(prefix.ToUri() + " logicfaceId:" + strconv.FormatUint(logicfaceId, 10) + "failed!")
 		return &mgmt.ControlResponse{Code: 410, Msg: "the face is not found"}
 	}
 	// 执行添加下一跳命令 放入表中
@@ -71,11 +89,17 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 	return &mgmt.ControlResponse{Code: 200, Msg: "add next hop success"}
 }
 
+//
+// 根据logicface在fib表中删除下一跳
+//
+// @Description:根据logicface在fib表中删除下一跳并返回删除结果
+// @receiver f
+//
 func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
 	// 获取前缀
-	prefix := parameters.Prefix
-	logicfaceId := parameters.LogicfaceId
+	prefix := parameters.ControlParameterPrefix.Prefix()
+	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	// 根据Id从table中取出 logicface
 	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
@@ -91,7 +115,7 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 		// 如果空 直接删除整个表项
 		err := f.fib.EraseByFIBEntry(fibEntry)
 		if err != nil {
-			fmt.Println(err)
+			common.LogError(err)
 			return &mgmt.ControlResponse{Code: 412, Msg: err.Error()}
 		}
 	}
@@ -99,6 +123,12 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 	return &mgmt.ControlResponse{Code: 200, Msg: "remove next hop success"}
 }
 
+//
+// 获取fib表中所有的下一跳信息
+//
+// @Description:获取fib表中所有信息，并分片发送给客户端
+// @receiver f
+//
 func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *packet.Interest,
 	context *StatusDatasetContext) {
 	fibEntrys := f.fib.GetAllEntry()
@@ -118,9 +148,17 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 	context.data = newData
 }
 
-// FibManager验证参数函数 返回是否验证成功
+//
+// fib管理模块参数验证函数
+//
+// @Description:fib管理模块的参数验证函数，条件语句中的为必需字段，若有一项不合规范则返回false
+// @receiver f
+// @Return:bool
+//
 func (f *FibManager) ValidateParameters(parameters *mgmt.ControlParameters) bool {
-	if parameters.Prefix != nil && parameters.Cost > 0 && parameters.LogicfaceId > 0 {
+	if parameters.ControlParameterPrefix.IsInitial() &&
+		parameters.ControlParameterCost.IsInitial() &&
+		parameters.ControlParameterLogicFaceId.IsInitial() {
 		return true
 	}
 	return false

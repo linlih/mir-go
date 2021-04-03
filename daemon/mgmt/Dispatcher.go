@@ -1,3 +1,10 @@
+//
+// @Author: yzy
+// @Description:
+// @Version: 1.0.0
+// @Date: 2021/3/10 3:13 下午
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
 package mgmt
 
 import (
@@ -6,30 +13,49 @@ import (
 	"minlib/mgmt"
 	"minlib/packet"
 	"minlib/security"
+	"mir-go/daemon/common"
 	"sync"
 )
 
+//
+// 行为模块结构体
+//
+// @Description:行为模块结构体，一个行为对应一个模块，如add、delete、list等
+//   			同时携带了行为对应的前缀relPrefix 参数验证函数、授权函数、
+//				行为对应的注册函数、分片函数、没有命中缓存执行的回调函数
+//
 type Module struct {
-	relPrefix          *component.Identifier
-	validateParameters ValidateParameters
-	authorization      Authorization
-	ccHandler          ControlCommandHandler
-	sdHandler          StatusDatasetHandler
-	missStorage        InterestHandler
+	relPrefix          *component.Identifier // 行为模块前缀 如/fib-mgmt/add
+	validateParameters ValidateParameters    //	参数验证函数
+	authorization      Authorization         // 授权函数
+	ccHandler          ControlCommandHandler // 注册命令回调函数
+	sdHandler          StatusDatasetHandler  // 数据处理分片回调函数
+	missStorage        InterestHandler       // 没有命中缓存的回调函数
 }
 
-type Dispacher struct {
-	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取
-	module        map[string]*Module
-	topLock       *sync.RWMutex // 读写锁
-	moduleLock    *sync.RWMutex
-	KeyChain      *security.KeyChain       // 网络包签名和验签 发送数据包的时候使用
-	SignInfo      *component.SignatureInfo // 表示签名的元数据
-	Cache         *Cache
+//
+// 调度器结构体
+//
+// @Description:调度器结构体，全局变量定义在Init.go中，包含顶级域map、行为模块map、
+//   			读写锁，对网络包进行签名和验签、签名元数据、缓存
+//
+type Dispatcher struct {
+	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
+	module        map[string]*Module               // 行为模块
+	topLock       *sync.RWMutex                    // 顶级域map读写锁
+	moduleLock    *sync.RWMutex                    // 行为模块map读写锁
+	KeyChain      *security.KeyChain               // 网络包签名和验签 发送数据包的时候使用
+	SignInfo      *component.SignatureInfo         // 表示签名的元数据
+	Cache         *Cache                           // 存储数据包分片缓存
 }
 
-func CreateDispatcher() *Dispacher {
-	return &Dispacher{
+//
+// 创建调度器函数
+//
+// @Description:创建调度器函数，对调度器进行初始化
+//
+func CreateDispatcher() *Dispatcher {
+	return &Dispatcher{
 		topPrefixList: make(map[string]*component.Identifier),
 		module:        make(map[string]*Module),
 		topLock:       new(sync.RWMutex),
@@ -38,29 +64,45 @@ func CreateDispatcher() *Dispacher {
 	}
 }
 
-// 顶级域加入到切片中
-func (d *Dispacher) AddTopPrefix(topPrefix *component.Identifier) {
+//
+// 添加顶级域函数
+//
+// @Description:在顶级域map中注册顶级域 顶级域分为本地:/min-mir/mgmt/localhost
+// 				远程:/<路由器前缀>/min-mir/mgmt/remote 等
+//
+func (d *Dispatcher) AddTopPrefix(topPrefix *component.Identifier) {
 	d.topLock.Lock()
 	defer d.topLock.Unlock()
 	d.topPrefixList[topPrefix.ToUri()] = topPrefix
 }
 
-// 从切片中删除顶级域
-func (d *Dispacher) RemoveTopPrefix(topPrefix *component.Identifier) {
+//
+// 删除顶级域函数
+//
+// @Description:在map中删除顶级域
+//
+func (d *Dispatcher) RemoveTopPrefix(topPrefix *component.Identifier) {
 	d.topLock.Lock()
 	defer d.topLock.Unlock()
 	delete(d.topPrefixList, topPrefix.ToUri())
 }
 
-//	在调度器中添加控制命令 add/delete ...
-func (d *Dispacher) AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
+//
+// 注册控制命令函数
+//
+// @Description:注册控制命令函数,如:add、delete等控制命令
+// @Return:error
+func (d *Dispatcher) AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
 	handler ControlCommandHandler) error {
 	if len(d.topPrefixList) == 0 {
-		return createDispacherErrorByType(TopPrefixsEmpty)
+		return createDispatcherErrorByType(TopPrefixesEmpty)
 	}
+	moduleLock.RLock()
 	if _, ok := d.module[relPrefix.ToUri()]; ok {
-		return createDispacherErrorByType(CommandExisted)
+		return createDispatcherErrorByType(CommandExisted)
 	}
+	moduleLock.RUnlock()
+
 	moduleLock.Lock()
 	defer moduleLock.Unlock()
 	d.module[relPrefix.ToUri()] = &Module{
@@ -68,20 +110,26 @@ func (d *Dispacher) AddControlCommand(relPrefix *component.Identifier, authoriza
 		authorization:      authorization,
 		validateParameters: validateParameters,
 		ccHandler:          handler}
-
 	return nil
 }
 
-// list...命令
-func (d *Dispacher) AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler) error {
+//
+// 注册数据集命令函数
+//
+// @Description:注册数据集命令函数,如:list 等数据集命令
+// @Return:error
+//
+func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler) error {
 	// 顶级域空 返回错误
 	if len(d.topPrefixList) == 0 {
-		return createDispacherErrorByType(TopPrefixsEmpty)
+		return createDispatcherErrorByType(TopPrefixesEmpty)
 	}
+	moduleLock.RLock()
 	if _, ok := d.module[relPrefix.ToUri()]; ok {
-		fmt.Println("the command is existed!")
-		return createDispacherErrorByType(CommandExisted)
+		common.LogError("the command is existed!")
+		return createDispatcherErrorByType(CommandExisted)
 	}
+	moduleLock.RUnlock()
 
 	moduleLock.Lock()
 	defer moduleLock.Unlock()
@@ -93,8 +141,12 @@ func (d *Dispacher) AddStatusDataset(relPrefix *component.Identifier, authorizat
 
 }
 
-// 查找数据包切片 并发送
-func (d *Dispacher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
+//
+// 查询缓存函数
+//
+// @Description:查询分片缓存，若存在直接取出发送，若不存在从表中请求数据，并分片存储到缓存当中
+//
+func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
 	if v, ok := d.Cache.Get(interest.ToUri()); ok {
 		// 发送分片
@@ -105,11 +157,21 @@ func (d *Dispacher) queryStorage(topPrefix *component.Identifier, interest *pack
 	}
 }
 
-func (d *Dispacher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
+//	TODO:暂未实现
+// 发送控制回复给客户端
+//
+// @Description:发送控制回复给客户端
+//
+func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
 
 }
 
-func (d *Dispacher) sendData(data *packet.Data) {
+// TODO:暂未实现
+// 发送数据包给客户端
+//
+// @Description:发送数据包给客户端
+//
+func (d *Dispatcher) sendData(data *packet.Data) {
 
 }
 
@@ -119,23 +181,23 @@ func (d *Dispacher) sendData(data *packet.Data) {
 
 const (
 	NotMatchTopPrefix = iota
-	TopPrefixsEmpty
+	TopPrefixesEmpty
 	CommandExisted
 )
 
-type DispacherError struct {
+type DispatcherError struct {
 	msg string
 }
 
-func (d DispacherError) Error() string {
-	return fmt.Sprintf("DispacherError: %s", d.msg)
+func (d DispatcherError) Error() string {
+	return fmt.Sprintf("DispatcherError: %s", d.msg)
 }
 
-func createDispacherErrorByType(errorType int) (err DispacherError) {
+func createDispatcherErrorByType(errorType int) (err DispatcherError) {
 	switch errorType {
 	case NotMatchTopPrefix:
 		err.msg = "the command prefix not match top prefix"
-	case TopPrefixsEmpty:
+	case TopPrefixesEmpty:
 		err.msg = "the top prefixs is empty"
 	case CommandExisted:
 		err.msg = "the command is already existed"

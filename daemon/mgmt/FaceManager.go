@@ -9,10 +9,10 @@ package mgmt
 
 import (
 	"encoding/json"
-	"fmt"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"net"
 	"strconv"
@@ -25,62 +25,86 @@ const (
 	UnixLogicFace
 )
 
+//
+// face管理模块结构体
+//
+// @Description:face管理模块结构体
+//
 type FaceManager struct {
 }
 
+//
+// 创建face管理模块函数
+//
+// @Description:创建face管理模块函数并返回指针
+//
 func CreateFaceManager() *FaceManager {
 	return &FaceManager{}
 }
 
+//
+// face管理模块初始化注册命令
+//
+// @Description:face管理模块初始化注册命令，包括create、destroy、list
+// @receiver f
+//
 func (f *FaceManager) Init() {
 	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/create")
 	err := dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.createFace)
 	if err != nil {
-		fmt.Println("face add create-command fail,the err is:", err)
+		common.LogError("face add create-command fail,the err is:", err)
 	}
 
 	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/destroy")
 	err = dispatcher.AddControlCommand(identifier, authorization, f.ValidateParameters, f.destroyFace)
 	if err != nil {
-		fmt.Println("face add destroy-command fail,the err is:", err)
+		common.LogError("face add destroy-command fail,the err is:", err)
 	}
 
 	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, authorization, f.listFaces)
 	if err != nil {
-		fmt.Println("face add list-command fail,the err is:", err)
+		common.LogError("face add list-command fail,the err is:", err)
 	}
 }
 
 //
+// 创建连接face函数
+//
+// @Description:创建连接face函数，有Ether、TCP、UDP、UNIX四种
+// @receiver f
+// @Return:*mgmt.ControlResponse返回创建结果
+//
 func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
-
-	switch parameters.Scheme {
+	uriScheme := parameters.ControlParameterUriScheme.UriScheme()
+	uri := parameters.ControlParameterUri.Uri()
+	localUri := parameters.ControlParameterLocalUri.LocalUri()
+	switch uriScheme {
 	case EtherLogicFace:
-		remoteMacAddr, err := net.ParseMAC(parameters.RemoteUri)
+		remoteMacAddr, err := net.ParseMAC(uri)
 		if err != nil {
 			return &mgmt.ControlResponse{Code: 400, Msg: "parse remote address fail,the err is:" + err.Error()}
 		}
-		logicFaceId, err := lf.CreateEtherLogicFace(parameters.LocalUri, remoteMacAddr)
+		logicFaceId, err := lf.CreateEtherLogicFace(localUri, remoteMacAddr)
 		if err != nil {
 			return &mgmt.ControlResponse{Code: 400, Msg: "create EtherLogicFace fail,the err is:" + err.Error()}
 		}
 		return &mgmt.ControlResponse{Code: 200, Msg: "create face success,the id is " + strconv.FormatUint(logicFaceId, 10)}
 	case TcpLogicFace:
-		logicFaceId, err := lf.CreateTcpLogicFace(parameters.RemoteUri)
+		logicFaceId, err := lf.CreateTcpLogicFace(uri)
 		if err != nil {
 			return &mgmt.ControlResponse{Code: 400, Msg: "create TcpLogicFace fail,the err is:" + err.Error()}
 		}
 		return &mgmt.ControlResponse{Code: 200, Msg: "create face success,the id is " + strconv.FormatUint(logicFaceId, 10)}
 	case UdpLogicFace:
-		logicFaceId, err := lf.CreateUdpLogicFace(parameters.RemoteUri)
+		logicFaceId, err := lf.CreateUdpLogicFace(uri)
 		if err != nil {
 			return &mgmt.ControlResponse{Code: 400, Msg: "create TcpLogicFace fail,the err is:" + err.Error()}
 		}
 		return &mgmt.ControlResponse{Code: 200, Msg: "create face success,the id is " + strconv.FormatUint(logicFaceId, 10)}
 	case UnixLogicFace:
-		logicFaceId, err := lf.CreateUnixLogicFace(parameters.RemoteUri)
+		logicFaceId, err := lf.CreateUnixLogicFace(uri)
 		if err != nil {
 			return &mgmt.ControlResponse{Code: 400, Msg: "create TcpLogicFace fail,the err is:" + err.Error()}
 		}
@@ -90,16 +114,29 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 	}
 }
 
+//
+// 根据LogicfaceId从全局FaceTable中删除face
+//
+// @Description:根据LogicfaceId从全局FaceTable中删除face
+// @receiver f
+// @Return:*mgmt.ControlResponse返回删除结果
+//
 func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(parameters.LogicfaceId)
+	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
+	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
 		return &mgmt.ControlResponse{Code: 400, Msg: "the face is not existed"}
 	}
-	lf.GLogicFaceTable.RemoveByLogicFaceId(parameters.LogicfaceId)
+	lf.GLogicFaceTable.RemoveByLogicFaceId(logicfaceId)
 	return &mgmt.ControlResponse{Code: 200, Msg: "ok"}
 }
 
+//
+// 获取所有的逻辑face并分片发送给客户端
+//
+// @Description:获取所有的逻辑face并分片发送给客户端
+// @receiver f
 //
 func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packet.Interest,
 	context *StatusDatasetContext) {
@@ -120,8 +157,17 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 	context.data = newData
 }
 
+//
+// face管理模块的参数验证函数
+//
+// @Description:face管理模块的参数验证函数，条件语句中的为必需字段，若有一项不合规范则返回false
+// @receiver f
+// @Return:bool
+//
 func (f *FaceManager) ValidateParameters(parameters *mgmt.ControlParameters) bool {
-	if parameters.RemoteUri != "" && parameters.LocalUri != "" && parameters.Scheme != 0 {
+	if parameters.ControlParameterUri.IsInitial() &&
+		parameters.ControlParameterLocalUri.IsInitial() &&
+		parameters.ControlParameterUriScheme.IsInitial() {
 		return true
 	}
 	return false
