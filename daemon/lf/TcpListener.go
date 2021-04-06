@@ -36,7 +36,7 @@ func (t *TcpListener) Init() {
 // @receiver t
 // @param conn	新TCP连接句柄
 //
-func (t *TcpListener) createTcpLogicFace(conn net.Conn) {
+func (t *TcpListener) tryCreateTcpLogicFace(conn net.Conn) {
 	logicFace, _ := createTcpLogicFace(conn)
 	logicFace.Start()
 }
@@ -51,7 +51,7 @@ func (t *TcpListener) accept() {
 		if err != nil {
 			common.LogFatal(err)
 		}
-		t.createTcpLogicFace(newConnect)
+		t.tryCreateTcpLogicFace(newConnect)
 	}
 }
 

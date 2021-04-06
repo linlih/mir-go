@@ -68,7 +68,11 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
-	//TODO 把包入到待处理缓冲区
+	//把包入到待处理缓冲区
+	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
+		LogicFace: lf,
+		MinPacket: minPacket,
+	})
 	identifier, err := minPacket.GetIdentifier(0)
 	if err != nil {
 		common.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
