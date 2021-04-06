@@ -3,6 +3,7 @@ package main
 import (
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
+	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
 )
 
@@ -31,4 +32,19 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	forwarder := new(fw.Forwarder)
 	forwarder.Init(pluginManager, packetQueue)
 
+	// PacketValidator
+	packetValidator := new(fw.PacketValidator)
+	packetValidator.Init(mirConfig.ParallelVerifyNum, mirConfig.VerifyPacket, packetQueue)
+
+	// LogicFaceSystem
+	logicFaceTable := new(lf.LogicFaceTable)
+	logicFaceTable.Init()
+	logicFaceSystem := new(lf.LogicFaceSystem)
+	logicFaceSystem.Init(logicFaceTable, packetValidator)
+	logicFaceSystem.Start()
+
+	// TODO: 在这边启动管理模块的程序
+
+	// 启动转发处理流程（死循环阻塞）
+	forwarder.Start()
 }
