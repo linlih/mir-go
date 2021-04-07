@@ -118,7 +118,7 @@ func CreateUnixLogicFace(remoteUri string) (uint64, error) {
 // @return *logicface.LogicFace	其它模使用的logicFace
 // @return *
 //
-func CreateInnerLogicFacePair(remoteUri string) (*LogicFace, *logicface.LogicFace) {
+func CreateInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
 	lfServer, lfClient := createInnerLogicFacePair()
 	lfServer.Start()
 	return lfServer, lfClient
