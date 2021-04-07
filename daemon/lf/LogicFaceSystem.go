@@ -10,7 +10,6 @@ package lf
 import (
 	"minlib/security"
 	"mir-go/daemon/common"
-	"mir-go/daemon/fw"
 	"time"
 )
 
@@ -35,7 +34,7 @@ type LogicFaceSystem struct {
 	udpListener      UdpListener
 	unixListener     UnixStreamListener
 	logicFaceTable   *LogicFaceTable
-	packetValidator  *fw.PacketValidator
+	packetValidator  IPacketValidator
 }
 
 //
@@ -43,7 +42,7 @@ type LogicFaceSystem struct {
 // @receiver l
 // @param table
 //
-func (l *LogicFaceSystem) Init(table *LogicFaceTable, packetValidator *fw.PacketValidator) {
+func (l *LogicFaceSystem) Init(table *LogicFaceTable, packetValidator IPacketValidator) {
 	l.logicFaceTable = table
 	l.packetValidator = packetValidator
 	l.ethernetListener.Init()

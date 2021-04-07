@@ -1,20 +1,25 @@
-package lf
+package lf_test
 
 import (
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/fw"
+	"mir-go/daemon/lf"
 	"sync"
 	"testing"
 )
 
 func TestTcpTransport_Init(t *testing.T) {
-	var LfTb LogicFaceTable
+	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem LogicFaceSystem
-	Fsystem.Init(&LfTb)
+	var Fsystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := fw.BlockQueue{}
+	packetValidator.Init(100, false, &blockQueue)
+	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
 
-	id, err := CreateTcpLogicFace("192.168.159.129:13899")
+	id, err := lf.CreateTcpLogicFace("192.168.159.129:13899")
 	if err != nil {
 		t.Fatal("Create TCP logic face failed", err.Error())
 	}

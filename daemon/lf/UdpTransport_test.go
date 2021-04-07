@@ -5,12 +5,14 @@
 // @Date: 2021/3/31 下午7:45 
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
-package lf
+package lf_test
 
 import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/fw"
+	"mir-go/daemon/lf"
 	"testing"
 	"time"
 )
@@ -24,13 +26,16 @@ import (
  * VM1 会在终端中打印 "recv from :" 等信息，并正确解码相应的兴趣包
  ***************************************************************/
 func TestUdpTransport_Init(t *testing.T) {
-	var LfTb LogicFaceTable
+	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem LogicFaceSystem
-	Fsystem.Init(&LfTb)
+	var Fsystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := fw.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
+	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
 
-	id, err := CreateUdpLogicFace("192.168.0.9:13899")
+	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		t.Fatal("Create UDP logic face failed", err.Error())
 	}
@@ -53,10 +58,13 @@ func TestUdpTransport_Init(t *testing.T) {
 }
 
 func TestUdpTransport_Receive(t *testing.T) {
-	var LfTb LogicFaceTable
+	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem LogicFaceSystem
-	Fsystem.Init(&LfTb)
+	var Fsystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := fw.BlockQueue{}
+	packetValidator.Init(100, false, &blockQueue)
+	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
 
 	for true {
