@@ -9,6 +9,8 @@ package lf
 
 import (
 	"github.com/google/gopacket/pcap"
+	"minlib/logicface"
+	"minlib/packet"
 	"net"
 )
 
@@ -108,4 +110,30 @@ func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace,
 	logicFace.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
 	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
 	return &logicFace, logicFaceId
+}
+
+//
+// @Description: 创建一对相互收发包的内部logicFace，　需要调用者自己把要收包的logicface start 起来
+// @return *LogicFace	 转发器使用的logicFace
+// @return *logicface.LogicFace	其它模使用的logicFace
+// @return *
+//
+func createInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
+	chan1 := make(chan *packet.LpPacket)
+	chan2 := make(chan *packet.LpPacket)
+	var innerTransport InnerTransport
+	var linkService LinkService
+	var newLogicFace LogicFace
+	innerTransport.Init(chan1, chan2) // chan1 用于发包，　chan2用于收包
+	linkService.Init(9000)
+	linkService.transport = &innerTransport
+	linkService.logicFace = &newLogicFace
+	innerTransport.linkService = &linkService
+	newLogicFace.Init(&innerTransport, &linkService, LogicFaceTypeInner)
+	GLogicFaceTable.AddLogicFace(&newLogicFace)
+
+	var clientLogicFace logicface.LogicFace
+	_ = clientLogicFace.InitWithInnerChan(chan2, chan1)
+
+	return &newLogicFace, &clientLogicFace
 }

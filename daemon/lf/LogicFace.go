@@ -23,6 +23,7 @@ const (
 	LogicFaceTypeUDP   LogicFaceType = 1
 	LogicFaceTypeEther LogicFaceType = 2
 	LogicFaceTypeUnix  LogicFaceType = 3
+	LogicFaceTypeInner LogicFaceType = 4
 )
 
 //

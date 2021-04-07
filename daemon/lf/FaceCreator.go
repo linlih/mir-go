@@ -9,6 +9,7 @@ package lf
 
 import (
 	"errors"
+	"minlib/logicface"
 	"mir-go/daemon/common"
 	"net"
 )
@@ -109,4 +110,16 @@ func CreateUnixLogicFace(remoteUri string) (uint64, error) {
 	logicFace, logicFaceId := createUnixLogicFace(conn)
 	logicFace.Start()
 	return logicFaceId, nil
+}
+
+//
+// @Description: 创建一对相互收发包的内部logicFace，　需要调用者自己把要收包的logicface start 起来
+// @return *LogicFace	 转发器使用的logicFace
+// @return *logicface.LogicFace	其它模使用的logicFace
+// @return *
+//
+func CreateInnerLogicFacePair(remoteUri string) (*LogicFace, *logicface.LogicFace) {
+	lfServer, lfClient := createInnerLogicFacePair()
+	lfServer.Start()
+	return lfServer, lfClient
 }
