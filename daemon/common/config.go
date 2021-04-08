@@ -38,7 +38,7 @@ func (mirConfig *MIRConfig) Init() {
 	mirConfig.LogConfig.LogLevel = "INFO"
 	mirConfig.LogConfig.ReportCaller = true
 	mirConfig.LogConfig.LogFormat = "text"
-	mirConfig.LogConfig.LogFilePath = "~/.mir"
+	mirConfig.LogConfig.LogFilePath = ""
 
 	// table
 	mirConfig.TableConfig.CSSize = 500
