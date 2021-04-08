@@ -131,6 +131,8 @@ func (i *InterfaceListener) readPacketFromDev() {
 	for pkt := range pktSrc.Packets() {
 		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[14:])
 		if err != nil {
+			common.LogError("parse byte to lpPacket error : ", err)
+		} else {
 			i.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
 		}
 	}
