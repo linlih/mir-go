@@ -17,7 +17,6 @@ func main() {
 
 	// 初始化日志模块
 	common.InitLogger(mirConfig)
-
 	InitForwarder(mirConfig)
 }
 

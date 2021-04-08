@@ -41,6 +41,11 @@ func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *BlockQue
 	p.packetQueue = packetQueue
 	// 当且仅当需要进行签名验证时，才开启协程池
 	if needValidate {
+		if keyChain, err := security.CreateKeyChain(); err != nil {
+			common.LogFatal("Create KeyChain failed! msg => %s", err.Error())
+		} else {
+			p.keyChain = keyChain
+		}
 		p._pool, _ = ants.NewPool(cap)
 		if err := p.keyChain.InitialKeyChain(); err != nil {
 			// 如果初始化KeyChain失败，则认为是严重错误直接抛出错误退出程序
