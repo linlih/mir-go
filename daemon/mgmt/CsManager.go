@@ -36,8 +36,8 @@ type CsManager struct {
 func CreateCsManager() *CsManager {
 	return &CsManager{
 		cs:          new(table.CS),
-		enableServe: false,
-		enableAdd:   false,
+		enableServe: true,
+		enableAdd:   true,
 	}
 }
 
@@ -47,14 +47,14 @@ func CreateCsManager() *CsManager {
 // @Description:对CS管理模块注册三个必须的函数add、delete、list
 // @receiver c
 //
-func (c *CsManager) Init() {
+func (c *CsManager) Init(dispatcher *Dispatcher) {
 	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/delete")
-	err := dispatcher.AddControlCommand(identifier, authorization, c.ValidateParameters, c.changeConfig)
+	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, c.ValidateParameters, c.changeConfig)
 	if err != nil {
 		common.LogError("cs add delete-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/list")
-	err = dispatcher.AddStatusDataset(identifier, authorization, c.serveInfo)
+	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, c.serveInfo)
 	if err != nil {
 		common.LogError("cs add list-command fail,the err is:", err)
 	}
@@ -79,8 +79,8 @@ func (c *CsManager) changeConfig(topPrefix *component.Identifier, interest *pack
 // @Description:获取CS管理模块的服务信息，分片发送给客户端，信息包括配置信息、条目数量、命中缓存次数等
 // @receiver c
 //
-func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.Interest,
-	context *StatusDatasetContext) {
+func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
+	var response *mgmt.ControlResponse
 	if c.enableServe {
 		var CSInfo = struct {
 			enableServe bool
@@ -97,20 +97,25 @@ func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.
 		}
 		data, err := json.Marshal(CSInfo)
 		if err != nil {
-			res := &mgmt.ControlResponse{Code: 400, Msg: "mashal CSInfo fail , the err is:" + err.Error()}
-			context.nackSender(res, interest)
+			response = MakeControlResponse(400, "mashal CSInfo fail , the err is:"+err.Error(), "")
+			context.nackSender(response, interest)
 		}
-		res := &mgmt.ControlResponse{Code: 200, Msg: "", Data: string(data)}
-		newData, err := json.Marshal(res)
-		if err != nil {
-			res = &mgmt.ControlResponse{Code: 400, Msg: "mashal CSInfo fail , the err is:" + err.Error()}
-			context.nackSender(res, interest)
+		context.data = data
+		dataList := context.Append()
+		if dataList == nil {
+			response = MakeControlResponse(400, "slice data packet err!", "")
+			context.nackSender(response, interest)
 			return
+		} else {
+			for _, data := range dataList {
+				// 包编码放在dataSender中
+				context.dataSender(data)
+			}
 		}
-		context.data = newData
+	} else {
+		response = MakeControlResponse(400, "have no Permission to get CsInfo!", "")
+		context.nackSender(response, interest)
 	}
-	res := &mgmt.ControlResponse{Code: 400, Msg: "have no Permission to get CsInfo!"}
-	context.nackSender(res, interest)
 }
 
 //

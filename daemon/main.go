@@ -1,9 +1,11 @@
 package main
 
 import (
+	"minlib/component"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
 )
 
@@ -44,6 +46,25 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Start()
 
 	// TODO: 在这边启动管理模块的程序
+	fibManager := mgmt.CreateFibManager()
+	faceManager := mgmt.CreateFaceManager()
+	csManager := mgmt.CreateCsManager()
+	dispatcher := mgmt.CreateDispatcher()
+	fibManager.Init(dispatcher)
+	faceManager.Init(dispatcher)
+	csManager.Init(dispatcher)
+	// FIX:下面这两行暂时保留 后面可能需要删除
+	lf.GLogicFaceTable = &lf.LogicFaceTable{}
+	lf.GLogicFaceTable.Init()
+	faceServer, faceClient := lf.CreateInnerLogicFacePair()
+	dispatcher.FaceClient = faceClient
+	identifier, err := component.CreateIdentifierByString("/min-mir/mgmt/localhop")
+	if err != nil {
+		common.LogError("register prefix fail!the err is:", err)
+	}
+	dispatcher.AddTopPrefix(identifier)
+	fibManager.GetFib().AddOrUpdate(identifier, faceServer, 0)
+	dispatcher.Start()
 
 	// 启动转发处理流程（死循环阻塞）
 	forwarder.Start()

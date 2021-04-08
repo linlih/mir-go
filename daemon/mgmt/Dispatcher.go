@@ -10,10 +10,13 @@ package mgmt
 import (
 	"fmt"
 	"minlib/component"
+	"minlib/encoding"
+	"minlib/logicface"
 	"minlib/mgmt"
 	"minlib/packet"
 	"minlib/security"
 	"mir-go/daemon/common"
+	"os"
 	"sync"
 )
 
@@ -40,6 +43,7 @@ type Module struct {
 //   			读写锁，对网络包进行签名和验签、签名元数据、缓存
 //
 type Dispatcher struct {
+	FaceClient    *logicface.LogicFace             // 内部face，用来和转发器进行通信
 	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
 	module        map[string]*Module               // 行为模块
 	topLock       *sync.RWMutex                    // 顶级域map读写锁
@@ -47,6 +51,90 @@ type Dispatcher struct {
 	KeyChain      *security.KeyChain               // 网络包签名和验签 发送数据包的时候使用
 	SignInfo      *component.SignatureInfo         // 表示签名的元数据
 	Cache         *Cache                           // 存储数据包分片缓存
+}
+
+//
+// 调度器启动函数
+//
+// @Description:启动调度器进行收包监听
+//
+func (d *Dispatcher) Start() {
+	go func() {
+		for {
+			if d.FaceClient == nil {
+				common.LogError("faceClient is null!")
+				os.Exit(0)
+			}
+			minPacket, err := d.FaceClient.ReceivePacket()
+			if err != nil {
+				common.LogError("receive packet fail!the err is:", err)
+				d.FaceClient.Shutdown()
+				os.Exit(0)
+			}
+			if minPacket.PacketType != encoding.TlvPacketMINCommon {
+				common.LogWarn("receive minPacket from tcp type error")
+				continue
+			}
+			interest, err := packet.CreateInterestByMINPacket(minPacket)
+			if err != nil {
+				common.LogError("can not parse minPacket to interest!the err is:", err)
+				continue
+			}
+			actionPrefix, _ := interest.GetName().GetSubIdentifier(3, 2)
+			topPrefix, _ := interest.GetName().GetSubIdentifier(0, 3)
+			module := d.module[actionPrefix.ToUri()]
+			if module == nil {
+				common.LogWarn("the command is not registered!")
+				continue
+			}
+			parameters := &mgmt.ControlParameters{}
+			if module.authorization(topPrefix, interest, parameters, authorizationAccept, authorizationReject) {
+				if module.validateParameters(parameters) {
+					if module.ccHandler != nil {
+						module.ccHandler(topPrefix, interest, parameters)
+					}
+					if module.sdHandler != nil {
+						d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
+							var context = CreateSDC(interest, d.sendDataAndSave, d.sendControlResponse)
+							module.sdHandler(topPrefix, interest, context)
+						})
+					}
+				} else {
+					common.LogWarn("parameters validate fail!discard the packet!")
+				}
+
+			} else {
+				common.LogWarn("authority validate fail!discard the packet!")
+			}
+		}
+	}()
+}
+
+//
+// 授权验证函数
+//
+// @Description:对收到的兴趣包中的参数进行解析，并验证权限
+// @Return:bool
+//
+func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *mgmt.ControlParameters,
+	accept AuthorizationAccept,
+	reject AuthorizationReject) bool {
+	if _, ok := d.topPrefixList[topPrefix.ToUri()]; !ok {
+		// 顶级域不存在
+		reject(5)
+		return false
+	}
+	// 没有权限
+	if topPrefix.ToUri() == "" {
+		reject(6)
+		return false
+	}
+	if err := parameters.Parse(interest); err != nil {
+		common.LogError("解析控制参数错误！the err is:", err)
+	}
+	accept()
+	return true
 }
 
 //
@@ -166,13 +254,21 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 
 }
 
-// TODO:暂未实现
+// 发送数据包给客户端并缓存数据包
+//
+// @Description:发送数据包给客户端并缓存数据包
+//
+func (d *Dispatcher) sendDataAndSave(data *Data) {
+	d.Cache.Add(data.key, data.dataFrag)
+	// TODO
+}
+
 // 发送数据包给客户端
 //
 // @Description:发送数据包给客户端
 //
 func (d *Dispatcher) sendData(data *packet.Data) {
-
+	// TODO
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

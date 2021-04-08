@@ -8,6 +8,7 @@
 package mgmt
 
 import (
+	"encoding/json"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/mgmt"
@@ -29,7 +30,7 @@ const (
 //
 // @Description:发送数据包回调
 //
-type DataSender func(data *packet.Data)
+type DataSender func(data *Data)
 
 //
 // 发送错误信息回调
@@ -55,6 +56,11 @@ type StatusDatasetContext struct {
 	nackSender NackSender           // 发送错误信息回调
 }
 
+type Data struct {
+	key      string
+	dataFrag *packet.Data
+}
+
 //
 // 创建数据集上下文函数
 //
@@ -76,32 +82,63 @@ func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender Nack
 // @Description:
 // @receiver s
 //
-func (s *StatusDatasetContext) Append() {
+func (s *StatusDatasetContext) Append() []*Data {
+	var dataList []*Data
 	if s.state == FINALIZED {
 		common.LogWarn("state is in FINALIZED")
-		return
+		return nil
 	}
 	s.state = RESPONDED
 	size := encoding.SizeT(len(s.data))
+
+	// 加入分片头部
+	dataFrag := &packet.Data{}
+	var responseHeader = struct {
+		Code     int
+		FragNums int
+	}{Code: 200, FragNums: int(size / encoding.MaxPacketSize)}
+	if size%encoding.MaxPacketSize != 0 {
+		responseHeader.FragNums++
+	}
+	headerData, err := json.Marshal(responseHeader)
+	if err != nil {
+		common.LogError("mashal err,the err is : ", err)
+		return nil
+	}
+	prefix := s.Prefix
+	prefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(0)))
+	dataFrag.SetName(&prefix)
+	dataFrag.Payload.SetValue(headerData)
+
+	data := &Data{key: s.Prefix.ToUri() + "/" + strconv.Itoa(0), dataFrag: dataFrag}
+	//dispatcher.Cache.Add(s.Prefix.ToUri()+"/"+strconv.Itoa(0), data)
+	dataList = append(dataList, data)
+
+	// 分片内容
 	byteArrLeft := size
 	for byteArrLeft > 0 {
 		nBytesAppend := utils.Min(byteArrLeft, encoding.MaxPacketSize)
-		data := &packet.Data{}
+		dataFrag := &packet.Data{}
 		// 从1开始是分片
 		s.segmentNo += 1
 		//解引用防止篡改源数据
 		prefix := s.Prefix
+		// 原前缀上面加入分片号
 		prefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(s.segmentNo)))
-		data.SetName(&prefix)
-		data.Payload.SetValue(s.data[size-byteArrLeft : size-byteArrLeft+nBytesAppend])
+		// 设置好兴趣包
+		dataFrag.SetName(&prefix)
+		dataFrag.Payload.SetValue(s.data[size-byteArrLeft : size-byteArrLeft+nBytesAppend])
 
 		byteArrLeft -= nBytesAppend
 		if byteArrLeft <= 0 {
 			s.state = FINALIZED
 		}
-		dispatcher.Cache.Add(s.Prefix.ToUri()+strconv.Itoa(s.segmentNo), data)
-		s.dataSender(data)
+		//dispatcher.Cache.Add(s.Prefix.ToUri()+"/"+strconv.Itoa(s.segmentNo), data)
+		data := &Data{key: s.Prefix.ToUri() + "/" + strconv.Itoa(s.segmentNo), dataFrag: dataFrag}
+		dataList = append(dataList, data)
 	}
+
+	return dataList
 }
 
 //
