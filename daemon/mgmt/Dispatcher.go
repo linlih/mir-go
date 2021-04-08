@@ -72,8 +72,8 @@ func (d *Dispatcher) Start() {
 				os.Exit(0)
 			}
 			if minPacket.PacketType != encoding.TlvPacketMINCommon {
-				common.LogWarn("receive minPacket from tcp type error")
-				continue
+				//common.LogWarn("receive minPacket from tcp type error")
+				//continue
 			}
 			interest, err := packet.CreateInterestByMINPacket(minPacket)
 			if err != nil {
@@ -89,23 +89,28 @@ func (d *Dispatcher) Start() {
 			}
 			parameters := &mgmt.ControlParameters{}
 			if module.authorization(topPrefix, interest, parameters, authorizationAccept, authorizationReject) {
-				if module.validateParameters(parameters) {
-					if module.ccHandler != nil {
-						module.ccHandler(topPrefix, interest, parameters)
+
+				if module.ccHandler != nil {
+					if err := parameters.Parse(interest); err != nil {
+						common.LogError("解析控制参数错误！the err is:", err)
+						continue
 					}
-					if module.sdHandler != nil {
-						d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
-							var context = CreateSDC(interest, d.sendDataAndSave, d.sendControlResponse)
-							module.sdHandler(topPrefix, interest, context)
-						})
+					if !module.validateParameters(parameters) {
+						common.LogWarn("parameters validate fail!discard the packet!")
+						continue
+
 					}
-				} else {
-					common.LogWarn("parameters validate fail!discard the packet!")
+					module.ccHandler(topPrefix, interest, parameters)
 				}
 
-			} else {
-				common.LogWarn("authority validate fail!discard the packet!")
+				if module.sdHandler != nil {
+					d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
+						var context = CreateSDC(interest, d.sendDataAndSave, d.sendControlResponse)
+						module.sdHandler(topPrefix, interest, context)
+					})
+				}
 			}
+
 		}
 	}()
 }
@@ -130,9 +135,7 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 		reject(6)
 		return false
 	}
-	if err := parameters.Parse(interest); err != nil {
-		common.LogError("解析控制参数错误！the err is:", err)
-	}
+
 	accept()
 	return true
 }

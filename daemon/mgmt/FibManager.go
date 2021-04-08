@@ -149,6 +149,7 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 		context.nackSender(response, interest)
 		return
 	} else {
+		common.LogInfo("get fib info success,start send the data!")
 		for _, data := range dataList {
 			// 包编码放在dataSender中
 			context.dataSender(data)

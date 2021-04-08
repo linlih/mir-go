@@ -1,37 +1,56 @@
 package mgmt
 
 import (
-	"encoding/json"
-	"fmt"
 	"minlib/component"
+	"minlib/encoding"
 	"minlib/mgmt"
 	"minlib/packet"
+	"mir-go/daemon/lf"
 	"testing"
+	"time"
 )
 
 func Test(t *testing.T) {
-	interest := &packet.Interest{}
-	Prefix, _ := component.CreateIdentifierByString("/fib-mgmt/add")
-	para := &mgmt.ControlParameters{}
-	byteArrary, _ := json.Marshal(para)
+	fibManager := CreateFibManager()
+	faceManager := CreateFaceManager()
+	csManager := CreateCsManager()
+	dispatcher := CreateDispatcher()
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
-	identifier := *topPrefix
-	components := component.CreateIdentifierComponentByByteArray(byteArrary)
-	identifier.Append(components)
-	interest.SetName(&identifier)
-	module := dispatcher.module[Prefix.ToUri()]
-	if module.authorization(topPrefix, interest, para, authorizationAccept, authorizationReject) {
-		//普通查询
-		res := module.ccHandler(topPrefix, interest, para)
-		fmt.Println(res)
-		dispatcher.sendControlResponse(res, interest)
-		////表项查询 数据量大需要分片 自定义没有找到进行的操作
-		//dispatcher.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
-		//	var context = CreateSDC(interest, dispatcher.sendData, dispatcher.sendControlResponse)
-		//	module.sdHandler(topPrefix, interest, context)
-		//	// 放入缓存
-		//	context.Append()
-		//	// 发送Data数据包
-		//})
-	}
+	dispatcher.AddTopPrefix(topPrefix)
+	fibManager.Init(dispatcher)
+	faceManager.Init(dispatcher)
+	csManager.Init(dispatcher)
+	// FIX:下面这两行暂时保留 后面可能需要删除
+	lf.GLogicFaceTable = &lf.LogicFaceTable{}
+	lf.GLogicFaceTable.Init()
+	faceServer, faceClient := lf.CreateInnerLogicFacePair()
+	dispatcher.FaceClient = faceClient
+	topPrefix, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhop")
+	dispatcher.AddTopPrefix(topPrefix)
+	fibManager.GetFib().AddOrUpdate(topPrefix, faceServer, 0)
+	dispatcher.Start()
+	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhop/fib-mgmt/add")
+	logicfaceId := fibManager.fib.FindExactMatch(topPrefix).GetNextHops()[0].LogicFace.LogicFaceId
+	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	interest := &packet.Interest{}
+	parameters := &mgmt.ControlParameters{}
+
+	prefix, _ := component.CreateIdentifierByString("/min")
+	parameters.SetPrefix(prefix)
+	parameters.SetCost(10)
+	parameters.SetLogicFaceId(0)
+
+	var encoder = &encoding.Encoder{}
+	encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	parameters.WireEncode(encoder)
+	buf, _ := encoder.GetBuffer()
+
+	identifier.Append(component.CreateIdentifierComponentByByteArray(buf))
+	interest.SetName(identifier)
+	face.SendInterest(interest)
+	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhop/fib-mgmt/list")
+	interest.SetName(identifier)
+	face.SendInterest(interest)
+
+	time.Sleep(time.Minute)
 }
