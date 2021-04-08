@@ -2,7 +2,7 @@
 // @Author: Lihong Lin
 // @Description:
 // @Version: 1.0.0
-// @Date: 2021/3/31 下午7:45 
+// @Date: 2021/3/31 下午7:45
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
 package lf_test
@@ -62,13 +62,13 @@ func TestUdpTransport_Receive(t *testing.T) {
 	LfTb.Init()
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
+	blockQueue := fw.CreateBlockQueue(10)
+	packetValidator.Init(100, false, blockQueue)
 	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
 
 	for true {
-		time.Sleep(10*time.Second)
+		time.Sleep(10 * time.Second)
 		fmt.Println("等待收包")
 	}
 }
