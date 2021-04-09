@@ -154,6 +154,7 @@ func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
 		l.sendFragment(buf[startIdx:startIdx+fragmentLen], fragmentLen, l.lpPacketId, uint64(fragmentNum),
 			uint64(fragmentSeq))
 		startIdx += fragmentLen
+		fragmentSeq++
 	}
 	l.lpPacketId++
 }
