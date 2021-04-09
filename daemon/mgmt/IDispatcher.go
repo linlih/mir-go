@@ -82,8 +82,7 @@ type ControlCommandHandler func(topPrefix *component.Identifier, interest *packe
 // @param interest
 // @param context
 //
-type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet.Interest,
-	context *StatusDatasetContext)
+type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext)
 
 //
 // 兴趣包处理回调
