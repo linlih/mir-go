@@ -5,6 +5,7 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/utils"
 	"sync"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestTcpTransport_Init(t *testing.T) {
 	LfTb.Init()
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.BlockQueue{}
+	blockQueue := utils.BlockQueue{}
 	packetValidator.Init(100, false, &blockQueue)
 	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()

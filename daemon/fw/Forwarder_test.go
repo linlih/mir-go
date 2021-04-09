@@ -6,13 +6,14 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
+	"mir-go/daemon/utils"
 	"testing"
 )
 
 func TestForwarder_Init(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := CreateBlockQueue(20)
+	queue := utils.CreateBlockQueue(20)
 	forwarder.Init(newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	face := new(lf.LogicFace)
@@ -47,7 +48,7 @@ func TestForwarder_OnOutgoingInterest(t *testing.T) {
 	newName1, _ := component.CreateIdentifierByString("/min")
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := CreateBlockQueue(20)
+	queue := utils.CreateBlockQueue(20)
 	forwarder.Init(newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
@@ -82,7 +83,7 @@ func TestForwarder_OnInterestLoop(t *testing.T) {
 	newName1, _ := component.CreateIdentifierByString("/min")
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := CreateBlockQueue(20)
+	queue := utils.CreateBlockQueue(20)
 	forwarder.Init(newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
@@ -118,7 +119,7 @@ func TestForwarder_OnContentStoreHit(t *testing.T) {
 
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := CreateBlockQueue(20)
+	queue := utils.CreateBlockQueue(20)
 	forwarder.Init(newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	brs := BestRouteStrategy{StrategyBase{forwarder: forwarder}}

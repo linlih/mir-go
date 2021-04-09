@@ -5,7 +5,7 @@
 // @Date: 2021/3/26 9:59 上午
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
-package fw
+package utils
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ func CreateBlockQueue(size uint) *BlockQueue {
 // @return interface{}
 // @return error
 //
-func (b *BlockQueue) read() interface{} {
+func (b *BlockQueue) Read() interface{} {
 	return <-b.bufChan
 }
 
@@ -61,7 +61,7 @@ func (b *BlockQueue) read() interface{} {
 // @return interface{}
 // @return error
 //
-func (b *BlockQueue) readUntil(waitTime uint) (interface{}, error) {
+func (b *BlockQueue) ReadUntil(waitTime uint) (interface{}, error) {
 	ticker := time.NewTicker(time.Duration(waitTime) * time.Millisecond)
 	select {
 	case data := <-b.bufChan:
@@ -78,7 +78,7 @@ func (b *BlockQueue) readUntil(waitTime uint) (interface{}, error) {
 // @receiver b
 // @param data
 //
-func (b *BlockQueue) write(data interface{}) {
+func (b *BlockQueue) Write(data interface{}) {
 	b.bufChan <- data
 }
 
@@ -94,7 +94,7 @@ func (b *BlockQueue) write(data interface{}) {
 // @param data
 // @return error
 //
-func (b *BlockQueue) writeUtil(waitTime uint, data interface{}) error {
+func (b *BlockQueue) WriteUtil(waitTime uint, data interface{}) error {
 	ticker := time.NewTicker(time.Duration(waitTime) * time.Millisecond)
 	select {
 	case b.bufChan <- data:
@@ -113,7 +113,7 @@ type BlockQueueError struct {
 }
 
 var (
-	timeoutError = BlockQueueError{msg: fmt.Sprintf("Timeout for read or write!")}
+	timeoutError = BlockQueueError{msg: fmt.Sprintf("Timeout for Read or Write!")}
 )
 
 func (b BlockQueueError) Error() string {

@@ -7,6 +7,7 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
+	"mir-go/daemon/utils"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	//pluginManager.RegisterPlugin()
 
 	// 初始化 BlockQueue
-	packetQueue := fw.CreateBlockQueue(uint(mirConfig.ForwarderConfig.PacketQueueSize))
+	packetQueue := utils.CreateBlockQueue(uint(mirConfig.ForwarderConfig.PacketQueueSize))
 
 	// 初始化转发器
 	forwarder := new(fw.Forwarder)
