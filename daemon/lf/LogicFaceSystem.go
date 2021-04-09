@@ -42,14 +42,16 @@ type LogicFaceSystem struct {
 // @receiver l
 // @param table
 //
-func (l *LogicFaceSystem) Init(table *LogicFaceTable, packetValidator IPacketValidator) {
-	l.logicFaceTable = table
+func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.MIRConfig) {
+	var logicfaceTable LogicFaceTable
+	logicfaceTable.Init()
+	l.logicFaceTable = &logicfaceTable
 	l.packetValidator = packetValidator
 	l.ethernetListener.Init()
 	l.tcpListener.Init()
 	l.udpListener.Init()
 	l.unixListener.Init()
-	GLogicFaceTable = table
+	GLogicFaceTable = &logicfaceTable
 	gLogicFaceSystem = l
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {
