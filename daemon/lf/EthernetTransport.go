@@ -68,13 +68,15 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
 	if err != nil {
 		e.status = false
-		common.LogFatal("open default net device error: ", err.Error())
+		common.LogError("open default net device error")
+		return
 	}
 	//mPcapFilter := "ether proto 0x8600"
 	err = e.handle.SetBPFFilter("ether proto 0x8888")
 	if err != nil {
 		e.status = false
-		common.LogFatal("open default net device error: ", err.Error())
+		common.LogError("open default net device error")
+		return
 	}
 }
 

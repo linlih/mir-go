@@ -40,6 +40,9 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (u
 		return logicFace.LogicFaceId, nil
 	}
 	logicFace, _ = createEtherLogicFace(localIfName, ifListener.macAddr, remoteMacAddr, ifListener.mtu)
+	if logicFace == nil {
+		return 0, errors.New("create ether logic face fail")
+	}
 	ifListener.AddLogicFace(remoteMacAddr.String(), logicFace)
 	return logicFace.LogicFaceId, nil
 }
