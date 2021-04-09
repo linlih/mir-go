@@ -45,6 +45,9 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
 
+	// get LogicFaceTable
+	//logicFaceSystem.LogicFaceTable()
+
 	// TODO: 在这边启动管理模块的程序
 	fibManager := mgmt.CreateFibManager()
 	faceManager := mgmt.CreateFaceManager()
@@ -53,9 +56,6 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	fibManager.Init(dispatcher)
 	faceManager.Init(dispatcher)
 	csManager.Init(dispatcher)
-	// FIX:下面这两行暂时保留 后面可能需要删除
-	lf.GLogicFaceTable = &lf.LogicFaceTable{}
-	lf.GLogicFaceTable.Init()
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
 	identifier, err := component.CreateIdentifierByString("/min-mir/mgmt/localhop")
