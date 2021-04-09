@@ -12,11 +12,14 @@ import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/utils"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"testing"
+	"time"
 )
 
 func TestEthernetTransport_Send(t *testing.T) {
@@ -24,13 +27,13 @@ func TestEthernetTransport_Send(t *testing.T) {
 	LfTb.Init()
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
+	blockQueue := fw.CreateBlockQueue(10)
+	packetValidator.Init(100, false, blockQueue)
 	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
-
+	time.Sleep(5 * time.Second)
 	str := "00:0c:29:fa:de:18"
-	remote := "ff:ff:ff:ff:ff:ff"
+	remote := "00:0c:29:a1:35:bf"
 
 	interest := new(packet.Interest)
 	token := make([]byte, 7000)
@@ -46,11 +49,22 @@ func TestEthernetTransport_Send(t *testing.T) {
 		fmt.Println("local mac", err)
 	}
 	//remoteMac, err1 := net.ParseMAC(remote)
-	_, err1 := net.ParseMAC(remote)
+	remoteMac, err1 := net.ParseMAC(remote)
 	if err1 != nil {
 		fmt.Println("local mac", err1)
 	}
-	//face, faceid := createEtherLogicFace("ens33", localMac, remoteMac, 1500)
+	faceid, faceErr := lf.CreateEtherLogicFace("ens33", remoteMac)
+	if faceErr != nil {
+		common.LogError(faceErr)
+	}
+	logicFace := LfTb.GetLogicFacePtrById(faceid)
+	//指定pprof对外提供的http服务的ip和端口，配置为0.0.0.0表示可以非本机访问
+	go func() {
+		http.ListenAndServe("0.0.0.0:9999", nil)
+	}()
 	//fmt.Println(faceid)
-	//face.SendInterest(interest)
+	for {
+		logicFace.SendInterest(interest)
+	}
+
 }

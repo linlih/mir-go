@@ -72,7 +72,8 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 		return
 	}
 	//mPcapFilter := "ether proto 0x8600"
-	err = e.handle.SetBPFFilter("ether proto 0x8888")
+	common.LogInfo(e.localAddr)
+	err = e.handle.SetBPFFilter("ether proto 0x8888 and not ether src host " + e.localAddr)
 	if err != nil {
 		e.status = false
 		common.LogError("open default net device error", err)
