@@ -13,6 +13,8 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"net/http"
+	_ "net/http/pprof"
 	"testing"
 	"time"
 )
@@ -63,9 +65,17 @@ func TestUdpTransport_Receive(t *testing.T) {
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := fw.CreateBlockQueue(10)
-	packetValidator.Init(100, false, blockQueue)
+	packetValidator.Init(2, false, blockQueue)
 	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:9999", nil)
+	}()
+
+	for true {
+
+	}
 
 	for true {
 		time.Sleep(10 * time.Second)
