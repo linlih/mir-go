@@ -28,6 +28,7 @@ type EthernetListener struct {
 //
 func (e *EthernetListener) Init() {
 	e.mInterfaceListeners = make(map[string]*InterfaceListener)
+	e.badDev = make(map[string]int)
 }
 
 //
