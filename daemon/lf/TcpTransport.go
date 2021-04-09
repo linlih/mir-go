@@ -26,6 +26,6 @@ func (t *TcpTransport) Init(conn net.Conn) {
 	t.localUri = "tcp://" + t.localAddr
 	t.remoteAddr = conn.RemoteAddr().String()
 	t.remoteUri = "tcp://" + t.remoteAddr
-	t.recvBuf = make([]byte, 1024*1028*4)
+	t.recvBuf = make([]byte, 1024*1024*4)
 	t.recvLen = 0
 }

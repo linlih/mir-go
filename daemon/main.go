@@ -42,7 +42,7 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceTable := new(lf.LogicFaceTable)
 	logicFaceTable.Init()
 	logicFaceSystem := new(lf.LogicFaceSystem)
-	logicFaceSystem.Init(logicFaceTable, packetValidator)
+	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
 
 	// TODO: 在这边启动管理模块的程序
