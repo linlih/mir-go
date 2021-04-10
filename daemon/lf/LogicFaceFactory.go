@@ -36,7 +36,7 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 	linkService.logicFace = &logicFace
 	etherTransport.linkService = &linkService
 	logicFace.Init(&etherTransport, &linkService, LogicFaceTypeEther)
-	GLogicFaceTable.AddLogicFace(&logicFace)
+	gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
 
 	return &logicFace, etherTransport.handle
 }
@@ -61,7 +61,7 @@ func createTcpLogicFace(conn net.Conn) (*LogicFace, uint64) {
 	tcpTransport.linkService = &linkService
 
 	logicFace.Init(&tcpTransport, &linkService, LogicFaceTypeTCP)
-	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
 	return &logicFace, logicFaceId
 }
 
@@ -85,7 +85,7 @@ func createUnixLogicFace(conn net.Conn) (*LogicFace, uint64) {
 	unixTransport.linkService = &linkService
 
 	logicFace.Init(&unixTransport, &linkService, LogicFaceTypeUnix)
-	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
 	return &logicFace, logicFaceId
 }
 
@@ -110,7 +110,7 @@ func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace,
 	udpTransport.linkService = &linkService
 
 	logicFace.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
-	logicFaceId := GLogicFaceTable.AddLogicFace(&logicFace)
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
 	return &logicFace, logicFaceId
 }
 
@@ -132,7 +132,7 @@ func createInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
 	linkService.logicFace = &newLogicFace
 	innerTransport.linkService = &linkService
 	newLogicFace.Init(&innerTransport, &linkService, LogicFaceTypeInner)
-	GLogicFaceTable.AddLogicFace(&newLogicFace)
+	gLogicFaceSystem.logicFaceTable.AddLogicFace(&newLogicFace)
 
 	var clientLogicFace logicface.LogicFace
 	_ = clientLogicFace.InitWithInnerChan(chan2, chan1)

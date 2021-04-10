@@ -50,7 +50,6 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	l.tcpListener.Init()
 	l.udpListener.Init()
 	l.unixListener.Init()
-	GLogicFaceTable = &logicFaceTable
 	gLogicFaceSystem = l
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {
@@ -88,7 +87,7 @@ func (l *LogicFaceSystem) destroyFace(logicFaceId uint64, logicFace *LogicFace) 
 //
 func (l *LogicFaceSystem) doFaceClean() {
 	curTime := getTimestampMS()
-	for k, v := range GLogicFaceTable.mLogicFaceTable {
+	for k, v := range l.logicFaceTable.mLogicFaceTable {
 		if v.state == false {
 			l.destroyFace(k, v)
 		} else if v.expireTime < curTime { // logicFace已经超时

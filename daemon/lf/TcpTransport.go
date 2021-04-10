@@ -16,7 +16,7 @@ type TcpTransport struct {
 }
 
 //
-// @Description:  初始化TcpTransport
+// @Description:  初始化 TcpTransport
 // @receiver t
 // @param conn
 //
