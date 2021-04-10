@@ -8,6 +8,7 @@
 package mgmt
 
 import (
+	"encoding/json"
 	"fmt"
 	"minlib/component"
 	"minlib/encoding"
@@ -100,7 +101,8 @@ func (d *Dispatcher) Start() {
 						continue
 
 					}
-					module.ccHandler(topPrefix, interest, parameters)
+					response := module.ccHandler(topPrefix, interest, parameters)
+					d.sendControlResponse(response, interest)
 				}
 
 				if module.sdHandler != nil {
@@ -241,9 +243,11 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 	// 如果在缓存中找到分片
 	if v, ok := d.Cache.Get(interest.ToUri()); ok {
 		// 发送分片
+		common.LogInfo("hit the cache")
 		d.sendData(v.(*packet.Data))
 	} else {
 		// 没找到 发起请求数据 并添加到缓存中
+		common.LogInfo("miss the cache")
 		missStorage(topPrefix, interest)
 	}
 }
@@ -254,6 +258,15 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 // @Description:发送控制回复给客户端
 //
 func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
+	if dataByte, err := json.Marshal(response); err == nil {
+		data := &packet.Data{}
+		idertifier, _ := component.CreateIdentifierByString("/response")
+		data.SetName(idertifier)
+		data.SetValue(dataByte)
+		d.sendData(data)
+	} else {
+		common.LogError("Mashal data fail!,the err is:", err)
+	}
 
 }
 
@@ -263,7 +276,7 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 //
 func (d *Dispatcher) sendDataAndSave(data *Data) {
 	d.Cache.Add(data.key, data.dataFrag)
-	// TODO
+	d.sendData(data.dataFrag)
 }
 
 // 发送数据包给客户端
@@ -271,7 +284,12 @@ func (d *Dispatcher) sendDataAndSave(data *Data) {
 // @Description:发送数据包给客户端
 //
 func (d *Dispatcher) sendData(data *packet.Data) {
-	// TODO
+
+	if err := d.FaceClient.SendData(data); err != nil {
+		common.LogError("send data fail!the err is :", err)
+		return
+	}
+	common.LogInfo("send data success")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
