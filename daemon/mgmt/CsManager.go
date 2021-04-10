@@ -13,6 +13,7 @@ import (
 	"minlib/mgmt"
 	"minlib/packet"
 	"mir-go/daemon/common"
+	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 )
 
@@ -22,9 +23,10 @@ import (
 // @Description:CS管理模块结构体
 //
 type CsManager struct {
-	cs          *table.CS // CS表
-	enableServe bool      // 是否可以展示信息
-	enableAdd   bool      // 是否可以添加缓存
+	cs             *table.CS // CS表
+	logicFaceTable *lf.LogicFaceTable
+	enableServe    bool // 是否可以展示信息
+	enableAdd      bool // 是否可以添加缓存
 }
 
 //
@@ -47,7 +49,8 @@ func CreateCsManager() *CsManager {
 // @Description:对CS管理模块注册三个必须的函数add、delete、list
 // @receiver c
 //
-func (c *CsManager) Init(dispatcher *Dispatcher) {
+func (c *CsManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
+	c.logicFaceTable = logicFaceTable
 	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/delete")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, c.ValidateParameters, c.changeConfig)
 	if err != nil {

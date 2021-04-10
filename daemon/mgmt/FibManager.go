@@ -24,7 +24,8 @@ import (
 // @Description:fib管理模块结构体
 //
 type FibManager struct {
-	fib *table.FIB //fib表
+	fib            *table.FIB //fib表
+	logicFaceTable *lf.LogicFaceTable
 }
 
 //
@@ -44,7 +45,8 @@ func CreateFibManager() *FibManager {
 // @Description:fib管理模块初始化注册命令函数
 // @receiver f
 //
-func (f *FibManager) Init(dispatcher *Dispatcher) {
+func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
+	f.logicFaceTable = logicFaceTable
 	identifier, _ := component.CreateIdentifierByString("/fib-mgmt/add")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
@@ -94,7 +96,7 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 		return MakeControlResponse(414, "the prefix is too long ,cannot exceed "+strconv.Itoa(table.MAX_DEPTH)+"components", "")
 	}
 	// 根据Id从table中取出 logicface
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
 		common.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicfaceId:"+strconv.FormatUint(logicfaceId, 10)+"failed!")
 		return MakeControlResponse(414, "the face is not found", "")
@@ -116,7 +118,7 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 	prefix := parameters.ControlParameterPrefix.Prefix()
 	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	// 根据Id从table中取出 logicface
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
 		common.LogError("add next hop fail,the err is:face is not found")
 		return MakeControlResponse(410, "the face is not found", "")

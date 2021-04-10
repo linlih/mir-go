@@ -7,29 +7,29 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/utils"
 	"testing"
 	"time"
 )
 
 func Test(t *testing.T) {
+
+	var Fsystem lf.LogicFaceSystem
+	var packetValidator = &fw.PacketValidator{}
+	blockQueue := utils.CreateBlockQueue(100)
+	packetValidator.Init(100, false, blockQueue)
+	Fsystem.Init(packetValidator, nil)
+	Fsystem.Start()
+
 	fibManager := CreateFibManager()
 	faceManager := CreateFaceManager()
 	csManager := CreateCsManager()
 	dispatcher := CreateDispatcher()
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
 	dispatcher.AddTopPrefix(topPrefix)
-	fibManager.Init(dispatcher)
-	faceManager.Init(dispatcher)
-	csManager.Init(dispatcher)
-	// FIX:下面这两行暂时保留 后面可能需要删除
-	var LfTb lf.LogicFaceTable
-	LfTb.Init()
-	var Fsystem lf.LogicFaceSystem
-	var packetValidator fw.PacketValidator
-	blockQueue := fw.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
-	Fsystem.Init(&LfTb, &packetValidator)
-	Fsystem.Start()
+	fibManager.Init(dispatcher, Fsystem.LogicFaceTable())
+	faceManager.Init(dispatcher, Fsystem.LogicFaceTable())
+	csManager.Init(dispatcher, Fsystem.LogicFaceTable())
 
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
@@ -40,7 +40,7 @@ func Test(t *testing.T) {
 
 	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhop/fib-mgmt/delete")
 	logicfaceId := fibManager.fib.FindExactMatch(topPrefix).GetNextHops()[0].LogicFace.LogicFaceId
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	face := fibManager.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	face.Start()
 
 	interest := &packet.Interest{}
@@ -56,8 +56,10 @@ func Test(t *testing.T) {
 	identifier.Append(component.CreateIdentifierComponentByByteArray(buf))
 	interest.SetName(identifier)
 	face.SendInterest(interest)
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhop/fib-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhop/face-mgmt/list")
 	interest.SetName(identifier)
+	face.SendInterest(interest)
+
 	face.SendInterest(interest)
 
 	time.Sleep(time.Minute)

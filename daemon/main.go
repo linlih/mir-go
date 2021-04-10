@@ -53,15 +53,12 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	faceManager := mgmt.CreateFaceManager()
 	csManager := mgmt.CreateCsManager()
 	dispatcher := mgmt.CreateDispatcher()
-	fibManager.Init(dispatcher)
-	faceManager.Init(dispatcher)
-	csManager.Init(dispatcher)
+	fibManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
+	faceManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
+	csManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
-	identifier, err := component.CreateIdentifierByString("/min-mir/mgmt/localhop")
-	if err != nil {
-		common.LogError("register prefix fail!the err is:", err)
-	}
+	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhop")
 	dispatcher.AddTopPrefix(identifier)
 	fibManager.GetFib().AddOrUpdate(identifier, faceServer, 0)
 	dispatcher.Start()

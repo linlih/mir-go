@@ -24,6 +24,7 @@ import (
 // @Description:face管理模块结构体
 //
 type FaceManager struct {
+	logicFaceTable *lf.LogicFaceTable
 }
 
 //
@@ -41,8 +42,9 @@ func CreateFaceManager() *FaceManager {
 // @Description:face管理模块初始化注册命令，包括create、destroy、list
 // @receiver f
 //
-func (f *FaceManager) Init(dispatcher *Dispatcher) {
-	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/add-logic-face")
+func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
+	f.logicFaceTable = logicFaceTable
+	identifier, _ := component.CreateIdentifierByString("/face-mgmt/add-logic-face")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
 		if parameters.ControlParameterUri.IsInitial() &&
 			parameters.ControlParameterLocalUri.IsInitial() &&
@@ -56,7 +58,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher) {
 		common.LogError("face add create-command fail,the err is:", err)
 	}
 
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/destroy")
+	identifier, _ = component.CreateIdentifierByString("/face-mgmt/destroy")
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
 		if parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
@@ -67,7 +69,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher) {
 		common.LogError("face add destroy-command fail,the err is:", err)
 	}
 
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/face-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listFaces)
 	if err != nil {
 		common.LogError("face add list-command fail,the err is:", err)
@@ -144,12 +146,12 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
 	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
-	face := lf.GLogicFaceTable.GetLogicFacePtrById(logicfaceId)
+	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
 		common.LogError("destory face fail,the err is: inner face is null")
 		return MakeControlResponse(400, "the face is not existed", "")
 	}
-	lf.GLogicFaceTable.RemoveByLogicFaceId(logicfaceId)
+	f.logicFaceTable.RemoveByLogicFaceId(logicfaceId)
 	common.LogInfo("destory face success")
 	return MakeControlResponse(200, "destory face success!", "")
 }
@@ -162,7 +164,7 @@ func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *pac
 //
 func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
 	var response *mgmt.ControlResponse
-	faceList := lf.GLogicFaceTable.GetAllFaceList()
+	faceList := f.logicFaceTable.GetAllFaceList()
 	data, err := json.Marshal(faceList)
 	if err != nil {
 		common.LogError("get face info fail,the err is:", err)

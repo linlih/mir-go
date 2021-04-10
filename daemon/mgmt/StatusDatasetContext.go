@@ -56,6 +56,11 @@ type StatusDatasetContext struct {
 	nackSender NackSender           // 发送错误信息回调
 }
 
+type ResponseHeader struct {
+	Code     int
+	FragNums int
+}
+
 type Data struct {
 	key      string
 	dataFrag *packet.Data
@@ -93,10 +98,7 @@ func (s *StatusDatasetContext) Append() []*Data {
 
 	// 加入分片头部
 	dataFrag := &packet.Data{}
-	var responseHeader = struct {
-		Code     int
-		FragNums int
-	}{Code: 200, FragNums: int(size / encoding.MaxPacketSize)}
+	var responseHeader = &ResponseHeader{Code: 200, FragNums: int(size / encoding.MaxPacketSize)}
 	if size%encoding.MaxPacketSize != 0 {
 		responseHeader.FragNums++
 	}

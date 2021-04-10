@@ -18,6 +18,7 @@ import (
 	"minlib/security"
 	"mir-go/daemon/common"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -241,10 +242,25 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 //
 func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
-	if v, ok := d.Cache.Get(interest.ToUri()); ok {
+
+	if v, ok := d.Cache.Get(interest.GetName().ToUri() + "/0"); ok {
 		// 发送分片
 		common.LogInfo("hit the cache")
-		d.sendData(v.(*packet.Data))
+		var responseHeader *ResponseHeader
+		err := json.Unmarshal(v.(*packet.Data).Payload.GetValue(), &responseHeader)
+		if err != nil {
+			common.LogError("get the datas error!the err is:", err)
+			missStorage(topPrefix, interest)
+		}
+		for i := 0; i <= responseHeader.FragNums; i++ {
+			if v, ok := d.Cache.Get(interest.GetName().ToUri() + "/" + strconv.Itoa(i)); ok {
+				common.LogInfo("hit the slice number:", i)
+				d.sendData(v.(*packet.Data))
+			} else {
+				common.LogInfo("miss the slice number:", i)
+				missStorage(topPrefix, interest)
+			}
+		}
 	} else {
 		// 没找到 发起请求数据 并添加到缓存中
 		common.LogInfo("miss the cache")
