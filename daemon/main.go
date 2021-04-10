@@ -7,6 +7,7 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
+	"mir-go/daemon/utils"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	//pluginManager.RegisterPlugin()
 
 	// 初始化 BlockQueue
-	packetQueue := fw.CreateBlockQueue(uint(mirConfig.ForwarderConfig.PacketQueueSize))
+	packetQueue := utils.CreateBlockQueue(uint(mirConfig.ForwarderConfig.PacketQueueSize))
 
 	// 初始化转发器
 	forwarder := new(fw.Forwarder)
@@ -41,8 +42,11 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceTable := new(lf.LogicFaceTable)
 	logicFaceTable.Init()
 	logicFaceSystem := new(lf.LogicFaceSystem)
-	logicFaceSystem.Init(logicFaceTable, packetValidator)
+	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
+
+	// get LogicFaceTable
+	//logicFaceSystem.LogicFaceTable()
 
 	// TODO: 在这边启动管理模块的程序
 	fibManager := mgmt.CreateFibManager()
@@ -52,9 +56,6 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	fibManager.Init(dispatcher)
 	faceManager.Init(dispatcher)
 	csManager.Init(dispatcher)
-	// FIX:下面这两行暂时保留 后面可能需要删除
-	lf.GLogicFaceTable = &lf.LogicFaceTable{}
-	lf.GLogicFaceTable.Init()
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
 	identifier, err := component.CreateIdentifierByString("/min-mir/mgmt/localhop")

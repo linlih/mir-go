@@ -16,6 +16,7 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
+	"mir-go/daemon/utils"
 	"time"
 )
 
@@ -30,7 +31,7 @@ type Forwarder struct {
 	table.CS                                        // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
-	packetQueue         *BlockQueue                 // 包队列
+	packetQueue         *utils.BlockQueue           // 包队列
 }
 
 //
@@ -39,7 +40,7 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *BlockQueue) {
+func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils.BlockQueue) {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
@@ -56,7 +57,7 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 //
 func (f *Forwarder) Start() {
 	for true {
-		data := f.packetQueue.read()
+		data := f.packetQueue.Read()
 		ipd, ok := data.(*lf.IncomingPacketData)
 		if !ok {
 			continue

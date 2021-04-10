@@ -58,7 +58,7 @@ func (l *LpReassemble) Init() {
 //
 func (l *LpReassemble) processTimeoutEvent(curTime int64) {
 
-	for l.timeoutEventHeap.Len() > 0 && l.timeoutEventHeap[0].timeoutTime > curTime {
+	for l.timeoutEventHeap.Len() > 0 && l.timeoutEventHeap[0].timeoutTime <= curTime {
 		timeOutEvent := heap.Pop(&l.timeoutEventHeap).(TimeoutEvent)
 		entry, ok := l.mPartialPackets[timeOutEvent.key]
 		if ok {

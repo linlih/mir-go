@@ -19,6 +19,7 @@ import (
 //
 type EthernetListener struct {
 	mInterfaceListeners map[string]*InterfaceListener // 用于保存，已经打开了的网卡的信息，以及相应的logicFace号
+	badDev              map[string]int                // 用于保存无法启动的网卡名
 }
 
 //
@@ -27,6 +28,7 @@ type EthernetListener struct {
 //
 func (e *EthernetListener) Init() {
 	e.mInterfaceListeners = make(map[string]*InterfaceListener)
+	e.badDev = make(map[string]int)
 }
 
 //
@@ -66,6 +68,10 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 		return
 	}
 	if (flag & net.FlagUp) != 0 {
+		_, ok = e.badDev[name]
+		if ok { // 该网卡前面尝试启动过，启动不了
+			return
+		}
 		e.CreateInterfaceListener(name, macAddr, mtu) // 创建以太网类型的 LogicFace
 	}
 }
@@ -80,7 +86,11 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 func (e *EthernetListener) CreateInterfaceListener(ifName string, macAddr net.HardwareAddr, mtu int) {
 	var ifListener InterfaceListener
 	ifListener.Init(ifName, macAddr, mtu)
-	ifListener.Start() // 启动从网卡读取包的协程
+	err := ifListener.Start() // 启动从网卡读取包的协程
+	if err != nil {
+		e.badDev[ifName] = 1
+		return
+	}
 	e.mInterfaceListeners[ifName] = &ifListener
 }
 

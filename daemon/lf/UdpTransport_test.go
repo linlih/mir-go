@@ -2,7 +2,7 @@
 // @Author: Lihong Lin
 // @Description:
 // @Version: 1.0.0
-// @Date: 2021/3/31 下午7:45 
+// @Date: 2021/3/31 下午7:45
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
 package lf_test
@@ -13,6 +13,8 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"net/http"
+	_ "net/http/pprof"
 	"testing"
 	"time"
 )
@@ -62,13 +64,21 @@ func TestUdpTransport_Receive(t *testing.T) {
 	LfTb.Init()
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
+	blockQueue := fw.CreateBlockQueue(10)
+	packetValidator.Init(2, false, blockQueue)
 	Fsystem.Init(&LfTb, &packetValidator)
 	Fsystem.Start()
 
+	go func() {
+		http.ListenAndServe("0.0.0.0:9999", nil)
+	}()
+
 	for true {
-		time.Sleep(10*time.Second)
+
+	}
+
+	for true {
+		time.Sleep(10 * time.Second)
 		fmt.Println("等待收包")
 	}
 }

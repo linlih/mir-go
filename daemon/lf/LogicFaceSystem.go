@@ -14,11 +14,6 @@ import (
 )
 
 //
-// @Description:  全局logicFace表指针
-//
-var GLogicFaceTable *LogicFaceTable
-
-//
 // @Description: 全局logicFace系统
 //
 var gLogicFaceSystem *LogicFaceSystem
@@ -37,19 +32,25 @@ type LogicFaceSystem struct {
 	packetValidator  IPacketValidator
 }
 
+func (l *LogicFaceSystem) LogicFaceTable() *LogicFaceTable {
+	return l.logicFaceTable
+}
+
 //
 // @Description: 初始化LogicFaceSystem对象
 // @receiver l
 // @param table
 //
-func (l *LogicFaceSystem) Init(table *LogicFaceTable, packetValidator IPacketValidator) {
-	l.logicFaceTable = table
+func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.MIRConfig) {
+	var logicFaceTable LogicFaceTable
+	logicFaceTable.Init()
+	l.logicFaceTable = &logicFaceTable
 	l.packetValidator = packetValidator
 	l.ethernetListener.Init()
 	l.tcpListener.Init()
 	l.udpListener.Init()
 	l.unixListener.Init()
-	GLogicFaceTable = table
+	GLogicFaceTable = &logicFaceTable
 	gLogicFaceSystem = l
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {

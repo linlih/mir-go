@@ -144,7 +144,7 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 
 //
 // 创建调度器函数
-//
+//pp
 // @Description:创建调度器函数，对调度器进行初始化
 //
 func CreateDispatcher() *Dispatcher {

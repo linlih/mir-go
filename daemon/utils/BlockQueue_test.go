@@ -1,4 +1,4 @@
-package fw
+package utils
 
 import (
 	"math/rand"
@@ -24,7 +24,7 @@ var w sync.WaitGroup
 //			w.Done()
 //		}()
 //		for{
-//			get:=que.read()
+//			get:=que.Read()
 //			getinterest:=get.(*packet.Interest)
 //			fmt.Println("get interest",getinterest.Payload)
 //			count++
@@ -41,7 +41,7 @@ var w sync.WaitGroup
 //		token := make([]byte, 7000)
 //		rand.Read(token)
 //		interest.Payload.SetValue(token)
-//		que.write(interest)
+//		que.Write(interest)
 //		time.Sleep(2*time.Millisecond)
 //		wr++
 //		fmt.Println("wr",wr)
@@ -50,6 +50,13 @@ var w sync.WaitGroup
 //	w.Wait()
 //
 //}
+
+func TestCreateBlockQueue(t *testing.T) {
+	que := CreateBlockQueue(10)
+	for i := 0; i < 20; i++ {
+		que.Write(i)
+	}
+}
 
 func BenchmarkCreateBlockQueue(b *testing.B) {
 	que := CreateBlockQueue(100)
@@ -66,8 +73,8 @@ func BenchmarkCreateBlockQueue(b *testing.B) {
 			w.Done()
 		}()
 		for {
-			//get:=que.read()
-			que.read()
+			//get:=que.Read()
+			que.Read()
 			//getinterest:=get.(*packet.Interest)
 			//fmt.Println("get interest",getinterest.Payload)
 			count++
@@ -90,7 +97,7 @@ func BenchmarkCreateBlockQueue(b *testing.B) {
 		interest.Payload.SetValue(token)
 		go func() {
 			for j := 0; j < 1000; j++ {
-				que.write(interest)
+				que.Write(interest)
 				wr++
 				//fmt.Println("wr", wr)
 			}

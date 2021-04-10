@@ -8,6 +8,7 @@
 package lf
 
 import (
+	"errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"minlib/packet"
@@ -67,16 +68,20 @@ func (i *InterfaceListener) Close() {
 	}
 }
 
-//
-// @Description: 	启动当前监听器
+// @Description: 启动当前监听器
 // @receiver i
+// @return error 启动失败则返回错误
 //
-func (i *InterfaceListener) Start() {
+func (i *InterfaceListener) Start() error {
 	remoteMacAddr, _ := net.ParseMAC("01:00:5e:00:17:aa")
 	var logicFacePtr *LogicFace
 	logicFacePtr, i.pcapHandle = createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
+	if logicFacePtr == nil {
+		return errors.New("create ether logic face error")
+	}
 	i.logicFace = logicFacePtr
 	go i.readPacketFromDev()
+	return nil
 }
 
 //
@@ -118,6 +123,9 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 		return
 	}
 	logicFacePtr, _ := createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
+	if logicFacePtr == nil {
+		common.LogFatal("create ether logicface, error")
+	}
 	i.etherFaceMap[srcMacAddr] = logicFacePtr
 	logicFacePtr.linkService.ReceivePacket(lpPacket)
 }

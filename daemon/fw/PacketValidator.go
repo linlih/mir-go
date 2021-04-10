@@ -12,6 +12,7 @@ import (
 	"minlib/security"
 	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/utils"
 )
 
 //
@@ -21,7 +22,7 @@ import (
 //
 type PacketValidator struct {
 	_pool        *ants.Pool         // 协程池，用于并发验签
-	packetQueue  *BlockQueue        // 一个阻塞队列，用于和 Forwarder 进行通信
+	packetQueue  *utils.BlockQueue  // 一个阻塞队列，用于和 Forwarder 进行通信
 	keyChain     *security.KeyChain // 一个KeyChain，用于包签名验证
 	cap          int                // 协程池容量
 	needValidate bool               // 是否需要进行验证（如果不开启签名验证，则直接传递给缓存队列即可，无需开启线程池）
@@ -36,7 +37,7 @@ type PacketValidator struct {
 // @param needValidate			是否需要开启签名验证
 // @param packetQueue			与 Forwarder 共同持有的一个阻塞队列
 //
-func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *BlockQueue) {
+func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *utils.BlockQueue) {
 	p.cap = cap
 	p.packetQueue = packetQueue
 	// 当且仅当需要进行签名验证时，才开启协程池
@@ -66,7 +67,7 @@ func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *BlockQue
 func (p *PacketValidator) ReceiveMINPacket(data *lf.IncomingPacketData) {
 	if !p.needValidate {
 		// 如果不需要进行包验证，则直接放到队列中
-		p.packetQueue.write(data)
+		p.packetQueue.Write(data)
 		return
 	}
 
@@ -77,7 +78,7 @@ func (p *PacketValidator) ReceiveMINPacket(data *lf.IncomingPacketData) {
 			// 验证成功
 			common.LogDebugWithFields(data.ToFields(), "Verify Packet Success")
 			// 验证成功之后将包放入队列中
-			p.packetQueue.write(data)
+			p.packetQueue.Write(data)
 		} else {
 			// 验证失败
 			common.LogDebugWithFields(data.ToFields(), "Verify Packet Failed")
