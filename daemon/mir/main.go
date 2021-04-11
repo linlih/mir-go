@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/urfave/cli"
 	"minlib/component"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
@@ -8,17 +9,41 @@ import (
 	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/utils"
+	"os"
 )
 
+const defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini"
+
 func main() {
-	mirConfig, err := common.ParseConfig("/usr/local/etc/mir/mirconf.ini")
-	if err != nil {
-		common.LogFatal(err)
+	var configFilePath string
+	mirApp := cli.NewApp()
+	mirApp.Name = "mir"
+	mirApp.Usage = " MIR forwarder daemon program "
+	mirApp.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:        "f",
+			Value:       defaultConfigFilePath,
+			Usage:       "Config file path for MIR",
+			Destination: &configFilePath,
+			Required:    true,
+		},
+	}
+	mirApp.Action = func(context *cli.Context) error {
+		common.LogInfo(configFilePath)
+		mirConfig, err := common.ParseConfig(configFilePath)
+		if err != nil {
+			common.LogFatal(err)
+		}
+
+		// 初始化日志模块
+		common.InitLogger(mirConfig)
+		InitForwarder(mirConfig)
+		return nil
 	}
 
-	// 初始化日志模块
-	common.InitLogger(mirConfig)
-	InitForwarder(mirConfig)
+	if err := mirApp.Run(os.Args); err != nil {
+		return
+	}
 }
 
 func InitForwarder(mirConfig *common.MIRConfig) {
@@ -45,13 +70,8 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
 
-	// get LogicFaceTable
-	//logicFaceSystem.LogicFaceTable()
-
 	// TODO: 在这边启动管理模块的程序
-	fibManager := mgmt.CreateFibManager()
-	faceManager := mgmt.CreateFaceManager()
-	csManager := mgmt.CreateCsManager()
+	fibManager, faceManager, csManager := mgmt.CreateFibManager(), mgmt.CreateFaceManager(), mgmt.CreateCsManager()
 	dispatcher := mgmt.CreateDispatcher()
 	fibManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
 	faceManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
