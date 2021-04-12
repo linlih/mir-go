@@ -107,7 +107,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if reassembleLpPacket == nil {
 		return
 	}
-	minPacket, err := getMINPacketFromLpPacket(lpPacket)
+	minPacket, err := getMINPacketFromLpPacket(reassembleLpPacket)
 	if err != nil {
 		common.LogWarn(err)
 		return
