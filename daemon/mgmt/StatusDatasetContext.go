@@ -15,7 +15,6 @@ import (
 	"minlib/packet"
 	"mir-go/daemon/common"
 	"mir-go/daemon/utils"
-	"strconv"
 	"time"
 )
 
@@ -30,7 +29,14 @@ const (
 //
 // @Description:发送数据包回调
 //
-type DataSender func(data *Data)
+type DataSender func(data *packet.Data)
+
+//
+// 保存数据包回调
+//
+// @Description:发送数据包回调
+//
+type DataSaver func(data *packet.Data)
 
 //
 // 发送错误信息回调
@@ -54,6 +60,7 @@ type StatusDatasetContext struct {
 	data       []byte               // 分片数据
 	dataSender DataSender           // 发送数据包回调
 	nackSender NackSender           // 发送错误信息回调
+	dataSaver  DataSaver            // 保存数据回调
 }
 
 type ResponseHeader struct {
@@ -61,23 +68,19 @@ type ResponseHeader struct {
 	FragNums int
 }
 
-type Data struct {
-	key      string
-	dataFrag *packet.Data
-}
-
 //
 // 创建数据集上下文函数
 //
 // @Description:创建数据集上下文函数
 //
-func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender NackSender) *StatusDatasetContext {
+func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender NackSender, dataSaver DataSaver) *StatusDatasetContext {
 	return &StatusDatasetContext{
 		Prefix:     *interest.GetName(),
 		state:      INITIAL,
 		FreshTime:  100 * time.Millisecond,
 		dataSender: dataSender,
 		nackSender: nackSender,
+		dataSaver:  dataSaver,
 	}
 }
 
@@ -87,8 +90,8 @@ func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender Nack
 // @Description:
 // @receiver s
 //
-func (s *StatusDatasetContext) Append() []*Data {
-	var dataList []*Data
+func (s *StatusDatasetContext) Append() []*packet.Data {
+	var dataList []*packet.Data
 	if s.state == FINALIZED {
 		common.LogWarn("state is in FINALIZED")
 		return nil
@@ -108,19 +111,18 @@ func (s *StatusDatasetContext) Append() []*Data {
 		return nil
 	}
 	prefix := s.Prefix
-	prefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(0)))
 	dataFrag.SetName(&prefix)
 	dataFrag.Payload.SetValue(headerData)
+	dataFrag.SetTtl(5)
 
-	data := &Data{key: s.Prefix.ToUri() + "/" + strconv.Itoa(0), dataFrag: dataFrag}
-	//dispatcher.Cache.Add(s.Prefix.ToUri()+"/"+strconv.Itoa(0), data)
-	dataList = append(dataList, data)
+	dataList = append(dataList, dataFrag)
 
 	// 分片内容
 	byteArrLeft := size
 	for byteArrLeft > 0 {
 		nBytesAppend := utils.Min(byteArrLeft, encoding.MaxPacketSize)
 		dataFrag := &packet.Data{}
+
 		// 从1开始是分片
 		s.segmentNo += 1
 		//解引用防止篡改源数据
@@ -130,14 +132,14 @@ func (s *StatusDatasetContext) Append() []*Data {
 		// 设置好兴趣包
 		dataFrag.SetName(&prefix)
 		dataFrag.Payload.SetValue(s.data[size-byteArrLeft : size-byteArrLeft+nBytesAppend])
+		dataFrag.SetTtl(5)
 
 		byteArrLeft -= nBytesAppend
 		if byteArrLeft <= 0 {
 			s.state = FINALIZED
 		}
 		//dispatcher.Cache.Add(s.Prefix.ToUri()+"/"+strconv.Itoa(s.segmentNo), data)
-		data := &Data{key: s.Prefix.ToUri() + "/" + strconv.Itoa(s.segmentNo), dataFrag: dataFrag}
-		dataList = append(dataList, data)
+		dataList = append(dataList, dataFrag)
 	}
 
 	return dataList

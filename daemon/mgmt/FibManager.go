@@ -170,20 +170,13 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 		return
 	} else {
 		common.LogInfo("get fib info success")
-		for _, data := range dataList {
+		for i, data := range dataList {
 			// 包编码放在dataSender中
-			context.dataSender(data)
+			context.dataSaver(data)
+			if i == 0 {
+				// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
+				context.dataSender(data)
+			}
 		}
 	}
-}
-
-//
-// 获取FIB管理模块fib表
-//
-// @Description:获取FIB管理模块fib表
-// @receiver f
-// @Return:*table.FIB fib表
-//
-func (f *FibManager) GetFib() *table.FIB {
-	return f.fib
 }

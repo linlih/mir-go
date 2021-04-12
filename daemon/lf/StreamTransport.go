@@ -153,7 +153,7 @@ func (t *StreamTransport) Receive() {
 	for true {
 		recvRet, err := t.conn.Read(t.recvBuf[t.recvLen:])
 		if err != nil {
-			common.LogError("recv from tcp transport error")
+			common.LogError("recv from tcp transport error,the err is:", err)
 			t.linkService.logicFace.Shutdown()
 			break
 		}

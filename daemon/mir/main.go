@@ -71,16 +71,15 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Start()
 
 	// TODO: 在这边启动管理模块的程序
-	fibManager, faceManager, csManager := mgmt.CreateFibManager(), mgmt.CreateFaceManager(), mgmt.CreateCsManager()
+	mgmtSystem := mgmt.CreateMgmtSystem()
+	mgmtSystem.SetFIB(forwarder.GetFIB())
 	dispatcher := mgmt.CreateDispatcher()
-	fibManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
-	faceManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
-	csManager.Init(dispatcher, logicFaceSystem.LogicFaceTable())
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
-	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhop")
-	dispatcher.AddTopPrefix(identifier)
-	fibManager.GetFib().AddOrUpdate(identifier, faceServer, 0)
+	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
+	dispatcher.AddTopPrefix(topPrefix)
+	mgmtSystem.AddInnerFace(topPrefix, faceServer, 0)
+	mgmtSystem.Init(dispatcher, logicFaceSystem.LogicFaceTable())
 	dispatcher.Start()
 
 	// 启动转发处理流程（死循环阻塞）

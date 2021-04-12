@@ -18,7 +18,6 @@ import (
 	"minlib/security"
 	"mir-go/daemon/common"
 	"os"
-	"strconv"
 	"sync"
 )
 
@@ -53,6 +52,24 @@ type Dispatcher struct {
 	KeyChain      *security.KeyChain               // 网络包签名和验签 发送数据包的时候使用
 	SignInfo      *component.SignatureInfo         // 表示签名的元数据
 	Cache         *Cache                           // 存储数据包分片缓存
+}
+
+// TODO:暂未实现
+// 授权成功回调
+//
+// @Description:如果授权成功执行此函数进行相应处理
+//
+func authorizationAccept() {
+
+}
+
+// TODO:暂未实现
+// 授权失败回调
+//
+// @Description:如果授权失败执行此函数进行相应处理
+//
+func authorizationReject(errorType int) {
+
 }
 
 //
@@ -100,7 +117,6 @@ func (d *Dispatcher) Start() {
 					if !module.validateParameters(parameters) {
 						common.LogWarn("parameters validate fail!discard the packet!")
 						continue
-
 					}
 					response := module.ccHandler(topPrefix, interest, parameters)
 					d.sendControlResponse(response, interest)
@@ -108,7 +124,7 @@ func (d *Dispatcher) Start() {
 
 				if module.sdHandler != nil {
 					d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
-						var context = CreateSDC(interest, d.sendDataAndSave, d.sendControlResponse)
+						var context = CreateSDC(interest, d.sendData, d.sendControlResponse, d.saveData)
 						module.sdHandler(topPrefix, interest, context)
 					})
 				}
@@ -243,24 +259,9 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
 
-	if v, ok := d.Cache.Get(interest.GetName().ToUri() + "/0"); ok {
-		// 发送分片
+	if v, ok := d.Cache.Get(interest.GetName().ToUri()); ok {
 		common.LogInfo("hit the cache")
-		var responseHeader *ResponseHeader
-		err := json.Unmarshal(v.(*packet.Data).Payload.GetValue(), &responseHeader)
-		if err != nil {
-			common.LogError("get the datas error!the err is:", err)
-			missStorage(topPrefix, interest)
-		}
-		for i := 0; i <= responseHeader.FragNums; i++ {
-			if v, ok := d.Cache.Get(interest.GetName().ToUri() + "/" + strconv.Itoa(i)); ok {
-				common.LogInfo("hit the slice number:", i)
-				d.sendData(v.(*packet.Data))
-			} else {
-				common.LogInfo("miss the slice number:", i)
-				missStorage(topPrefix, interest)
-			}
-		}
+		d.sendData(v.(*packet.Data))
 	} else {
 		// 没找到 发起请求数据 并添加到缓存中
 		common.LogInfo("miss the cache")
@@ -290,9 +291,8 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 //
 // @Description:发送数据包给客户端并缓存数据包
 //
-func (d *Dispatcher) sendDataAndSave(data *Data) {
-	d.Cache.Add(data.key, data.dataFrag)
-	d.sendData(data.dataFrag)
+func (d *Dispatcher) saveData(data *packet.Data) {
+	d.Cache.Add(data.ToUri(), data)
 }
 
 // 发送数据包给客户端
@@ -331,7 +331,7 @@ func createDispatcherErrorByType(errorType int) (err DispatcherError) {
 	case NotMatchTopPrefix:
 		err.msg = "the command prefix not match top prefix"
 	case TopPrefixesEmpty:
-		err.msg = "the top prefixs is empty"
+		err.msg = "the top prefixes is empty"
 	case CommandExisted:
 		err.msg = "the command is already existed"
 	default:

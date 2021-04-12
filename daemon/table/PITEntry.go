@@ -378,8 +378,8 @@ func (p *PITEntry) InsertOrUpdateOutRecord(logicFace *lf.LogicFace, interest *pa
 func (p *PITEntry) DeleteOutRecord(logicFace *lf.LogicFace) error {
 	p.OutRWlock.Lock()
 	defer p.OutRWlock.Unlock()
-	if _, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
-		delete(p.InRecordList, logicFace.LogicFaceId)
+	if _, ok := p.OutRecordList[logicFace.LogicFaceId]; ok {
+		delete(p.OutRecordList, logicFace.LogicFaceId)
 		return nil
 	}
 	return createPITEntryErrorByType(OutRecordNotExistedError)

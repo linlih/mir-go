@@ -9,25 +9,33 @@
 package cli
 
 import (
+	"encoding/json"
 	"github.com/urfave/cli"
 	"minlib/component"
 	"minlib/logicface"
 	"minlib/packet"
 	"mir-go/daemon/common"
+	"mir-go/daemon/mgmt"
 )
 
 var remote string
 var local string
-var shcema string
+var scheme string
 var mtu int
 
 var faceCommands = cli.Command{
 	Name:        "lf",
 	Usage:       "logic Face Management",
-	Subcommands: []*cli.Command{&GetFaceInfoCommand, &AddFaceCommand, &DeleteFaceCommand},
+	Subcommands: []*cli.Command{&GetFaceInfoCommand},
 }
 
 var GetFaceInfoCommand = cli.Command{
+	Name:   "list",
+	Usage:  "Show all face info",
+	Action: GetAllFaceInfo,
+}
+
+var SetFaceInfoCommand = cli.Command{
 	Name:   "list",
 	Usage:  "Show all face info",
 	Action: GetAllFaceInfo,
@@ -46,53 +54,7 @@ var GetFaceInfoCommand = cli.Command{
 		&cli.StringFlag{
 			Name:        "schema",
 			Value:       "tcp",
-			Destination: &shcema,
-		},
-	},
-}
-
-var AddFaceCommand = cli.Command{
-	Name:   "list",
-	Usage:  "Show all face info",
-	Action: GetAllFaceInfo,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:        "remote",
-			Value:       "/localhost",
-			Destination: &remote,
-		},
-		&cli.StringFlag{
-			Name:        "local",
-			Value:       "/mgmt",
-			Destination: &local,
-		},
-		&cli.StringFlag{
-			Name:        "schema",
-			Value:       "tcp",
-			Destination: &shcema,
-		},
-	},
-}
-
-var DeleteFaceCommand = cli.Command{
-	Name:   "list",
-	Usage:  "Show all face info",
-	Action: GetAllFaceInfo,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:        "remote",
-			Value:       "/localhost",
-			Destination: &remote,
-		},
-		&cli.StringFlag{
-			Name:        "local",
-			Value:       "/mgmt",
-			Destination: &local,
-		},
-		&cli.StringFlag{
-			Name:        "schema",
-			Value:       "tcp",
-			Destination: &shcema,
+			Destination: &scheme,
 		},
 	},
 }
@@ -106,12 +68,29 @@ func GetAllFaceInfo(c *cli.Context) error {
 		return err
 	}
 	interest := &packet.Interest{}
-	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhop/fib-mgmt/list")
+	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/list")
 	interest.SetName(identifier)
+	interest.SetTtl(5)
+	interest.InterestLifeTime.SetInterestLifeTime(4000)
+
 	if err = face.SendInterest(interest); err != nil {
 		common.LogError("send interest packet fail!the err is:", err)
 		return err
 	}
-	face.ReceivePacket()
+	minPacket, err := face.ReceivePacket()
+	if err != nil {
+		common.LogError("receive min packet fail!the err is:", err)
+		return err
+	}
+	data, _ := packet.CreateDataByMINPacket(minPacket)
+	var respinseHeader *mgmt.ResponseHeader
+	err = json.Unmarshal(data.GetValue(), &respinseHeader)
+	if err != nil {
+		common.LogError("parse data fail!the err is:", err)
+		return err
+	}
+	for i := 0; i < respinseHeader.FragNums; i++ {
+
+	}
 	return nil
 }

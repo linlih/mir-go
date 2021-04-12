@@ -40,7 +40,7 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils.BlockQueue) {
+func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils.BlockQueue) error {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
@@ -48,6 +48,14 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
 	f.packetQueue = packetQueue
+	identifier, err := component.CreateIdentifierByString("/min-mir")
+	if err != nil {
+		return err
+	}
+	bestRouteStrategy := new(BestRouteStrategy)
+	bestRouteStrategy.SetForwarder(f)
+	f.StrategyTable.Insert(identifier, "/strategy/best-route", bestRouteStrategy)
+	return nil
 }
 
 //
@@ -712,4 +720,8 @@ func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Durati
 	pitEntry.SetExpiryTimer(duration*time.Millisecond, func(entry *table.PITEntry) {
 		f.OnInterestFinalize(entry)
 	})
+}
+
+func (f *Forwarder) GetFIB() *table.FIB {
+	return &f.FIB
 }

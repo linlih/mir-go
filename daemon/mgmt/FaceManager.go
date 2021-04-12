@@ -181,9 +181,13 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 		return
 	} else {
 		common.LogInfo("get face info success")
-		for _, data := range dataList {
+		for i, data := range dataList {
 			// 包编码放在dataSender中
-			context.dataSender(data)
+			context.dataSaver(data)
+			if i == 0 {
+				// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
+				context.dataSender(data)
+			}
 		}
 	}
 }

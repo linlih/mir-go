@@ -51,12 +51,12 @@ func CreateCsManager() *CsManager {
 //
 func (c *CsManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	c.logicFaceTable = logicFaceTable
-	identifier, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/delete")
+	identifier, _ := component.CreateIdentifierByString("/cs-mgmt/delete")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, c.ValidateParameters, c.changeConfig)
 	if err != nil {
 		common.LogError("cs add delete-command fail,the err is:", err)
 	}
-	identifier, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhost/cs-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/cs-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, c.serveInfo)
 	if err != nil {
 		common.LogError("cs add list-command fail,the err is:", err)
