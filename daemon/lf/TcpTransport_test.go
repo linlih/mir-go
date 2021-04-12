@@ -3,6 +3,7 @@ package lf_test
 import (
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/utils"
@@ -13,12 +14,14 @@ import (
 func TestTcpTransport_Init(t *testing.T) {
 	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem lf.LogicFaceSystem
+	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
-	Fsystem.Init(&LfTb, &packetValidator)
-	Fsystem.Start()
+	blockQueue := utils.CreateBlockQueue(10)
+	packetValidator.Init(100, false, blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
 
 	id, err := lf.CreateTcpLogicFace("192.168.159.129:13899")
 	if err != nil {

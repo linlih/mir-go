@@ -15,6 +15,8 @@ import (
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/plugin"
+	"mir-go/daemon/utils"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -25,15 +27,23 @@ import (
 func TestEthernetTransport_Send(t *testing.T) {
 	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem lf.LogicFaceSystem
+	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.CreateBlockQueue(10)
+	blockQueue := utils.CreateBlockQueue(10)
 	packetValidator.Init(100, false, blockQueue)
-	Fsystem.Init(&LfTb, &packetValidator)
-	Fsystem.Start()
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
 	time.Sleep(5 * time.Second)
 	str := "00:0c:29:fa:de:18"
 	remote := "00:0c:29:a1:35:bf"
+
+	var forWarder fw.Forwarder
+	var pluginManager plugin.GlobalPluginManager
+	forWarder.Init(&pluginManager, blockQueue)
+
+	forWarder.Start()
 
 	interest := new(packet.Interest)
 	token := make([]byte, 7000)

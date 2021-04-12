@@ -11,8 +11,11 @@ import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
+	"mir-go/daemon/plugin"
+	"mir-go/daemon/utils"
 	"net/http"
 	_ "net/http/pprof"
 	"testing"
@@ -30,12 +33,14 @@ import (
 func TestUdpTransport_Init(t *testing.T) {
 	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem lf.LogicFaceSystem
+	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.BlockQueue{}
-	packetValidator.Init(100, true, &blockQueue)
-	Fsystem.Init(&LfTb, &packetValidator)
-	Fsystem.Start()
+	blockQueue := utils.CreateBlockQueue(10)
+	packetValidator.Init(100, false, blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
 
 	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
@@ -60,22 +65,34 @@ func TestUdpTransport_Init(t *testing.T) {
 }
 
 func TestUdpTransport_Receive(t *testing.T) {
+	mirConfig, err := common.ParseConfig("/usr/local/etc/mir/mirconf.ini")
+	if err != nil {
+		common.LogFatal(err)
+	}
+
+	// 初始化日志模块
+	common.InitLogger(mirConfig)
+
 	var LfTb lf.LogicFaceTable
 	LfTb.Init()
-	var Fsystem lf.LogicFaceSystem
+	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := fw.CreateBlockQueue(10)
-	packetValidator.Init(2, false, blockQueue)
-	Fsystem.Init(&LfTb, &packetValidator)
-	Fsystem.Start()
+	blockQueue := utils.CreateBlockQueue(10)
+	packetValidator.Init(100, false, blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
+
+	var forWarder fw.Forwarder
+	var pluginManager plugin.GlobalPluginManager
+	forWarder.Init(&pluginManager, blockQueue)
+
+	forWarder.Start()
 
 	go func() {
 		http.ListenAndServe("0.0.0.0:9999", nil)
 	}()
-
-	for true {
-
-	}
 
 	for true {
 		time.Sleep(10 * time.Second)
