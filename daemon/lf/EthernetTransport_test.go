@@ -16,7 +16,6 @@ import (
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/plugin"
 	"mir-go/daemon/utils"
 	"net"
 	"net/http"
@@ -26,8 +25,6 @@ import (
 )
 
 func TestEthernetTransport_Send(t *testing.T) {
-	var LfTb lf.LogicFaceTable
-	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.CreateBlockQueue(10)
@@ -40,14 +37,8 @@ func TestEthernetTransport_Send(t *testing.T) {
 	str := "00:0c:29:fa:de:18"
 	remote := "00:0c:29:a1:35:bf"
 
-	var forWarder fw.Forwarder
-	var pluginManager plugin.GlobalPluginManager
-	forWarder.Init(&pluginManager, blockQueue)
-
-	forWarder.Start()
-
 	interest := new(packet.Interest)
-	token := make([]byte, 7000)
+	token := make([]byte, 1000)
 	interest.Payload.SetValue(token)
 	identifer, _ := component.CreateIdentifierByString("/pkusz")
 	interest.SetName(identifer)
@@ -68,14 +59,17 @@ func TestEthernetTransport_Send(t *testing.T) {
 	if faceErr != nil {
 		common2.LogError(faceErr)
 	}
-	logicFace := LfTb.GetLogicFacePtrById(faceid)
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(faceid)
 	//指定pprof对外提供的http服务的ip和端口，配置为0.0.0.0表示可以非本机访问
 	go func() {
 		http.ListenAndServe("0.0.0.0:9999", nil)
 	}()
+	counter := 0
 	//fmt.Println(faceid)
 	for {
 		logicFace.SendInterest(interest)
+		counter++
+		common2.LogInfo(counter)
 	}
 
 }

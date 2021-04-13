@@ -1,7 +1,6 @@
 package lf_test
 
 import (
-	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
@@ -17,8 +16,8 @@ func TestTcpTransport_Init(t *testing.T) {
 	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.CreateBlockQueue(10)
-	packetValidator.Init(100, false, blockQueue)
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, false, &blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)

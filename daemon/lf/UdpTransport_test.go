@@ -9,13 +9,11 @@ package lf_test
 
 import (
 	"fmt"
-	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/plugin"
 	"mir-go/daemon/utils"
 	"net/http"
 	_ "net/http/pprof"
@@ -36,8 +34,8 @@ func TestUdpTransport_Init(t *testing.T) {
 	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.CreateBlockQueue(10)
-	packetValidator.Init(100, false, blockQueue)
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
@@ -66,30 +64,16 @@ func TestUdpTransport_Init(t *testing.T) {
 }
 
 func TestUdpTransport_Receive(t *testing.T) {
-	mirConfig, err := common.ParseConfig("/usr/local/etc/mir/mirconf.ini")
-	if err != nil {
-		common2.LogFatal(err)
-	}
-
-	// 初始化日志模块
-	common.InitLogger(mirConfig)
-
 	var LfTb lf.LogicFaceTable
 	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.CreateBlockQueue(10)
-	packetValidator.Init(100, false, blockQueue)
+	packetValidator.Init(2, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
-
-	var forWarder fw.Forwarder
-	var pluginManager plugin.GlobalPluginManager
-	forWarder.Init(&pluginManager, blockQueue)
-
-	forWarder.Start()
 
 	go func() {
 		http.ListenAndServe("0.0.0.0:9999", nil)
