@@ -37,6 +37,7 @@ go env
 ```bash
 go mod tidy
 ```
+注意：minlib配置到此操作结束，mir-go配置还需要下面的步骤。
 
 ### 2.5 创建本地文件夹
 ```bash
