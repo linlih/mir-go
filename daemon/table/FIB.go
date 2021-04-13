@@ -10,8 +10,8 @@ package table
 
 import (
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/component"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 )
 
@@ -157,7 +157,7 @@ func (f *FIB) RemoveNextHopByFace(logicFace *lf.LogicFace) uint64 {
 				return 1
 			}
 		} else {
-			common.LogErrorWithFields(logrus.Fields{
+			common2.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}
@@ -176,7 +176,7 @@ func (f *FIB) Size() uint64 {
 		if _, ok := val.(*FIBEntry); ok {
 			return 1
 		} else {
-			common.LogErrorWithFields(logrus.Fields{
+			common2.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}
@@ -196,7 +196,7 @@ func (f *FIB) GetAllEntry() []*FIBEntry {
 			fibEntrys = append(fibEntrys, fibEntry)
 			return 1
 		} else {
-			common.LogErrorWithFields(logrus.Fields{
+			common2.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}

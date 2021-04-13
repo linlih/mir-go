@@ -9,9 +9,9 @@ package fw
 
 import (
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 )
@@ -52,7 +52,7 @@ func (brs *BestRouteStrategy) AfterReceiveInterest(ingress *lf.LogicFace, intere
 	// 首先判断是否有正在pending的 out-record
 	if HasPendingOutRecords(pitEntry) {
 		// 不是新的 Interest ，不转发被聚合
-		common.LogDebugWithFields(logrus.Fields{
+		common2.LogDebugWithFields(logrus.Fields{
 			"ingress":  ingress.LogicFaceId,
 			"interest": interest.ToUri(),
 			"pitEntry": pitEntry.Identifier.ToUri(),

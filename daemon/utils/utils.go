@@ -124,15 +124,15 @@ func getLocationDefault(loc *time.Location) *time.Location {
 	}
 	return loc
 }
+
 // 计算模块部分
 
-func Min(x , y encoding.SizeT)(min encoding.SizeT){
-	if x<y{
+func Min(x, y encoding.SizeT) (min encoding.SizeT) {
+	if x < y {
 		return x
 	}
 	return y
 }
-
 
 //
 // @Description:  生成随机用的Byte数组，因为go中没有默认参数的设置方法，所以这里使用可变长参数的方式来实现
@@ -143,11 +143,11 @@ func Min(x , y encoding.SizeT)(min encoding.SizeT){
 // @return []byte 返回随机的Byte数组
 //
 func RandomBytes(n int, seed ...int64) []byte {
-	if (len(seed) > 1) {
+	if len(seed) > 1 {
 		panic("输入参数错误, 仅接受一个参数")
 	}
 	var s int64 = 0
-	if (len(seed) != 0) {
+	if len(seed) != 0 {
 		s = seed[0]
 	}
 	rand := rand.New(rand.NewSource(s))
@@ -167,11 +167,11 @@ func RandomBytes(n int, seed ...int64) []byte {
 // @return []byte 返回随机字符串
 //
 func RandomString(n int, seed ...int64) string {
-	if (len(seed) > 1) {
+	if len(seed) > 1 {
 		panic("输入参数错误, 仅接受一个参数")
 	}
 	var s int64 = 0
-	if (len(seed) != 0) {
+	if len(seed) != 0 {
 		s = seed[0]
 	}
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

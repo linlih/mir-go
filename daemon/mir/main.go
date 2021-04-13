@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/urfave/cli"
+	common2 "minlib/common"
 	"minlib/component"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
@@ -29,10 +30,10 @@ func main() {
 		},
 	}
 	mirApp.Action = func(context *cli.Context) error {
-		common.LogInfo(configFilePath)
+		common2.LogInfo(configFilePath)
 		mirConfig, err := common.ParseConfig(configFilePath)
 		if err != nil {
-			common.LogFatal(err)
+			common2.LogFatal(err)
 		}
 
 		// 初始化日志模块

@@ -9,6 +9,7 @@ package lf_test
 
 import (
 	"fmt"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
@@ -67,7 +68,7 @@ func TestUdpTransport_Init(t *testing.T) {
 func TestUdpTransport_Receive(t *testing.T) {
 	mirConfig, err := common.ParseConfig("/usr/local/etc/mir/mirconf.ini")
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 	}
 
 	// 初始化日志模块

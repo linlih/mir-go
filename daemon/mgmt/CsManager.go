@@ -9,10 +9,10 @@ package mgmt
 
 import (
 	"encoding/json"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 )
@@ -54,12 +54,12 @@ func (c *CsManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTab
 	identifier, _ := component.CreateIdentifierByString("/cs-mgmt/delete")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, c.ValidateParameters, c.changeConfig)
 	if err != nil {
-		common.LogError("cs add delete-command fail,the err is:", err)
+		common2.LogError("cs add delete-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/cs-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, c.serveInfo)
 	if err != nil {
-		common.LogError("cs add list-command fail,the err is:", err)
+		common2.LogError("cs add list-command fail,the err is:", err)
 	}
 }
 

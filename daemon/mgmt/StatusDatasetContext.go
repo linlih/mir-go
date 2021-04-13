@@ -9,11 +9,11 @@ package mgmt
 
 import (
 	"encoding/json"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/mgmt"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/utils"
 	"time"
 )
@@ -93,7 +93,7 @@ func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender Nack
 func (s *StatusDatasetContext) Append() []*packet.Data {
 	var dataList []*packet.Data
 	if s.state == FINALIZED {
-		common.LogWarn("state is in FINALIZED")
+		common2.LogWarn("state is in FINALIZED")
 		return nil
 	}
 	s.state = RESPONDED
@@ -107,7 +107,7 @@ func (s *StatusDatasetContext) Append() []*packet.Data {
 	}
 	headerData, err := json.Marshal(responseHeader)
 	if err != nil {
-		common.LogError("mashal err,the err is : ", err)
+		common2.LogError("mashal err,the err is : ", err)
 		return nil
 	}
 	prefix := s.Prefix
@@ -154,7 +154,7 @@ func (s *StatusDatasetContext) Append() []*packet.Data {
 //
 func (s *StatusDatasetContext) Reject(response *mgmt.ControlResponse) {
 	if s.state != INITIAL {
-		common.LogWarn("state is in RESPONDED or FINALIZED")
+		common2.LogWarn("state is in RESPONDED or FINALIZED")
 		return
 	}
 	s.state = FINALIZED

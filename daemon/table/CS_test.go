@@ -5,8 +5,8 @@ import (
 	"minlib/component"
 	"minlib/packet"
 	//"mir-go/daemon/lf"
-	"testing"
 	"strconv"
+	"testing"
 )
 
 func TestCSSize(t *testing.T) {
@@ -131,7 +131,6 @@ func TestCSEraseByIdentifier(t *testing.T) {
 
 }
 
-
 func TestCSFind(t *testing.T) {
 	cs := CreateCS()
 	identifier, err := component.CreateIdentifierByString("/min")
@@ -211,9 +210,6 @@ func BenchmarkCSSize(b *testing.B) {
 	}
 }
 
-
-
-
 func BenchmarkCSEraseByIdentifier(b *testing.B) {
 	cs := CreateCS()
 	identifier, err := component.CreateIdentifierByString("/min")
@@ -244,7 +240,7 @@ func BenchmarkCSInsert(b *testing.B) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			
+
 			data := &packet.Data{}
 			data.SetName(identifier)
 			cs.Insert(data)

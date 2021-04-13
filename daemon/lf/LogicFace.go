@@ -8,9 +8,9 @@
 package lf
 
 import (
+	common2 "minlib/common"
 	"minlib/encoding"
 	"minlib/packet"
-	"mir-go/daemon/common"
 )
 
 type LogicFaceType uint32
@@ -76,7 +76,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	})
 	identifier, err := minPacket.GetIdentifier(0)
 	if err != nil {
-		common.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
+		common2.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
 		return
 	}
 	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {

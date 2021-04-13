@@ -8,7 +8,7 @@
 package lf
 
 import (
-	"mir-go/daemon/common"
+	common2 "minlib/common"
 	"net"
 	"strconv"
 )
@@ -49,7 +49,7 @@ func (t *TcpListener) accept() {
 	for true {
 		newConnect, err := t.listener.Accept()
 		if err != nil {
-			common.LogFatal(err)
+			common2.LogFatal(err)
 		}
 		t.tryCreateTcpLogicFace(newConnect)
 	}
@@ -62,7 +62,7 @@ func (t *TcpListener) accept() {
 func (t *TcpListener) Start() {
 	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(int(t.TcpPort)))
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 		return
 	}
 	t.listener = listener

@@ -9,8 +9,8 @@ package lf
 
 import (
 	"errors"
+	common2 "minlib/common"
 	"minlib/logicface"
-	"mir-go/daemon/common"
 	"net"
 )
 
@@ -60,7 +60,7 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (u
 func CreateTcpLogicFace(remoteUri string) (uint64, error) {
 	conn, err := net.Dial("tcp", remoteUri)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 		return 0, err
 	}
 	logicFace, logicFaceId := createTcpLogicFace(conn)
@@ -81,7 +81,7 @@ func CreateTcpLogicFace(remoteUri string) (uint64, error) {
 func CreateUdpLogicFace(remoteUri string) (uint64, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp4", remoteUri)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 		return 0, err
 	}
 	logicFace, logicFaceId := createUdpLogicFace(gLogicFaceSystem.udpListener.conn, udpAddr)
@@ -103,7 +103,7 @@ func CreateUdpLogicFace(remoteUri string) (uint64, error) {
 func CreateUnixLogicFace(remoteUri string) (uint64, error) {
 	addr, err := net.ResolveUnixAddr("unix", remoteUri)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 		return 0, err
 	}
 	conn, err := net.DialUnix("unix", nil, addr)

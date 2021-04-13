@@ -9,6 +9,7 @@ package fw
 
 import (
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/packet"
@@ -83,7 +84,7 @@ func (f *Forwarder) Start() {
 // @param lf.IncomingPacketData
 //
 func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId": ipd.LogicFace.LogicFaceId,
 	}, "On Receive MINPacket")
 
@@ -93,7 +94,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 	// 首先获取 MINPacket 标识区中的第一个标识，根据第一个标识区分不同的网络包
 	identifyWrapper, err := minPacket.GetIdentifier(0)
 	if err != nil {
-		common.LogWarnWithFields(logrus.Fields{
+		common2.LogWarnWithFields(logrus.Fields{
 			"faceId": ingress.LogicFaceId,
 		}, "Get Identifier failed")
 		return
@@ -103,7 +104,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 	switch identifyWrapper.GetIdentifierType() {
 	case encoding.TlvIdentifierCommon: // CPacket
 		if cPacket, err := packet.CreateCPacketByMINPacket(minPacket); err != nil {
-			common.LogWarnWithFields(logrus.Fields{
+			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
 			}, "Create CPacket by MINPacket failed")
@@ -113,7 +114,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 		}
 	case encoding.TlvIdentifierContentInterest: // Interest
 		if interest, err := packet.CreateInterestByMINPacket(minPacket); err != nil {
-			common.LogWarnWithFields(logrus.Fields{
+			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
 			}, "Create Interest by MINPacket failed")
@@ -121,7 +122,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 		} else {
 			if interest.NackHeader.IsInitial() {
 				if nack, err := packet.CreateNackByInterest(interest); err != nil {
-					common.LogWarnWithFields(logrus.Fields{
+					common2.LogWarnWithFields(logrus.Fields{
 						"faceId":     ingress.LogicFaceId,
 						"identifier": identifyWrapper.ToUri(),
 					}, "Create Nack by Interest failed")
@@ -137,7 +138,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 		}
 	case encoding.TlvIdentifierContentData: // Data
 		if data, err := packet.CreateDataByMINPacket(minPacket); err != nil {
-			common.LogWarnWithFields(logrus.Fields{
+			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
 			}, "Create Data by MINPacket failed")
@@ -179,7 +180,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 // @param interest	收到的内容兴趣包
 //
 func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.Interest) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "Incoming Interest")
@@ -236,7 +237,7 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 // @param interest
 //
 func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Interest) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "Detect Interest loop")
@@ -271,7 +272,7 @@ func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Inter
 // @param interest
 //
 func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "ContentStore miss")
@@ -307,7 +308,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 		ste.GetStrategy().AfterReceiveInterest(ingress, interest, pitEntry)
 	} else {
 		// 输出错误，兴趣包没有找到匹配的可用策略
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"interest": interest.ToUri(),
 		}, "Not found effective StrategyBase")
 	}
@@ -326,7 +327,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 // @param data
 //
 func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *table.CSEntry) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "ContentStore hit")
@@ -343,7 +344,7 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 		ste.GetStrategy().AfterContentStoreHit(ingress, data.GetData(), pitEntry)
 	} else {
 		// 输出错误，兴趣包没有找到匹配的可用策略
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"interest": interest.ToUri(),
 		}, "Not found effective StrategyBase")
 	}
@@ -361,7 +362,7 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 // @param interest
 //
 func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   egress.LogicFaceId,
 		"interest": interest.ToUri(),
 	}, "Outgoing interest")
@@ -386,7 +387,7 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 // @param pitEntry
 //
 func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"entry": pitEntry.GetIdentifier().ToUri(),
 	}, "Interest finalize")
 
@@ -403,7 +404,7 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	// 将对应的PIT条目从PIT表中移除
 	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
 		// 删除 PIT 条目失败，在这边输出提示信息
-		common.LogWarnWithFields(logrus.Fields{
+		common2.LogWarnWithFields(logrus.Fields{
 			"interest": pitEntry.GetIdentifier().ToUri(),
 		}, "Delete PITEntry failed")
 	}
@@ -428,7 +429,7 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 // @param data
 //
 func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId": ingress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Incoming data")
@@ -458,13 +459,13 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		// 清除对应的出记录
 		if err := pitEntry.DeleteOutRecord(ingress); err != nil {
 			// 删除出记录失败，这边输出错误
-			common.LogWarnWithFields(logrus.Fields{
+			common2.LogWarnWithFields(logrus.Fields{
 				"pitEntry": pitEntry.GetIdentifier().ToUri(),
 			}, "Delete out-record failed: ", err)
 		}
 	} else {
 		// 输出错误，数据包没有找到匹配的可用策略
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"data": data.ToUri(),
 		}, "Not found effective StrategyBase")
 	}
@@ -482,7 +483,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 // @param data
 //
 func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId": ingress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Data unsolicited")
@@ -505,7 +506,7 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 // @param data
 //
 func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId": egress.LogicFaceId,
 		"data":   data.ToUri(),
 	}, "Outgoing data")
@@ -532,7 +533,7 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 // @param nack
 //
 func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   ingress.LogicFaceId,
 		"interest": nack.Interest.ToUri(),
 		"reason":   nack.GetNackReason(),
@@ -547,7 +548,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	pitEntry, err := f.PIT.Find(nack.Interest)
 	if err != nil || pitEntry == nil {
 		// 没有找到匹配的 PIT 条目，直接返回丢弃
-		common.LogDebugWithFields(logrus.Fields{
+		common2.LogDebugWithFields(logrus.Fields{
 			"nack":   nack.Interest.ToUri(),
 			"reason": nack.GetNackReason(),
 		}, "Have not found match PITEntry for nack")
@@ -557,7 +558,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	outRecord, err := pitEntry.GetOutRecord(ingress)
 	if err != nil || outRecord == nil {
 		// 如果不存在对应 LogicFace 的 out-record，则丢弃
-		common.LogDebugWithFields(logrus.Fields{
+		common2.LogDebugWithFields(logrus.Fields{
 			"nack":   nack.Interest.ToUri(),
 			"reason": nack.GetNackReason(),
 		}, "Have not found match out-record for nack")
@@ -567,7 +568,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	// 记录 NackHeader 到 out-record
 	if outRecord.LastNonce.GetNonce() != nack.Interest.GetNonce() {
 		// 如果 Nonce 不一致，直接丢弃
-		common.LogDebugWithFields(logrus.Fields{
+		common2.LogDebugWithFields(logrus.Fields{
 			"nack":   nack.Interest.ToUri(),
 			"reason": nack.GetNackReason(),
 		}, "Founded matched out-record, but Nonce is diff")
@@ -591,7 +592,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 		ste.GetStrategy().AfterReceiveNack(ingress, nack, pitEntry)
 	} else {
 		// 输出错误，Nack没有找到匹配的可用策略
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"nack":   nack.Interest.ToUri(),
 			"reason": nack.GetNackReason(),
 		}, "Not found matched StrategyBase for nack")
@@ -610,7 +611,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 // @param header
 //
 func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   egress.LogicFaceId,
 		"pitEntry": pitEntry.GetIdentifier().ToUri(),
 		"reason":   header.GetNackReason(),
@@ -649,7 +650,7 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 // @param cPacket
 //
 func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":  ingress.LogicFaceId,
 		"cPacket": cPacket.ToUri(),
 	}, "Incoming CPacket")
@@ -661,7 +662,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
 	if cPacket.TTL.Ttl() == 0 {
-		common.LogDebugWithFields(logrus.Fields{
+		common2.LogDebugWithFields(logrus.Fields{
 			"faceId":  ingress.LogicFaceId,
 			"cPacket": cPacket.ToUri(),
 		}, "CPacket TTL < 0")
@@ -674,7 +675,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 		ste.GetStrategy().AfterReceiveCPacket(ingress, cPacket)
 	} else {
 		// 输出错误，CPacket没有找到匹配的可用策略
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"faceId":  ingress.LogicFaceId,
 			"cPacket": cPacket.ToUri(),
 		}, "Not found matched StrategyBase for CPacket")
@@ -689,7 +690,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 // @param cPacket
 //
 func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":  egress.LogicFaceId,
 		"cPacket": cPacket.ToUri(),
 	}, "Outgoing CPacket")

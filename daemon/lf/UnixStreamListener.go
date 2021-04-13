@@ -8,7 +8,7 @@
 package lf
 
 import (
-	"mir-go/daemon/common"
+	common2 "minlib/common"
 	"net"
 	"os"
 	"os/exec"
@@ -41,7 +41,7 @@ func (u *UnixStreamListener) accept() {
 	for true {
 		newConnect, err := u.listener.Accept()
 		if err != nil {
-			common.LogFatal(err)
+			common2.LogFatal(err)
 		}
 		u.createTcpLogicFace(newConnect)
 	}
@@ -54,23 +54,23 @@ func (u *UnixStreamListener) accept() {
 func (u *UnixStreamListener) Start() {
 	err := os.Remove(u.filepath)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 	}
 	addr, err := net.ResolveUnixAddr("unix", u.filepath)
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 		return
 	}
 	listener, err := net.ListenUnix("unix", addr)
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 		return
 	}
 	// 设置连接文件的权限为 777 ， 这样主机上其他用户启动的程序才能正常连接
 	cmd := exec.Command("/bin/bash", "-c", "chmod 777 "+u.filepath)
 	err = cmd.Start()
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 	}
 	u.listener = listener
 	go u.accept()

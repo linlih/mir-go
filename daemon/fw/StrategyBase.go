@@ -9,6 +9,7 @@ package fw
 
 import (
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
@@ -72,7 +73,7 @@ func (s *StrategyBase) AfterReceiveInterest(ingress *lf.LogicFace, interest *pac
 // @param entry			兴趣包对应的PIT条目
 //
 func (s *StrategyBase) AfterContentStoreHit(ingress *lf.LogicFace, data *packet.Data, entry *table.PITEntry) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"ingress":  ingress.LogicFaceId,
 		"data":     data.ToUri(),
 		"pitEntry": entry.GetIdentifier().ToUri(),
@@ -104,7 +105,7 @@ func (s *StrategyBase) AfterContentStoreHit(ingress *lf.LogicFace, data *packet.
 // @param pitEntry		Data 对应匹配的PIT条目
 //
 func (s *StrategyBase) AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
-	common.LogDebugWithFields(logrus.Fields{
+	common2.LogDebugWithFields(logrus.Fields{
 		"ingress":  ingress.LogicFaceId,
 		"data":     data.ToUri(),
 		"pitEntry": pitEntry.GetIdentifier().ToUri(),
@@ -127,7 +128,7 @@ func (s *StrategyBase) AfterReceiveData(ingress *lf.LogicFace, data *packet.Data
 // @param pitEntry		Nack 对应匹配的PIT条目
 //
 func (s *StrategyBase) AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *table.PITEntry) {
-	common.LogDebug(logrus.Fields{
+	common2.LogDebug(logrus.Fields{
 		"ingress":  ingress.LogicFaceId,
 		"nack":     nack.Interest.ToUri(),
 		"reason":   nack.GetNackReason(),
@@ -174,7 +175,7 @@ func (s *StrategyBase) sendInterest(egress *lf.LogicFace, interest *packet.Inter
 func (s *StrategyBase) sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
 	// Data 发出后，对应的入记录应该删除
 	if err := pitEntry.DeleteInRecord(egress); err != nil {
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"egress":   egress.LogicFaceId,
 			"data":     data.ToUri(),
 			"pitEntry": pitEntry.GetIdentifier().ToUri(),

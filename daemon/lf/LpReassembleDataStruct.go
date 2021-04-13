@@ -8,8 +8,8 @@
 package lf
 
 import (
+	common2 "minlib/common"
 	"minlib/packet"
-	"mir-go/daemon/common"
 )
 
 const MaxFragmentNum = 1000
@@ -32,7 +32,7 @@ type PartialPacket struct {
 //
 func (p *PartialPacket) AddLpPacket(lpPacket *packet.LpPacket, curTime int64) {
 	if lpPacket.GetFragmentNum() > MaxFragmentNum {
-		common.LogWarn("exceed max fragment number")
+		common2.LogWarn("exceed max fragment number")
 		return
 	}
 	if len(p.fragments) <= 0 { // 添加第一个包

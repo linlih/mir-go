@@ -9,10 +9,10 @@ package mgmt
 
 import (
 	"encoding/json"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"net"
 	"strconv"
@@ -55,7 +55,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 		return false
 	}, f.createFace)
 	if err != nil {
-		common.LogError("face add create-command fail,the err is:", err)
+		common2.LogError("face add create-command fail,the err is:", err)
 	}
 
 	identifier, _ = component.CreateIdentifierByString("/face-mgmt/destroy")
@@ -66,13 +66,13 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 		return false
 	}, f.destroyFace)
 	if err != nil {
-		common.LogError("face add destroy-command fail,the err is:", err)
+		common2.LogError("face add destroy-command fail,the err is:", err)
 	}
 
 	identifier, _ = component.CreateIdentifierByString("/face-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listFaces)
 	if err != nil {
-		common.LogError("face add list-command fail,the err is:", err)
+		common2.LogError("face add list-command fail,the err is:", err)
 	}
 }
 
@@ -92,46 +92,46 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 	case component.ControlParameterUriSchemeEther:
 		remoteMacAddr, err := net.ParseMAC(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
+			common2.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "parse remote address fail,the err is:"+err.Error(), "")
 
 		}
 		logicFaceId, err := lf.CreateEtherLogicFace(localUri, remoteMacAddr)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
+			common2.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+err.Error(), "")
 		} else {
-			common.LogInfo("create face success")
+			common2.LogInfo("create face success")
 			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 		}
 	case component.ControlParameterUriSchemeTCP:
 		logicFaceId, err := lf.CreateTcpLogicFace(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
+			common2.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create TcpLogicFace fail,the err is:"+err.Error(), "")
 		} else {
-			common.LogInfo("create face success")
+			common2.LogInfo("create face success")
 			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 		}
 	case component.ControlParameterUriSchemeUDP:
 		logicFaceId, err := lf.CreateUdpLogicFace(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
+			common2.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create UdpLogicFace fail,the err is:"+err.Error(), "")
 		}
-		common.LogInfo("create face success")
+		common2.LogInfo("create face success")
 		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 	case component.ControlParameterUriSchemeUnix:
 		logicFaceId, err := lf.CreateUnixLogicFace(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
+			common2.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create UnixLogicFace fail,the err is:"+err.Error(), "")
 		}
-		common.LogInfo("create face success")
+		common2.LogInfo("create face success")
 		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 
 	default:
-		common.LogError("create face fail!the err is:Unsupported protocol")
+		common2.LogError("create face fail!the err is:Unsupported protocol")
 		return MakeControlResponse(400, "Unsupported protocol", "")
 	}
 }
@@ -148,11 +148,11 @@ func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *pac
 	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
-		common.LogError("destory face fail,the err is: inner face is null")
+		common2.LogError("destory face fail,the err is: inner face is null")
 		return MakeControlResponse(400, "the face is not existed", "")
 	}
 	f.logicFaceTable.RemoveByLogicFaceId(logicfaceId)
-	common.LogInfo("destory face success")
+	common2.LogInfo("destory face success")
 	return MakeControlResponse(200, "destory face success!", "")
 }
 
@@ -167,7 +167,7 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 	faceList := f.logicFaceTable.GetAllFaceList()
 	data, err := json.Marshal(faceList)
 	if err != nil {
-		common.LogError("get face info fail,the err is:", err)
+		common2.LogError("get face info fail,the err is:", err)
 		response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
 		context.nackSender(response, interest)
 	}
@@ -175,12 +175,12 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 	// 返回分片列表，并将分片放入缓存中去
 	dataList := context.Append()
 	if dataList == nil {
-		common.LogError("get face info fail,the err is:", err)
+		common2.LogError("get face info fail,the err is:", err)
 		response = MakeControlResponse(400, "slice data packet err!", "")
 		context.nackSender(response, interest)
 		return
 	} else {
-		common.LogInfo("get face info success")
+		common2.LogInfo("get face info success")
 		for i, data := range dataList {
 			// 包编码放在dataSender中
 			context.dataSaver(data)

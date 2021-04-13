@@ -11,8 +11,8 @@ package table
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 )
 
@@ -59,7 +59,7 @@ func (p *PIT) Size() uint64 {
 		if _, ok := val.(*PITEntry); ok {
 			return 1
 		} else {
-			common.LogErrorWithFields(logrus.Fields{
+			common2.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "PITEntry transform fail")
 		}
@@ -169,7 +169,7 @@ func (p *PIT) EraseByLogicFace(logicFace *lf.LogicFace) uint64 {
 			}
 			return 0
 		}
-		common.LogErrorWithFields(logrus.Fields{
+		common2.LogErrorWithFields(logrus.Fields{
 			"value": val,
 		}, "PITEntry transform fail")
 		return 0

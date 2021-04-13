@@ -8,6 +8,7 @@
 package lf
 
 import (
+	common2 "minlib/common"
 	"minlib/security"
 	"mir-go/daemon/common"
 	"time"
@@ -53,7 +54,7 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	gLogicFaceSystem = l
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {
-		common.LogFatal(err)
+		common2.LogFatal(err)
 	}
 	gkeyChain = mkeyChain
 }

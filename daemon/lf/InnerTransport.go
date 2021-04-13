@@ -1,8 +1,8 @@
 package lf
 
 import (
+	common2 "minlib/common"
 	"minlib/packet"
-	"mir-go/daemon/common"
 )
 
 //
@@ -47,7 +47,7 @@ func (i *InnerTransport) Receive() {
 	for true {
 		lpPacket, ok := <-i.recvChan
 		if !ok {
-			common.LogInfo("inner channel has been closed")
+			common2.LogInfo("inner channel has been closed")
 			break
 		}
 		i.linkService.ReceivePacket(lpPacket)

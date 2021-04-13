@@ -9,9 +9,9 @@ package lf
 
 import (
 	"errors"
+	common2 "minlib/common"
 	"minlib/encoding"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"net"
 )
 
@@ -33,7 +33,7 @@ type StreamTransport struct {
 func (t *StreamTransport) Close() {
 	err := t.conn.Close()
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 	}
 }
 
@@ -51,7 +51,7 @@ func (t *StreamTransport) Send(lpPacket *packet.LpPacket) {
 	for writeLen < encodeBufLen {
 		writeRet, err := t.conn.Write(encodeBuf[:encodeBufLen])
 		if err != nil {
-			common.LogError(err, "send to tcp transport error")
+			common2.LogError(err, "send to tcp transport error")
 			t.linkService.logicFace.Shutdown()
 			return
 		}
@@ -81,12 +81,12 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 	}
 	pktType, err := encoding.ReadVarNumber(buf, 0)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 		return err, 0
 	}
 	// 如果数据类型的 TLV 和 type值不等于   encoding.TlvLpPacket， 则接收出错，应该关闭当前logicFace
 	if pktType != encoding.TlvLpPacket {
-		common.LogWarn("receive lpPacket from tcp type error")
+		common2.LogWarn("receive lpPacket from tcp type error")
 		return errors.New("receive lpPacket from tcp type error"), 0
 	}
 	// 如果接收到的数据长度小于 LpPacket 的小于长度 则要等待
@@ -99,7 +99,7 @@ func (t *StreamTransport) readPktAndDeal(buf []byte, bufLen uint64) (error, uint
 	if bufLen >= totalPktLen {
 		lpPacket, err := parseByteArray2LpPacket(buf[:totalPktLen])
 		if err != nil {
-			common.LogWarn("parse lpPacket error")
+			common2.LogWarn("parse lpPacket error")
 		} else {
 			t.linkService.ReceivePacket(lpPacket)
 		}
@@ -153,14 +153,14 @@ func (t *StreamTransport) Receive() {
 	for true {
 		recvRet, err := t.conn.Read(t.recvBuf[t.recvLen:])
 		if err != nil {
-			common.LogError("recv from tcp transport error,the err is:", err)
+			common2.LogError("recv from tcp transport error,the err is:", err)
 			t.linkService.logicFace.Shutdown()
 			break
 		}
 		t.recvLen += uint64(recvRet)
 		err = t.onReceive()
 		if err != nil {
-			common.LogError("recv from tcp transport error")
+			common2.LogError("recv from tcp transport error")
 			t.linkService.logicFace.Shutdown()
 			break
 		}

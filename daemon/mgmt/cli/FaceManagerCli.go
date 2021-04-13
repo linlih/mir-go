@@ -11,6 +11,7 @@ package cli
 import (
 	"encoding/json"
 	"github.com/urfave/cli"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/logicface"
 	"minlib/packet"
@@ -64,7 +65,7 @@ func GetAllFaceInfo(c *cli.Context) error {
 	// 建立unix连接
 	err := face.InitWithUnixSocket("/tmp/mirsock")
 	if err != nil {
-		common.LogError("connect MIR fail!the err is:", err)
+		common2.LogError("connect MIR fail!the err is:", err)
 		return err
 	}
 	interest := &packet.Interest{}
@@ -74,19 +75,19 @@ func GetAllFaceInfo(c *cli.Context) error {
 	interest.InterestLifeTime.SetInterestLifeTime(4000)
 
 	if err = face.SendInterest(interest); err != nil {
-		common.LogError("send interest packet fail!the err is:", err)
+		common2.LogError("send interest packet fail!the err is:", err)
 		return err
 	}
 	minPacket, err := face.ReceivePacket()
 	if err != nil {
-		common.LogError("receive min packet fail!the err is:", err)
+		common2.LogError("receive min packet fail!the err is:", err)
 		return err
 	}
 	data, _ := packet.CreateDataByMINPacket(minPacket)
 	var respinseHeader *mgmt.ResponseHeader
 	err = json.Unmarshal(data.GetValue(), &respinseHeader)
 	if err != nil {
-		common.LogError("parse data fail!the err is:", err)
+		common2.LogError("parse data fail!the err is:", err)
 		return err
 	}
 	for i := 0; i < respinseHeader.FragNums; i++ {

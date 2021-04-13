@@ -14,7 +14,7 @@ import (
 )
 
 // 树的最大深度
-const MAX_DEPTH =  10
+const MAX_DEPTH = 10
 
 //
 // 最长前缀树的表示
@@ -289,20 +289,19 @@ func (n *node) TraverseFunc(f func(val interface{}) uint64) uint64 {
 	return count
 }
 
-func (n *node)GetDepth() int{
+func (n *node) GetDepth() int {
 	var max int = 0
 	// table!=nil 说明还有分支 得到最大的分支高度
 	if n.table != nil {
 		n.table.Range(func(key, value interface{}) bool {
-			if tmp:=value.(*node).GetDepth();max<tmp{
+			if tmp := value.(*node).GetDepth(); max < tmp {
 				max = tmp
 			}
 			return true
 		})
 	}
-	return max+1
+	return max + 1
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///// 错误处理

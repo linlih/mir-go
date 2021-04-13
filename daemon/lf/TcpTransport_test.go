@@ -1,6 +1,7 @@
 package lf_test
 
 import (
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"

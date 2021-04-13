@@ -22,7 +22,7 @@ import (
 //
 type NextHop struct {
 	LogicFace *lf.LogicFace //逻辑接口号
-	Cost        uint64 //路由开销
+	Cost      uint64        //路由开销
 }
 
 //

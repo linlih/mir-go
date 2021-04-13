@@ -9,8 +9,8 @@ package fw
 
 import (
 	"github.com/panjf2000/ants"
+	common2 "minlib/common"
 	"minlib/security"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/utils"
 )
@@ -43,14 +43,14 @@ func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *utils.Bl
 	// 当且仅当需要进行签名验证时，才开启协程池
 	if needValidate {
 		if keyChain, err := security.CreateKeyChain(); err != nil {
-			common.LogFatal("Create KeyChain failed! msg => %s", err.Error())
+			common2.LogFatal("Create KeyChain failed! msg => %s", err.Error())
 		} else {
 			p.keyChain = keyChain
 		}
 		p._pool, _ = ants.NewPool(cap)
 		if err := p.keyChain.InitialKeyChain(); err != nil {
 			// 如果初始化KeyChain失败，则认为是严重错误直接抛出错误退出程序
-			common.LogFatal("PacketValidator init KeyChain failed！ msg => %s", err.Error())
+			common2.LogFatal("PacketValidator init KeyChain failed！ msg => %s", err.Error())
 		}
 	}
 }
@@ -76,16 +76,16 @@ func (p *PacketValidator) ReceiveMINPacket(data *lf.IncomingPacketData) {
 		// TODO: 这边需要检查一下 KeyChain 的签名验证方法是不是多线程安全的
 		if err := p.keyChain.Verify(data.MinPacket); err == nil {
 			// 验证成功
-			common.LogDebugWithFields(data.ToFields(), "Verify Packet Success")
+			common2.LogDebugWithFields(data.ToFields(), "Verify Packet Success")
 			// 验证成功之后将包放入队列中
 			p.packetQueue.Write(data)
 		} else {
 			// 验证失败
-			common.LogDebugWithFields(data.ToFields(), "Verify Packet Failed")
+			common2.LogDebugWithFields(data.ToFields(), "Verify Packet Failed")
 		}
 	}); err != nil {
 		// 任务提交失败，输出错误
-		common.LogError("PacketValidator create a packet verify task failed: %s", err.Error())
+		common2.LogError("PacketValidator create a packet verify task failed: %s", err.Error())
 	}
 }
 

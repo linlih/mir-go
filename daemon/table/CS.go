@@ -10,9 +10,9 @@ package table
 
 import (
 	"github.com/sirupsen/logrus"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
-	"mir-go/daemon/common"
 )
 
 type CS struct {
@@ -39,7 +39,7 @@ func (c *CS) Size() uint64 {
 		if _, ok := val.(*CSEntry); ok {
 			return 1
 		} else {
-			common.LogErrorWithFields(logrus.Fields{
+			common2.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "CSEntry transform fail")
 		}

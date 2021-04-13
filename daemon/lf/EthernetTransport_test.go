@@ -10,6 +10,7 @@ package lf_test
 
 import (
 	"fmt"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
@@ -65,7 +66,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 	}
 	faceid, faceErr := lf.CreateEtherLogicFace("ens33", remoteMac)
 	if faceErr != nil {
-		common.LogError(faceErr)
+		common2.LogError(faceErr)
 	}
 	logicFace := LfTb.GetLogicFacePtrById(faceid)
 	//指定pprof对外提供的http服务的ip和端口，配置为0.0.0.0表示可以非本机访问

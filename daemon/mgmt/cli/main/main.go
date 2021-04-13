@@ -10,6 +10,6 @@ package main
 
 import "mir-go/daemon/mgmt/cli"
 
-func main(){
+func main() {
 	cli.SubMain()
 }

@@ -11,8 +11,8 @@ import (
 	"errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
+	common2 "minlib/common"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"net"
 )
 
@@ -115,16 +115,16 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 	}
 	remoteMacAddr, err := net.ParseMAC(srcMacAddr)
 	if err != nil {
-		common.LogWarn(err)
+		common2.LogWarn(err)
 		return
 	}
 	if checkIdentity(lpPacket) == false {
-		common.LogInfo("user identify verify no pass")
+		common2.LogInfo("user identify verify no pass")
 		return
 	}
 	logicFacePtr, _ := createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
 	if logicFacePtr == nil {
-		common.LogFatal("create ether logicface, error")
+		common2.LogFatal("create ether logicface, error")
 	}
 	i.etherFaceMap[srcMacAddr] = logicFacePtr
 	logicFacePtr.linkService.ReceivePacket(lpPacket)
@@ -139,7 +139,7 @@ func (i *InterfaceListener) readPacketFromDev() {
 	for pkt := range pktSrc.Packets() {
 		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[14:])
 		if err != nil {
-			common.LogError("parse byte to lpPacket error : ", err)
+			common2.LogError("parse byte to lpPacket error : ", err)
 		} else {
 			i.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
 		}

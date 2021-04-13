@@ -14,7 +14,7 @@ import (
 	"os"
 )
 
-func SubMain()  {
+func SubMain() {
 	oApp := cli.NewApp()
 	oApp.Name = "mirc"
 	oApp.Usage = " MIR Management Cli Tools "

@@ -10,9 +10,9 @@ package table
 
 import (
 	"fmt"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"sync"
 	"sync/atomic"
@@ -143,10 +143,10 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 		go func() {
 			select {
 			case <-p.Ticker.C:
-				common.LogInfo("执行回调函数")
+				common2.LogInfo("执行回调函数")
 				f(p)
 			case p.ch <- 1:
-				common.LogInfo("取消定时器 直接退出")
+				common2.LogInfo("取消定时器 直接退出")
 				p.ch = make(chan int)
 			}
 			p.Ticker.Stop()
@@ -168,7 +168,7 @@ func (p *PITEntry) CancelTimer() {
 		<-p.ch
 		return
 	}
-	common.LogWarn("the ticker not start")
+	common2.LogWarn("the ticker not start")
 }
 
 //

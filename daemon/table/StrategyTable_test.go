@@ -1,4 +1,3 @@
-
 package table
 
 import (
@@ -48,7 +47,6 @@ func TestStrategyTableSize(t *testing.T) {
 	fmt.Println(strategyTable.Size())
 }
 
-
 func TestStrategyTableErase(t *testing.T) {
 	strategyTable := CreateStrategyTable()
 	strategyName := "strategyName"
@@ -57,7 +55,7 @@ func TestStrategyTableErase(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	
+
 	strategyTable.Insert(identifier, strategyName, istrategy)
 	// 删除存在数据
 	fmt.Println(strategyTable.Size())
@@ -124,21 +122,21 @@ func TestFindEffectiveStrategyEntry(t *testing.T) {
 		fmt.Println(err)
 	}
 	strategyTable.Insert(identifier1, strategyName1, istrategy)
-	
+
 	strategyName2 := "strategyName2"
 	identifier2, err := component.CreateIdentifierByString("/min/pku/edu")
 	if err != nil {
 		fmt.Println(err)
 	}
 	strategyTable.Insert(identifier2, strategyName2, istrategy)
-	
+
 	strategyName3 := "strategyName3"
 	identifier3, err := component.CreateIdentifierByString("/min/pku/edu/cn")
 	if err != nil {
 		fmt.Println(err)
 	}
 	strategyTable.Insert(identifier3, strategyName3, istrategy)
-	
+
 	//查找"/min/pku"
 	fmt.Println(strategyTable.FindEffectiveStrategyEntry(identifier1))
 	//查找不存在的前缀
@@ -154,7 +152,6 @@ func TestFindEffectiveStrategyEntry(t *testing.T) {
 	}
 	fmt.Println(strategyTable.FindEffectiveStrategyEntry(identifier4))
 }
-
 
 func BenchmarkTableSize(b *testing.B) {
 	strategyTable := CreateStrategyTable()
@@ -217,7 +214,7 @@ func BenchmarkStrategyTableErase(b *testing.B) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -257,7 +254,6 @@ func BenchmarkSetDefaultStrategy(b *testing.B) {
 		strategyTable.SetDefaultStrategy(strategyName)
 	}
 }
-
 
 /*
 //插入、查询性能测试
