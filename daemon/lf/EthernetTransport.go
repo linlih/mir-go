@@ -11,8 +11,8 @@ import (
 	"encoding/binary"
 	"github.com/google/gopacket/pcap"
 	"math"
+	common2 "minlib/common"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"net"
 	"time"
 )
@@ -70,15 +70,15 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
 	if err != nil {
 		e.status = false
-		common.LogError("open default net device error", err)
+		common2.LogError("open default net device error", err)
 		return
 	}
 	//mPcapFilter := "ether proto 0x8600"
-	common.LogInfo(e.localAddr, ifName)
+	common2.LogInfo(e.localAddr, ifName)
 	err = e.handle.SetBPFFilter("ether proto 0x8888 and not ether src host " + e.localAddr)
 	if err != nil {
 		e.status = false
-		common.LogError("open default net device error", err)
+		common2.LogError("open default net device error", err)
 		return
 	}
 }
@@ -110,15 +110,15 @@ func (e *EthernetTransport) Send(lpPacket *packet.LpPacket) {
 	if encodeBufLen <= 0 {
 		return
 	}
-	if encodeBufLen > math.MaxUint16 || encodeBufLen > len(e.sendPacket) - 16{
-		common.LogError("send lpPacket larger than MaxUint16 or send buf len")
+	if encodeBufLen > math.MaxUint16 || encodeBufLen > len(e.sendPacket)-16 {
+		common2.LogError("send lpPacket larger than MaxUint16 or send buf len")
 		return
 	}
 	binary.BigEndian.PutUint16(e.sendPacket[14:16], uint16(encodeBufLen))
 	copy(e.sendPacket[16:], encodeBuf[0:encodeBufLen])
 	err := e.handle.WritePacketData(e.sendPacket[0 : 16+encodeBufLen])
 	if err != nil {
-		common.LogWarn(err, ", packet len = ", 16+encodeBufLen)
+		common2.LogWarn(err, ", packet len = ", 16+encodeBufLen)
 	}
 }
 

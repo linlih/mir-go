@@ -38,7 +38,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 	remote := "00:0c:29:a1:35:bf"
 
 	interest := new(packet.Interest)
-	token := make([]byte, 1000)
+	token := make([]byte, 1400)
 	interest.Payload.SetValue(token)
 	identifer, _ := component.CreateIdentifierByString("/pkusz")
 	interest.SetName(identifer)
@@ -69,7 +69,11 @@ func TestEthernetTransport_Send(t *testing.T) {
 	for {
 		logicFace.SendInterest(interest)
 		counter++
+		time.Sleep(30 * time.Microsecond)
 		common2.LogInfo(counter)
+		if counter == 10000 {
+			break
+		}
 	}
 
 }
