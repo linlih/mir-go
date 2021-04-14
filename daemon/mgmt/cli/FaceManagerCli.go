@@ -15,7 +15,6 @@ import (
 	"minlib/component"
 	"minlib/logicface"
 	"minlib/packet"
-	"mir-go/daemon/common"
 	"mir-go/daemon/mgmt"
 )
 
