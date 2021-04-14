@@ -8,6 +8,7 @@
 package lf
 
 import (
+	"encoding/binary"
 	"errors"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
@@ -137,7 +138,8 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 func (i *InterfaceListener) readPacketFromDev() {
 	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())
 	for pkt := range pktSrc.Packets() {
-		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[14:])
+		lpPacketLen := binary.BigEndian.Uint16(pkt.Data()[14:16])
+		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[16:16+lpPacketLen])
 		if err != nil {
 			common2.LogError("parse byte to lpPacket error : ", err)
 		} else {
