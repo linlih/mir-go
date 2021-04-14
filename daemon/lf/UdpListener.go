@@ -85,6 +85,7 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 		return
 	}
 	logicFace, _ = createUdpLogicFace(u.conn, remoteUdpAddr)
+	u.AddLogicFace( remoteUdpAddr.String() ,logicFace)
 	logicFace.linkService.ReceivePacket(lpPacket)
 }
 
