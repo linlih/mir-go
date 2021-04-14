@@ -66,6 +66,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 	}()
 	counter := 0
 	//fmt.Println(faceid)
+
 	for {
 		logicFace.SendInterest(interest)
 		counter++
