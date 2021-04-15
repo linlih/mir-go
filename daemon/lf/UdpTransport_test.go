@@ -8,7 +8,7 @@
 package lf_test
 
 import (
-	"fmt"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/common"
@@ -80,7 +80,11 @@ func TestUdpTransport_Receive(t *testing.T) {
 	}()
 
 	for true {
-		time.Sleep(10 * time.Second)
-		fmt.Println("等待收包")
+		time.Sleep(10 * time.Millisecond)
+		common2.LogInfo("\n\n======")
+		for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
+			common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
+		}
+		common2.LogInfo("======\n\n")
 	}
 }

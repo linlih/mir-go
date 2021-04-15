@@ -194,3 +194,7 @@ func (lf *LogicFace) Shutdown() {
 	}
 	lf.state = false
 }
+
+func (lf *LogicFace) GetCounter() uint64 {
+	return lf.logicFaceCounters.InInterestN
+}

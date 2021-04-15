@@ -12,8 +12,6 @@ import (
 )
 
 func TestTcpTransport_Init(t *testing.T) {
-	var LfTb lf.LogicFaceTable
-	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.BlockQueue{}
@@ -27,7 +25,7 @@ func TestTcpTransport_Init(t *testing.T) {
 	if err != nil {
 		t.Fatal("Create TCP logic face failed", err.Error())
 	}
-	logicFace := LfTb.GetLogicFacePtrById(id)
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 
 	name, err := component.CreateIdentifierByString("/min/pkusz")
 	if err != nil {

@@ -10,6 +10,7 @@ package lf_test
 
 import (
 	"fmt"
+	"math/rand"
 	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
@@ -37,14 +38,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 	str := "00:0c:29:fa:de:18"
 	remote := "00:0c:29:a1:35:bf"
 
-	interest := new(packet.Interest)
-	token := make([]byte, 1400)
-	interest.Payload.SetValue(token)
-	identifer, _ := component.CreateIdentifierByString("/pkusz")
-	interest.SetName(identifer)
-	interest.SetTtl(5)
-
-	interest.InterestLifeTime.SetInterestLifeTime(4000)
+	interest := createInterest()
 	//localMac, err := net.ParseMAC(str)
 	_, err := net.ParseMAC(str)
 	if err != nil {
@@ -67,14 +61,35 @@ func TestEthernetTransport_Send(t *testing.T) {
 	counter := 0
 	//fmt.Println(faceid)
 
+	//var keychain security.KeyChain
+	//keychain.Init()
+	//keychain.CreateIdentityByName("/yb","123123123123")
+
 	for {
 		logicFace.SendInterest(interest)
 		counter++
 		time.Sleep(30 * time.Microsecond)
 		common2.LogInfo(counter)
-		if counter == 10000 {
+		if counter == 100000 {
 			break
 		}
 	}
+}
+func createInterest() *packet.Interest {
+	interest := new(packet.Interest)
+	token := randByte()
+	interest.Payload.SetValue(token)
+	identifier, _ := component.CreateIdentifierByString("/pkusz")
+	interest.SetName(identifier)
+	interest.SetTtl(5)
+	interest.InterestLifeTime.SetInterestLifeTime(4000)
 
+	return interest
+}
+
+func randByte() []byte {
+	token := make([]byte, 1300)
+	rand.Read(token)
+
+	return token
 }
