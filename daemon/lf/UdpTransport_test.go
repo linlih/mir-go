@@ -8,9 +8,10 @@
 package lf_test
 
 import (
-	common2 "minlib/common"
+	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"minlib/security"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
@@ -30,8 +31,6 @@ import (
  * VM1 会在终端中打印 "recv from :" 等信息，并正确解码相应的兴趣包
  ***************************************************************/
 func TestUdpTransport_Init(t *testing.T) {
-	var LfTb lf.LogicFaceTable
-	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.BlockQueue{}
@@ -45,7 +44,6 @@ func TestUdpTransport_Init(t *testing.T) {
 	if err != nil {
 		t.Fatal("Create UDP logic face failed", err.Error())
 	}
-	logicFace := LfTb.GetLogicFacePtrById(id)
 
 	name, err := component.CreateIdentifierByString("/min/pkusz")
 	if err != nil {
@@ -57,15 +55,95 @@ func TestUdpTransport_Init(t *testing.T) {
 	interest.SetCanBePrefix(true)
 	interest.SetNonce(1234)
 	var buf []byte = []byte("hello world!")
+
 	interest.Payload.SetValue(buf[:])
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	logicFace.SendInterest(&interest)
 }
 
+func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int) {
+	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	if err != nil {
+		fmt.Println("Create UDP logic face failed", err.Error())
+		return
+	}
+
+	var interest packet.Interest
+	interest.SetNameByString("/min/pkusz")
+	interest.SetCanBePrefix(true)
+	interest.SetNonce(1234)
+
+	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
+
+	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
+	for i := 0; i < volume; i++ {
+		logicFace.SendInterest(&interest)
+	}
+}
+
+func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int) {
+	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	if err != nil {
+		fmt.Println("Create UDP logic face failed", err.Error())
+		return
+	}
+	var interest packet.Interest
+	interest.SetNameByString("/min/pkusz")
+	interest.SetCanBePrefix(true)
+	interest.SetNonce(1234)
+	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
+
+	keyChain, err := security.CreateKeyChain()
+	if err != nil {
+		fmt.Println("Create KeyChain failed ", err.Error())
+		return
+	}
+	// 测试前需要保证两条机器有相同的秘钥，需要用程序在一台主机上生成下，再拷贝到另外一台机器上
+	i := keyChain.IdentifyManager.GetIdentifyByName("/pkusz")
+	keyChain.SetCurrentIdentity(i, "pkusz123pkusz123")
+	keyChain.SignInterest(&interest)
+
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
+	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
+	for i := 0; i < volume; i++ {
+		logicFace.SendInterest(&interest)
+	}
+}
+
+func TestUdpTransport_Speed(t *testing.T) {
+	var faceSystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
+
+	for i := 0; i < 1; i++ {
+		go udpTransportSend(&faceSystem, 1500, 10000)
+	}
+}
+
+func TestUdpTransport_SpeedAndSign(t *testing.T) {
+	var faceSystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
+
+	for i := 0; i < 1; i++ {
+		go udpTransportSendAndSign(&faceSystem, 1500, 10000)
+	}
+}
+
 func TestUdpTransport_Receive(t *testing.T) {
-	var LfTb lf.LogicFaceTable
-	LfTb.Init()
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.CreateBlockQueue(10)
@@ -80,11 +158,13 @@ func TestUdpTransport_Receive(t *testing.T) {
 	}()
 
 	for true {
-		time.Sleep(10 * time.Millisecond)
-		common2.LogInfo("\n\n======")
-		for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
-			common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
-		}
-		common2.LogInfo("======\n\n")
+		time.Sleep(10 * time.Second)
+		fmt.Println("等待收包")
+		//time.Sleep(10 * time.Millisecond)
+		//common2.LogInfo("\n\n======")
+		//for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
+		//	common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
+		//}
+		//common2.LogInfo("======\n\n")
 	}
 }
