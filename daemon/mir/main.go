@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	common2 "minlib/common"
 	"minlib/component"
 	"mir-go/daemon/common"

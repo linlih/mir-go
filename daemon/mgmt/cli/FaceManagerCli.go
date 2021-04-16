@@ -10,7 +10,7 @@ package cli
 
 import (
 	"encoding/json"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	common2 "minlib/common"
 	"minlib/component"
 	"minlib/logicface"

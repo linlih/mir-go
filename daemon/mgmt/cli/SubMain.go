@@ -9,7 +9,7 @@
 package cli
 
 import (
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
