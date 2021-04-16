@@ -11,6 +11,7 @@ import (
 	"container/heap"
 	"minlib/packet"
 	"strconv"
+	"sync"
 )
 
 // 如果超过500ms没收到下一个分片，则删除表项
@@ -35,8 +36,9 @@ const ReassembleTimeout = 500 // 500ms超时
 //
 type LpReassemble struct {
 	// key : string = "remoteMacAddr:packetID"
-	mPartialPackets  map[string]*PartialPacket
-	timeoutEventHeap TimeoutEventHeap
+	mPartialPackets     map[string]*PartialPacket
+	mPartialPacketsLock sync.Mutex
+	timeoutEventHeap    TimeoutEventHeap
 }
 
 //
@@ -82,6 +84,7 @@ func (l *LpReassemble) processTimeoutEvent(curTime int64) {
 func (l *LpReassemble) ReceiveFragment(remoteMacAddr string, lpPacket *packet.LpPacket) *packet.LpPacket {
 	curTime := getTimestampMS()
 	key := remoteMacAddr + ":" + strconv.FormatUint(lpPacket.GetId(), 10)
+	l.mPartialPacketsLock.Lock()
 	entry, ok := l.mPartialPackets[key]
 	if ok {
 		entry.AddLpPacket(lpPacket, curTime)
@@ -98,5 +101,6 @@ func (l *LpReassemble) ReceiveFragment(remoteMacAddr string, lpPacket *packet.Lp
 		l.mPartialPackets[key] = entry
 	}
 	l.processTimeoutEvent(curTime)
+	l.mPartialPacketsLock.Unlock()
 	return reassembleLpPacket
 }

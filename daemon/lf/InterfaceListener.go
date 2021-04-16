@@ -132,22 +132,40 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 }
 
 //
-// @Description: 	不断的从网卡中读包
+// @Description: 处理收到的以太网帧协程
 // @receiver i
 //
-func (i *InterfaceListener) readPacketFromDev() {
-	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())
-	for pkt := range pktSrc.Packets() {
+func (i *InterfaceListener) processReceivedFrame(readPktChan <-chan gopacket.Packet) {
+	for true {
+		pkt, ok := <-readPktChan
+		if !ok {
+			common2.LogError("read from readPktChan error")
+			break
+		}
 		lpPacketLen := binary.BigEndian.Uint16(pkt.Data()[14:16])
 		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[16 : 16+lpPacketLen])
-		//i.logicFace.logicFaceCounters.InInterestN++
 		if err != nil {
 			common2.LogError("parse byte to lpPacket error : ", err)
 		} else {
 			i.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
 		}
 	}
+}
 
+//
+// @Description: 	不断的从网卡中读包
+// @receiver i
+//
+func (i *InterfaceListener) readPacketFromDev() {
+	readPktChan := make(chan gopacket.Packet, 10000)
+	for threadn := 0; threadn < 3; threadn++ {
+		i.processReceivedFrame(readPktChan)
+	}
+
+	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())
+	for pkt := range pktSrc.Packets() {
+		readPktChan <- pkt
+	}
 }
 
 //
