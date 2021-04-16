@@ -10,6 +10,7 @@ package mgmt
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"minlib/common"
 	"minlib/component"
 	"minlib/encoding"
@@ -17,7 +18,9 @@ import (
 	"minlib/mgmt"
 	"minlib/packet"
 	"minlib/security"
-	"os"
+	common2 "mir-go/daemon/common"
+	"mir-go/daemon/lf"
+	"mir-go/daemon/table"
 	"sync"
 )
 
@@ -79,68 +82,111 @@ func authorizationReject(errorType int) {
 //
 func (d *Dispatcher) Start() {
 	go func() {
+		if d.FaceClient == nil {
+			common.LogFatal("faceClient is null!")
+			return
+		}
+
+		// 开始循环处理管理命令兴趣包
 		for {
-			if d.FaceClient == nil {
-				common.LogError("faceClient is null!")
-				os.Exit(0)
-			}
 			minPacket, err := d.FaceClient.ReceivePacket()
 			if err != nil {
-				common.LogError("receive packet fail!the err is:", err)
-				d.FaceClient.Shutdown()
-				os.Exit(0)
+				_ = d.FaceClient.Shutdown()
+				common.LogFatal("receive packet fail!the err is:", err)
 			}
-			if minPacket.PacketType != encoding.TlvPacketMINCommon {
-				//common.LogWarn("receive minPacket from tcp type error")
-				//continue
-			}
-			interest, err := packet.CreateInterestByMINPacket(minPacket)
-			if err != nil {
-				common.LogError("can not parse minPacket to interest!the err is:", err)
+
+			// 判断是否是管理包，不是管理包则直接丢弃
+			if minPacket.PacketType != encoding.TlvPacketMINManagement {
 				continue
 			}
-			actionPrefix, _ := interest.GetName().GetSubIdentifier(3, 2)
-			topPrefix, _ := interest.GetName().GetSubIdentifier(0, 3)
-			module := d.module[actionPrefix.ToUri()]
+
+			// 创建管理兴趣包
+			interest, err := packet.CreateInterestByMINPacket(minPacket)
+			if err != nil {
+				common.LogWarn("can not parse minPacket to interest!the err is:", err)
+				continue
+			}
+
+			// 判断命令前缀是否足够长
+			prefix := interest.GetName()
+			if prefix.Size() < 5 {
+				common.LogWarn("Command Interest's prefix size < 5! drop it")
+				continue
+			}
+
+			// 获取顶级前缀，eg: /min-mir/mgmt/localhost
+			topPrefix, err := prefix.GetSubIdentifier(0, 3)
+			if err != nil {
+				common.LogWarnWithFields(logrus.Fields{
+					"prefix": prefix.ToUri(),
+				}, "Get Command Interest's topPrefix failed!")
+				continue
+			}
+
+			// 获取相对前缀，eg: /face-mgmt/list
+			relPrefix, err := prefix.GetSubIdentifier(3, 2)
+			if err != nil {
+				common.LogWarnWithFields(logrus.Fields{
+					"prefix": prefix.ToUri(),
+				}, "Get Command Interest's relPrefix failed!")
+				continue
+			}
+
+			// 获取对应命令的处理回调
+			module := d.module[relPrefix.ToUri()]
 			if module == nil {
-				common.LogWarn("the command is not registered!")
+				common.LogWarnWithFields(logrus.Fields{
+					"prefix":    prefix.ToUri(),
+					"relPrefix": relPrefix.ToUri(),
+				}, "the command is not registered!")
 				response := MakeControlResponse(400, "the command is not registered!", "")
 				d.sendControlResponse(response, interest)
 				continue
 			}
+
+			// 解析命令参数
 			parameters := &mgmt.ControlParameters{}
-			if module.authorization(topPrefix, interest, parameters, authorizationAccept, authorizationReject) {
-
-				if module.ccHandler != nil {
-					if err := parameters.Parse(interest); err != nil {
-						common.LogError("解析控制参数错误！the err is:", err)
-						response := MakeControlResponse(400, "parse parameters fail!", "")
-						d.sendControlResponse(response, interest)
-						continue
-					}
-					if !module.validateParameters(parameters) {
-						common.LogWarn("parameters validate fail!discard the packet!")
-						response := MakeControlResponse(400, "parameters validate fail!", "")
-						d.sendControlResponse(response, interest)
-						continue
-					} else {
-						response := module.ccHandler(topPrefix, interest, parameters)
-						d.sendControlResponse(response, interest)
-						continue
-					}
-				}
-
-				if module.sdHandler != nil {
-					d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
-						var context = CreateSDC(interest, d.sendData, d.sendControlResponse, d.saveData)
-						module.sdHandler(topPrefix, interest, context)
-					})
-				}
-			} else {
-				response := MakeControlResponse(400, "authorization fail!", "")
-				d.sendControlResponse(response, interest)
+			err = parameters.Parse(interest)
+			if err != nil {
+				common.LogWarnWithFields(logrus.Fields{
+					"interest": interest.ToUri(),
+				}, "Parse command interest parameters failed!", err)
+				continue
 			}
 
+			// 进行权限验证
+			module.authorization(topPrefix, interest, parameters, func() {
+				// Accept => 权限验证通过，进行进一步处理
+
+				// 首先查询缓存中有没有匹配项，有则直接返回
+				d.queryStorage(topPrefix, interest, func(topPrefix *component.Identifier, interest *packet.Interest) {
+					// 如果没用命中缓存，则进一步交给具体的管理模块处理
+
+					// 如果是管理命令，则调用管理命令处理
+					if module.ccHandler != nil {
+						if module.validateParameters != nil && !module.validateParameters(parameters) {
+							response := MakeControlResponse(400, "Parameters validate failed!", "")
+							d.sendControlResponse(response, interest)
+							return
+						} else {
+							response := module.ccHandler(topPrefix, interest, parameters)
+							d.sendControlResponse(response, interest)
+							return
+						}
+					} else {
+						common.LogWarn("This module doesn't register command handle")
+					}
+
+					// 如果是请求数据集的命令，则调用数据集处理回调进行处理
+					if module.sdHandler != nil {
+						var context = CreateSDC(interest, d.sendData, d.sendControlResponse, d.saveData)
+						module.sdHandler(topPrefix, interest, context)
+					}
+				})
+			}, func(errorType int) {
+				// Reject => 权限验证失败，返回错误
+				d.sendControlResponse(MakeControlResponse(errorType, "Authorization Failed!", ""), interest)
+			})
 		}
 	}()
 }
@@ -175,13 +221,13 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 //pp
 // @Description:创建调度器函数，对调度器进行初始化
 //
-func CreateDispatcher() *Dispatcher {
+func CreateDispatcher(config *common2.MIRConfig) *Dispatcher {
 	return &Dispatcher{
 		topPrefixList: make(map[string]*component.Identifier),
 		module:        make(map[string]*Module),
 		topLock:       new(sync.RWMutex),
 		moduleLock:    new(sync.RWMutex),
-		Cache:         New(100, nil),
+		Cache:         New(config.ManagementConfig.CacheSize, nil),
 	}
 }
 
@@ -191,10 +237,13 @@ func CreateDispatcher() *Dispatcher {
 // @Description:在顶级域map中注册顶级域 顶级域分为本地:/min-mir/mgmt/localhost
 // 				远程:/<路由器前缀>/min-mir/mgmt/remote 等
 //
-func (d *Dispatcher) AddTopPrefix(topPrefix *component.Identifier) {
+func (d *Dispatcher) AddTopPrefix(topPrefix *component.Identifier, fib *table.FIB, serverFace *lf.LogicFace) {
 	d.topLock.Lock()
 	defer d.topLock.Unlock()
 	d.topPrefixList[topPrefix.ToUri()] = topPrefix
+
+	// 在转发表中添加指向管理模块的前缀
+	fib.AddOrUpdate(topPrefix, serverFace, 0)
 }
 
 // RemoveTopPrefix

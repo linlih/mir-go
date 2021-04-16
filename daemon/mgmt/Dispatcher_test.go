@@ -24,9 +24,9 @@ func Test(t *testing.T) {
 	fibManager := CreateFibManager()
 	faceManager := CreateFaceManager()
 	csManager := CreateCsManager()
-	dispatcher := CreateDispatcher()
+	dispatcher := CreateDispatcher(nil)
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
-	dispatcher.AddTopPrefix(topPrefix)
+	dispatcher.AddTopPrefix(topPrefix, nil, nil)
 	fibManager.Init(dispatcher, Fsystem.LogicFaceTable())
 	faceManager.Init(dispatcher, Fsystem.LogicFaceTable())
 	csManager.Init(dispatcher, Fsystem.LogicFaceTable())
@@ -34,7 +34,7 @@ func Test(t *testing.T) {
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	dispatcher.FaceClient = faceClient
 	topPrefix, _ = component.CreateIdentifierByString("/min-mir/mgmt/localhop")
-	dispatcher.AddTopPrefix(topPrefix)
+	dispatcher.AddTopPrefix(topPrefix, nil, nil)
 	fibManager.GetFib().AddOrUpdate(topPrefix, faceServer, 0)
 	dispatcher.Start()
 

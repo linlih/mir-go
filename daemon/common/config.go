@@ -15,12 +15,13 @@ import "gopkg.in/ini.v1"
 // @Description:
 //
 type MIRConfig struct {
-	GeneralConfig   `ini:"General"`
-	LogConfig       `ini:"Log"`
-	TableConfig     `ini:"Table"`
-	LogicFaceConfig `ini:"LogicFace"`
-	SecurityConfig  `ini:"Security"`
-	ForwarderConfig `ini:"Forwarder"`
+	GeneralConfig    `ini:"General"`
+	LogConfig        `ini:"Log"`
+	TableConfig      `ini:"Table"`
+	LogicFaceConfig  `ini:"LogicFace"`
+	SecurityConfig   `ini:"Security"`
+	ForwarderConfig  `ini:"Forwarder"`
+	ManagementConfig `ini:"Management"`
 }
 
 // Init
@@ -117,6 +118,13 @@ type ForwarderConfig struct {
 	//// Forwarder
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	PacketQueueSize int `ini:"PacketQueueSize"` // 包缓冲队列大小
+}
+
+type ManagementConfig struct {
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//// Management
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	CacheSize int64 `ini:"CacheSize"` // 缓存大小
 }
 
 // ParseConfig

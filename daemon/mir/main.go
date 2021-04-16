@@ -71,15 +71,14 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
 
-	// TODO: 在这边启动管理模块的程序
+	// 管理模块
+	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	mgmtSystem := mgmt.CreateMgmtSystem()
 	mgmtSystem.SetFIB(forwarder.GetFIB())
-	dispatcher := mgmt.CreateDispatcher()
-	faceServer, faceClient := lf.CreateInnerLogicFacePair()
+	dispatcher := mgmt.CreateDispatcher(mirConfig)
 	dispatcher.FaceClient = faceClient
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
-	dispatcher.AddTopPrefix(topPrefix)
-	mgmtSystem.AddInnerFace(topPrefix, faceServer, 0)
+	dispatcher.AddTopPrefix(topPrefix, forwarder.GetFIB(), faceServer)
 	mgmtSystem.Init(dispatcher, logicFaceSystem.LogicFaceTable())
 	dispatcher.Start()
 
