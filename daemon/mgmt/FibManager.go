@@ -9,7 +9,7 @@ package mgmt
 
 import (
 	"encoding/json"
-	common2 "minlib/common"
+	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
@@ -57,7 +57,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 		return false
 	}, f.AddNextHop)
 	if err != nil {
-		common2.LogError("add add-command fail,the err is:", err)
+		common.LogError("add add-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/delete")
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
@@ -68,12 +68,12 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 		return false
 	}, f.RemoveNextHop)
 	if err != nil {
-		common2.LogError("add delete-command fail,the err is:", err)
+		common.LogError("add delete-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.ListEntries)
 	if err != nil {
-		common2.LogError("add list-command fail,the err is:", err)
+		common.LogError("add list-command fail,the err is:", err)
 	}
 }
 
@@ -91,18 +91,18 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 	cost := parameters.ControlParameterCost.Cost()
 	// 标识前缀 不能太长 太长返回错误信息
 	if prefix.Size() > table.MAX_DEPTH {
-		common2.LogError("add next hop fail,the err is:the prefix is too long")
+		common.LogError("add next hop fail,the err is:the prefix is too long")
 		// 返回前缀太长的错误信息
 		return MakeControlResponse(414, "the prefix is too long ,cannot exceed "+strconv.Itoa(table.MAX_DEPTH)+"components", "")
 	}
 	// 根据Id从table中取出 logicface
 	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
-		common2.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicfaceId:"+strconv.FormatUint(logicfaceId, 10)+"failed!")
+		common.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicfaceId:"+strconv.FormatUint(logicfaceId, 10)+"failed!")
 		return MakeControlResponse(414, "the face is not found", "")
 	}
 	f.fib.AddOrUpdate(prefix, face, cost)
-	common2.LogInfo("add next hop success")
+	common.LogInfo("add next hop success")
 	return MakeControlResponse(200, "add next hop success", "")
 }
 
@@ -120,13 +120,13 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 	// 根据Id从table中取出 logicface
 	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
 	if face == nil {
-		common2.LogError("add next hop fail,the err is:face is not found")
+		common.LogError("add next hop fail,the err is:face is not found")
 		return MakeControlResponse(410, "the face is not found", "")
 
 	}
 	fibEntry := f.fib.FindExactMatch(prefix)
 	if fibEntry == nil {
-		common2.LogError("add next hop fail,the err is:the fibEntry is not found")
+		common.LogError("add next hop fail,the err is:the fibEntry is not found")
 		return MakeControlResponse(411, "the fibEntry is not found", "")
 	}
 	// 删除这个标识前缀对应 FIB表项中的某个下一跳
@@ -135,12 +135,12 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 		// 如果空 直接删除整个表项
 		err := f.fib.EraseByFIBEntry(fibEntry)
 		if err != nil {
-			common2.LogError("add next hop fail,the err is", err)
+			common.LogError("add next hop fail,the err is", err)
 			return MakeControlResponse(412, err.Error(), "")
 		}
 	}
 	// 返回成功
-	common2.LogInfo("remove next hop success")
+	common.LogInfo("remove next hop success")
 	return MakeControlResponse(200, "remove next hop success", "")
 }
 
@@ -155,7 +155,7 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 	fibEntrys := f.fib.GetAllEntry()
 	data, err := json.Marshal(fibEntrys)
 	if err != nil {
-		common2.LogError("get fib info fail,the err is", err)
+		common.LogError("get fib info fail,the err is", err)
 		response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
 		context.nackSender(response, interest)
 		return
@@ -164,12 +164,12 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 	// 返回分片列表，并将分片放入缓存中去
 	dataList := context.Append()
 	if dataList == nil {
-		common2.LogError("get fib info fail,the err is", err)
+		common.LogError("get fib info fail,the err is", err)
 		response = MakeControlResponse(400, "slice data packet err!", "")
 		context.nackSender(response, interest)
 		return
 	} else {
-		common2.LogInfo("get fib info success")
+		common.LogInfo("get fib info success")
 		for i, data := range dataList {
 			// 包编码放在dataSender中
 			context.dataSaver(data)

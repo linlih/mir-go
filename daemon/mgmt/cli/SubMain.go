@@ -6,7 +6,7 @@
  *@Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
  */
 
-package cli
+package mgmt
 
 import (
 	"github.com/urfave/cli/v2"

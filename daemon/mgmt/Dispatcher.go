@@ -10,7 +10,7 @@ package mgmt
 import (
 	"encoding/json"
 	"fmt"
-	common2 "minlib/common"
+	"minlib/common"
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/logicface"
@@ -81,29 +81,31 @@ func (d *Dispatcher) Start() {
 	go func() {
 		for {
 			if d.FaceClient == nil {
-				common2.LogError("faceClient is null!")
+				common.LogError("faceClient is null!")
 				os.Exit(0)
 			}
 			minPacket, err := d.FaceClient.ReceivePacket()
 			if err != nil {
-				common2.LogError("receive packet fail!the err is:", err)
+				common.LogError("receive packet fail!the err is:", err)
 				d.FaceClient.Shutdown()
 				os.Exit(0)
 			}
 			if minPacket.PacketType != encoding.TlvPacketMINCommon {
-				//common2.LogWarn("receive minPacket from tcp type error")
+				//common.LogWarn("receive minPacket from tcp type error")
 				//continue
 			}
 			interest, err := packet.CreateInterestByMINPacket(minPacket)
 			if err != nil {
-				common2.LogError("can not parse minPacket to interest!the err is:", err)
+				common.LogError("can not parse minPacket to interest!the err is:", err)
 				continue
 			}
 			actionPrefix, _ := interest.GetName().GetSubIdentifier(3, 2)
 			topPrefix, _ := interest.GetName().GetSubIdentifier(0, 3)
 			module := d.module[actionPrefix.ToUri()]
 			if module == nil {
-				common2.LogWarn("the command is not registered!")
+				common.LogWarn("the command is not registered!")
+				response := MakeControlResponse(400, "the command is not registered!", "")
+				d.sendControlResponse(response, interest)
 				continue
 			}
 			parameters := &mgmt.ControlParameters{}
@@ -111,15 +113,21 @@ func (d *Dispatcher) Start() {
 
 				if module.ccHandler != nil {
 					if err := parameters.Parse(interest); err != nil {
-						common2.LogError("解析控制参数错误！the err is:", err)
+						common.LogError("解析控制参数错误！the err is:", err)
+						response := MakeControlResponse(400, "parse parameters fail!", "")
+						d.sendControlResponse(response, interest)
 						continue
 					}
 					if !module.validateParameters(parameters) {
-						common2.LogWarn("parameters validate fail!discard the packet!")
+						common.LogWarn("parameters validate fail!discard the packet!")
+						response := MakeControlResponse(400, "parameters validate fail!", "")
+						d.sendControlResponse(response, interest)
+						continue
+					} else {
+						response := module.ccHandler(topPrefix, interest, parameters)
+						d.sendControlResponse(response, interest)
 						continue
 					}
-					response := module.ccHandler(topPrefix, interest, parameters)
-					d.sendControlResponse(response, interest)
 				}
 
 				if module.sdHandler != nil {
@@ -128,6 +136,9 @@ func (d *Dispatcher) Start() {
 						module.sdHandler(topPrefix, interest, context)
 					})
 				}
+			} else {
+				response := MakeControlResponse(400, "authorization fail!", "")
+				d.sendControlResponse(response, interest)
 			}
 
 		}
@@ -236,7 +247,7 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 	}
 	moduleLock.RLock()
 	if _, ok := d.module[relPrefix.ToUri()]; ok {
-		common2.LogError("the command is existed!")
+		common.LogError("the command is existed!")
 		return createDispatcherErrorByType(CommandExisted)
 	}
 	moduleLock.RUnlock()
@@ -260,11 +271,11 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 	// 如果在缓存中找到分片
 
 	if v, ok := d.Cache.Get(interest.GetName().ToUri()); ok {
-		common2.LogInfo("hit the cache")
+		common.LogInfo("hit the cache")
 		d.sendData(v.(*packet.Data))
 	} else {
 		// 没找到 发起请求数据 并添加到缓存中
-		common2.LogInfo("miss the cache")
+		common.LogInfo("miss the cache")
 		missStorage(topPrefix, interest)
 	}
 }
@@ -277,12 +288,11 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
 	if dataByte, err := json.Marshal(response); err == nil {
 		data := &packet.Data{}
-		idertifier, _ := component.CreateIdentifierByString("/response")
-		data.SetName(idertifier)
+		data.SetName(interest.GetName())
 		data.SetValue(dataByte)
 		d.sendData(data)
 	} else {
-		common2.LogError("Mashal data fail!,the err is:", err)
+		common.LogError("Mashal data fail!,the err is:", err)
 	}
 
 }
@@ -302,10 +312,10 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 func (d *Dispatcher) sendData(data *packet.Data) {
 
 	if err := d.FaceClient.SendData(data); err != nil {
-		common2.LogError("send data fail!the err is :", err)
+		common.LogError("send data fail!the err is :", err)
 		return
 	}
-	common2.LogInfo("send data success")
+	common.LogInfo("send data success")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

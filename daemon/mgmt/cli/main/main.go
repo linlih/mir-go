@@ -11,5 +11,5 @@ package main
 import "mir-go/daemon/mgmt/cli"
 
 func main() {
-	cli.SubMain()
+	mgmt.SubMain()
 }
