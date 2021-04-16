@@ -1,4 +1,4 @@
-//
+// Package fw
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -21,8 +21,7 @@ import (
 	"time"
 )
 
-//
-// MIR 转发器实例
+// Forwarder MIR 转发器实例
 //
 // @Description:
 //
@@ -35,8 +34,7 @@ type Forwarder struct {
 	packetQueue         *utils.BlockQueue           // 包队列
 }
 
-//
-// 初始化转发器
+// Init 初始化转发器
 //
 // @Description:
 // @receiver f
@@ -59,8 +57,7 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 	return nil
 }
 
-//
-// 启动转发处理流程
+// Start 启动转发处理流程
 //
 // @Description:
 //
@@ -75,8 +72,7 @@ func (f *Forwarder) Start() {
 	}
 }
 
-//
-// 处理收到一个 MINPacket
+// OnReceiveMINPacket 处理收到一个 MINPacket
 //
 // @Description:
 // 	1. 解析MINPacket，提取出标识区的第一个标识，根据第一个标识的类型对包进行分类
@@ -149,8 +145,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 	}
 }
 
-//
-// 处理一个兴趣包到来 （ Incoming Interest Pipeline）
+// OnIncomingInterest 处理一个兴趣包到来 （ Incoming Interest Pipeline）
 //
 // @Description:
 // 1. 首先给 Interest 的 TTL 减一，然后检查 TTL 的值是：
@@ -227,8 +222,7 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 	}
 }
 
-//
-// 处理一个回环的兴趣包 （ Interest Loop Pipeline ）
+// OnInterestLoop 处理一个回环的兴趣包 （ Interest Loop Pipeline ）
 //
 // @Description:
 //  在 Incoming Interest 管道处理过程中，如果检测到 Interest 循环就会触发 Interest loop 管道，本管道会向收到 Interest 的 LogicFace
@@ -257,8 +251,7 @@ func (f *Forwarder) OnInterestLoop(ingress *lf.LogicFace, interest *packet.Inter
 	ingress.SendNack(&nack)
 }
 
-//
-// 处理兴趣包未命中缓存 （ ContentStore Miss Pipeline ）
+// OnContentStoreMiss 处理兴趣包未命中缓存 （ ContentStore Miss Pipeline ）
 //
 // @Description:
 // 1. 首先根据传入的 Interest 以及对应的传入 LogicFace 在尝试在对应的PIT条目中插入一条 in-record；
@@ -314,8 +307,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 	}
 }
 
-//
-// 处理兴趣包命中缓存 （ ContentStore Hit Pipeline ）
+// OnContentStoreHit 处理兴趣包命中缓存 （ ContentStore Hit Pipeline ）
 //
 // @Description:
 //  在 incoming Interest 管道中执行 ContentStore 查找并找到匹配项之后触发 ContentStore hit 管道处理逻辑。此管道执行以下步骤：
@@ -350,8 +342,7 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 	}
 }
 
-//
-// 处理将兴趣包通过 LogicFace 发出 （ Outgoing Interest Pipeline ）
+// OnOutgoingInterest 处理将兴趣包通过 LogicFace 发出 （ Outgoing Interest Pipeline ）
 //
 // @Description:
 //  该管道首先在PIT条目中为指定的传出 LogicFace 插入一个 out-record ，或者为同一 LogicFace 更新一个现有的 out-record 。 在这两种情况下，
@@ -380,8 +371,7 @@ func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PIT
 	egress.SendInterest(interest)
 }
 
-//
-// 兴趣包最终回收处理，此时兴趣包要么被满足要么被Nack （ Interest Finalize Pipeline ）
+// OnInterestFinalize 兴趣包最终回收处理，此时兴趣包要么被满足要么被Nack （ Interest Finalize Pipeline ）
 //
 // @Description:
 // @param pitEntry
@@ -413,8 +403,7 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	pitEntry.SetDeleted(true)
 }
 
-//
-// 处理一个数据包到来（ Incoming Data Pipeline ）
+// OnIncomingData 处理一个数据包到来（ Incoming Data Pipeline ）
 //
 // @Description:
 //  1. 首先，管道使用数据匹配算法（ Data Match algorithm ，第3.4.2节）检查 Data 是否与PIT条目匹配。如果找不到匹配的PIT条目，则将 Data
@@ -475,8 +464,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	}
 }
 
-//
-// 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
+// OnDataUnsolicited 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
 //
 // @Description:
 //  在 Incoming data 管道处理过程中发现 Data 是未经请求的时后会触发 Data unsolicited 管道处理逻辑，它的处理过程如下：
@@ -499,8 +487,7 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 	// TODO: 读取配置文件，是否缓存未经请求的 Data
 }
 
-//
-// 处理将一个数据包发出 （ Outgoing Data Pipeline ）
+// OnOutgoingData 处理将一个数据包发出 （ Outgoing Data Pipeline ）
 //
 // @Description:
 //  在 Incoming Interest 管道（第4.2.1节）处理过程中在 ContentStore 中找到匹配的数据或在 Incoming Data 管道处理过程中发现传入的 Data
@@ -523,8 +510,7 @@ func (f *Forwarder) OnOutgoingData(egress *lf.LogicFace, data *packet.Data) {
 	egress.SendData(data)
 }
 
-//
-// 处理一个 Nack 到来 （ Incoming Nack Pipeline ）
+// OnIncomingNack 处理一个 Nack 到来 （ Incoming Nack Pipeline ）
 //
 // @Description:
 //  1. 首先，从收到的 Nack 中提取到 Interest，然后查询是否有与之匹配的PIT条目，如果没有则丢弃，有则执行下一步；
@@ -603,8 +589,7 @@ func (f *Forwarder) OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) {
 	}
 }
 
-//
-// 处理一个 Nack 发出 （ Outgoing Nack Pipeline ）
+// OnOutgoingNack 处理一个 Nack 发出 （ Outgoing Nack Pipeline ）
 //
 // @Description:
 //  1. 首先，在PIT条目中查询指定的传出 LogicFace （下游）的 in-record 。该记录是必要的，因为协议要求将最后一个从下游接收到的 Interest
@@ -640,7 +625,7 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 	egress.SendNack(&nack)
 }
 
-//
+// OnIncomingCPacket
 // 处理一个 CPacket 到来 （Incoming CPacket Pipeline）
 //
 // @Description:
@@ -686,7 +671,7 @@ func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPa
 	}
 }
 
-//
+// OnOutgoingCPacket
 // 处理一个 CPacket 发出 （Outgoing CPacket Pipeline）
 //
 // @Description:
@@ -707,7 +692,7 @@ func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPac
 	egress.SendCPacket(cPacket)
 }
 
-//
+// SetExpiryTime
 // 设置 PIT 条目的超时时间，并在超时时触发 OnInterestFinalize 管道
 //
 // @Description:
