@@ -49,6 +49,7 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	l.logicFaceTable = &logicFaceTable
 	l.packetValidator = packetValidator
 
+	l.config = config
 	l.ethernetListener.Init()
 	l.tcpListener.Init(config.TCPPort)
 	l.udpListener.Init(config.UDPPort)
