@@ -15,6 +15,15 @@ import (
 )
 
 //
+// @Description: 用来存接收到的UDP包
+//
+type UdpPacket struct {
+	recvBuf    [9000]byte
+	recvLen    int64
+	remoteAddr *net.UDPAddr
+}
+
+//
 // @Description:  udpAddrFaceMap 用于保存IP：PORT信息和logicFace的映射关系
 //			key 的格式是收到UDP包的 "<源IP地址>:<源端口号>"
 //			value 的格式是logicFace对象指针
@@ -62,11 +71,7 @@ func (u *UdpListener) Start() {
 	}
 	u.conn = conn
 	u.createUdpLogicFace(conn)
-	go func() {
-		for {
-			u.doReceive()
-		}
-	}()
+	go u.doReceive()
 }
 
 func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UDPAddr) {
@@ -89,23 +94,50 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 	logicFace.linkService.ReceivePacket(lpPacket)
 }
 
+func (u *UdpListener) processUdpPacket(readPacketChan <-chan *UdpPacket) {
+	for true {
+		udpPacket, ok := <-readPacketChan
+		if !ok {
+			common2.LogError("read from readPacketChan error")
+			break
+		}
+		common2.LogInfo("recv from : ", udpPacket.remoteAddr)
+		lpPacket, err := parseByteArray2LpPacket(udpPacket.recvBuf[:udpPacket.recvLen])
+		if err != nil {
+			common2.LogWarn(err)
+			break
+		}
+		u.onReceive(lpPacket, udpPacket.remoteAddr)
+	}
+}
+
 //
 // @Description: 从UDP句柄中接收到UDP包，并处理
 // @receiver u
 //
 func (u *UdpListener) doReceive() {
-	readLen, remoteUdpAddr, err := u.conn.ReadFromUDP(u.recvBuf)
-	if err != nil {
-		common2.LogWarn(err)
-		return
+	readPacketChan := make(chan *UdpPacket, 10000)
+	for i := 0; i < 3; i++ {
+		go u.processUdpPacket(readPacketChan)
 	}
-	common2.LogInfo("recv from : ", remoteUdpAddr)
-	lpPacket, err := parseByteArray2LpPacket(u.recvBuf[:readLen])
-	if err != nil {
-		common2.LogWarn(err)
-		return
+	for true {
+		var udpPacket UdpPacket
+		packetLen, remoteAddr, err := u.conn.ReadFromUDP(udpPacket.recvBuf[:])
+		if err != nil {
+			common2.LogWarn(err)
+			break
+		}
+		udpPacket.remoteAddr = remoteAddr
+		udpPacket.recvLen = int64(packetLen)
+		readPacketChan <- &udpPacket
+		//common2.LogInfo("recv from : ", remoteUdpAddr)
+		//lpPacket, err := parseByteArray2LpPacket(u.recvBuf[:readLen])
+		//if err != nil {
+		//	common2.LogWarn(err)
+		//	break
+		//}
+		//u.onReceive(lpPacket, remoteUdpAddr)
 	}
-	u.onReceive(lpPacket, remoteUdpAddr)
 }
 
 func (u *UdpListener) DeleteLogicFace(remoteAddr string) {
