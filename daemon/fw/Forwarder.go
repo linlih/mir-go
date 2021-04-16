@@ -446,9 +446,13 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		f.OnDataUnsolicited(ingress, data)
 		return
 	}
-	// 找到对应的 PIT 条目
-	// 插入到CS缓存当中
-	f.CS.Insert(data)
+
+	// 判断是否需要缓存
+	if !data.NoCache.GetNoCache() {
+		// 找到对应的 PIT 条目
+		// 插入到CS缓存当中
+		f.CS.Insert(data)
+	}
 
 	// 调用对应策略的 StrategyBase::afterReceiveData 回调
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(data.GetName()); ste != nil {
