@@ -1,4 +1,4 @@
-//
+// Package fw
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -15,7 +15,7 @@ import (
 	"mir-go/daemon/utils"
 )
 
-//
+// PacketValidator
 // 表示一个包验证器，本验证器会并发的对收到的网络包进行签名验证，并且在
 //
 // @Description:
@@ -28,7 +28,7 @@ type PacketValidator struct {
 	needValidate bool               // 是否需要进行验证（如果不开启签名验证，则直接传递给缓存队列即可，无需开启线程池）
 }
 
-//
+// Init
 // 初始化包验证器
 //
 // @Description:
@@ -40,6 +40,7 @@ type PacketValidator struct {
 func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *utils.BlockQueue) {
 	p.cap = cap
 	p.packetQueue = packetQueue
+	p.needValidate = needValidate
 	// 当且仅当需要进行签名验证时，才开启协程池
 	if needValidate {
 		if keyChain, err := security.CreateKeyChain(); err != nil {
@@ -55,7 +56,7 @@ func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *utils.Bl
 	}
 }
 
-//
+// ReceiveMINPacket
 // 收到一个MINPacket
 //
 // @Description:
@@ -89,7 +90,7 @@ func (p *PacketValidator) ReceiveMINPacket(data *lf.IncomingPacketData) {
 	}
 }
 
-//
+// Close
 // 关闭包验证器
 //
 // @Description:
