@@ -139,13 +139,13 @@ func (i *InterfaceListener) readPacketFromDev() {
 	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())
 	for pkt := range pktSrc.Packets() {
 		lpPacketLen := binary.BigEndian.Uint16(pkt.Data()[14:16])
-		_, _ = parseByteArray2LpPacket(pkt.Data()[16 : 16+lpPacketLen])
-		i.logicFace.logicFaceCounters.InInterestN++
-		//if err != nil {
-		//	common2.LogError("parse byte to lpPacket error : ", err)
-		//} else {
-		//	i.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
-		//}
+		lpPacket, err := parseByteArray2LpPacket(pkt.Data()[16 : 16+lpPacketLen])
+		//i.logicFace.logicFaceCounters.InInterestN++
+		if err != nil {
+			common2.LogError("parse byte to lpPacket error : ", err)
+		} else {
+			i.onReceive(lpPacket, pkt.LinkLayer().LinkFlow().Src().String())
+		}
 	}
 
 }

@@ -64,13 +64,15 @@ func TestEthernetTransport_Send(t *testing.T) {
 	//var keychain security.KeyChain
 	//keychain.Init()
 	//keychain.CreateIdentityByName("/yb","123123123123")
-
+	start := time.Now()
 	for {
 		logicFace.SendInterest(interest)
 		counter++
-		time.Sleep(30 * time.Microsecond)
-		common2.LogInfo(counter)
-		if counter == 100000 {
+		//time.Sleep(30 * time.Microsecond)
+		//common2.LogInfo(counter)
+		if counter == 10000000 {
+			eclipase := time.Since(start)
+			common2.LogInfo(eclipase)
 			break
 		}
 	}
@@ -88,7 +90,7 @@ func createInterest() *packet.Interest {
 }
 
 func randByte() []byte {
-	token := make([]byte, 1300)
+	token := make([]byte, 8000)
 	rand.Read(token)
 
 	return token
