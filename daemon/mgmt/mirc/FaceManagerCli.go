@@ -6,10 +6,9 @@
  *@Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
  */
 
-package mgmt
+package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli/v2"
@@ -23,9 +22,14 @@ import (
 )
 
 var remote string
-var local string
-var scheme string
-var mtu int
+
+const moduleName = "face-mgmt"
+
+const (
+	actionList = "list"
+	actionAdd  = "add"
+	actionDel  = "del"
+)
 
 var faceCommands = cli.Command{
 	Name:        "lf",
@@ -75,7 +79,7 @@ var DestroyFaceCommand = cli.Command{
 	},
 }
 
-//func GetAllFaceInfo(c *cli.Context) error {
+//func GetAllFaceInfo(c *mirc.Context) error {
 //	face := logicface.LogicFaceICN{}
 //	// 建立unix连接
 //	err := face.InitWithUnixSocket("/tmp/mirsock")
@@ -143,49 +147,56 @@ var DestroyFaceCommand = cli.Command{
 //}
 
 func GetAllFaceInfo(c *cli.Context) error {
-	face := logicface.LogicFace{}
-	// 建立unix连接
-	err := face.InitWithUnixSocket("/tmp/mirsock")
+	// 接入路由器
+	face := logicface.LogicFaceICN{}
+	err := face.InitWithUnixSocket(unixPath)
 	if err != nil {
 		common.LogError("connect MIR fail!the err is:", err)
 		return err
 	}
 
-	interest := &packet.Interest{}
-	identifierHead, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/list")
-	interest.SetName(identifierHead)
-	interest.SetTtl(5)
-	interest.InterestLifeTime.SetInterestLifeTime(4000)
+	// 首先拉取到元数据
+	face.ExpressInterest(newCommandInterest(moduleName, actionList),
+		func(interest *packet.Interest, data *packet.Data) {
+			// OnData
+			common.LogInfo("OnData")
+			var responseHeader *mgmt.ResponseHeader
+			json.Unmarshal(data.GetValue(), &responseHeader)
+			common.LogInfo(responseHeader)
+		}, func(interest *packet.Interest) {
+			// OnTimeout
+		}, func(interest *packet.Interest, nack *packet.Nack) {
+			// OnNack
+		})
+	face.ProcessEvent()
 
-	face.SendInterest(interest)
-	data, _ := face.ReceiveData()
-	var responseHeader *mgmt.ResponseHeader
-	err = json.Unmarshal(data.GetValue(), &responseHeader)
-	if err != nil {
-		common.LogError("parse data fail!the err is:", err)
-		return err
-	}
-	bytesBuilder := bytes.Buffer{}
-	for i := 1; i <= responseHeader.FragNums; i++ {
-		identifierFrag := *identifierHead
-		identifierFrag.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(i)))
-		interest.SetName(&identifierFrag)
-		interest.SetTtl(5)
-		interest.InterestLifeTime.SetInterestLifeTime(4000)
-
-		face.SendInterest(interest)
-		data, _ := face.ReceiveData()
-		bytesBuilder.Write(data.Payload.GetValue())
-	}
-	var faceInfoList []mgmt.FaceInfo
-	err = json.Unmarshal(bytesBuilder.Bytes(), &faceInfoList)
-	if err != nil {
-		common.LogError("parse data fail!the err is:", err)
-		return err
-	}
-	for _, v := range faceInfoList {
-		fmt.Printf("%+v\n", v)
-	}
+	//data, _ := face.ReceiveData()
+	//err = json.Unmarshal(data.GetValue(), &responseHeader)
+	//if err != nil {
+	//	common.LogError("parse data fail!the err is:", err)
+	//	return err
+	//}
+	//bytesBuilder := bytes.Buffer{}
+	//for i := 1; i <= responseHeader.FragNums; i++ {
+	//	identifierFrag := *identifierHead
+	//	identifierFrag.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(i)))
+	//	interest.SetName(&identifierFrag)
+	//	interest.SetTtl(5)
+	//	interest.InterestLifeTime.SetInterestLifeTime(4000)
+	//
+	//	face.SendInterest(interest)
+	//	data, _ := face.ReceiveData()
+	//	bytesBuilder.Write(data.Payload.GetValue())
+	//}
+	//var faceInfoList []mgmt.FaceInfo
+	//err = json.Unmarshal(bytesBuilder.Bytes(), &faceInfoList)
+	//if err != nil {
+	//	common.LogError("parse data fail!the err is:", err)
+	//	return err
+	//}
+	//for _, v := range faceInfoList {
+	//	fmt.Printf("%+v\n", v)
+	//}
 	return nil
 }
 
