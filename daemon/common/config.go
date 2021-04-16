@@ -1,4 +1,4 @@
-//
+// Package common
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -9,7 +9,7 @@ package common
 
 import "gopkg.in/ini.v1"
 
-//
+// MIRConfig
 // 表示 MIR 配置文件的配置，与 mirconf.ini 中的配置一一对应
 //
 // @Description:
@@ -23,7 +23,7 @@ type MIRConfig struct {
 	ForwarderConfig `ini:"Forwarder"`
 }
 
-//
+// Init
 // 初始化配置，给所有的配置设置默认值
 //
 // @Description:
@@ -119,7 +119,7 @@ type ForwarderConfig struct {
 	PacketQueueSize int `ini:"PacketQueueSize"` // 包缓冲队列大小
 }
 
-//
+// ParseConfig
 // 解析配置文件
 //
 // @Description:

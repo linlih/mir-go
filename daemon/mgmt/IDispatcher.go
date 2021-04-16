@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -17,21 +17,21 @@ import (
 // 全局模块锁
 var moduleLock sync.RWMutex
 
-//
+// AuthorizationAccept
 // 授权通过回调
 //
 // @Description:
 //
 type AuthorizationAccept func()
 
-//
+// AuthorizationReject
 // 授权拒绝回调
 //
 // @Description:
 //
 type AuthorizationReject func(errorType int)
 
-//
+// Authorization
 // 一个回调函数，用于对收到的控制命令进行授权验证
 //
 // @Description:
@@ -53,7 +53,7 @@ type Authorization func(topPrefix *component.Identifier, interest *packet.Intere
 	accept AuthorizationAccept,
 	reject AuthorizationReject) bool
 
-//
+// ValidateParameters
 // 一个回调函数，用于对收到的控制命令参数进行验证
 //
 // @Description:
@@ -62,7 +62,7 @@ type Authorization func(topPrefix *component.Identifier, interest *packet.Intere
 //
 type ValidateParameters func(parameters *mgmt.ControlParameters) bool
 
-//
+// ControlCommandHandler
 // 一个回调函数，用于对收到的已授权的命令进行处理（每个管理模块会通过传入本回调函数自己实现对特定命令的处理逻辑）
 //
 // @Description:
@@ -74,7 +74,7 @@ type ValidateParameters func(parameters *mgmt.ControlParameters) bool
 type ControlCommandHandler func(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *mgmt.ControlParameters) *mgmt.ControlResponse
 
-//
+// StatusDatasetHandler
 // 一个回调函数，处理收到的请求数据集的命令
 //
 // @Description:
@@ -84,7 +84,7 @@ type ControlCommandHandler func(topPrefix *component.Identifier, interest *packe
 //
 type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext)
 
-//
+// InterestHandler
 // 兴趣包处理回调
 //
 // @Description:
@@ -93,7 +93,7 @@ type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet
 //
 type InterestHandler func(topPrefix *component.Identifier, interest *packet.Interest)
 
-//
+// IDispatcher
 // 定义一个管理命令解析和分发程序
 //
 // @Description:
@@ -102,7 +102,7 @@ type InterestHandler func(topPrefix *component.Identifier, interest *packet.Inte
 //	   本类发送给MIR；
 //
 type IDispatcher interface {
-	//
+	// AddTopPrefix
 	// 添加一个顶层前缀
 	//
 	// @Description:
@@ -110,7 +110,7 @@ type IDispatcher interface {
 	//
 	AddTopPrefix(topPrefix *component.Identifier)
 
-	//
+	// RemoveTopPrefix
 	// 移除一个顶层前缀
 	//
 	// @Description:
@@ -118,7 +118,7 @@ type IDispatcher interface {
 	//
 	RemoveTopPrefix(topPrefix *component.Identifier)
 
-	//
+	// AddControlCommand
 	// 注册一个控制命令
 	//
 	// @Description:
@@ -130,7 +130,7 @@ type IDispatcher interface {
 	AddControlCommand(relPrefix *component.Identifier, authorization Authorization, validateParameters ValidateParameters,
 		handler ControlCommandHandler) error
 
-	//
+	// AddStatusDataset
 	// 注册一个数据集
 	//
 	// @Description:

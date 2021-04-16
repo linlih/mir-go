@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -18,7 +18,7 @@ import (
 	"strconv"
 )
 
-//
+// FibManager
 // fib管理模块结构体
 //
 // @Description:fib管理模块结构体
@@ -28,7 +28,7 @@ type FibManager struct {
 	logicFaceTable *lf.LogicFaceTable
 }
 
-//
+// CreateFibManager
 // 创建fib管理模块函数
 //
 // @Description:创建fib管理模块函数并返回指针
@@ -39,7 +39,7 @@ func CreateFibManager() *FibManager {
 	}
 }
 
-//
+// Init
 // fib管理模块初始化注册命令函数
 //
 // @Description:fib管理模块初始化注册命令函数
@@ -77,7 +77,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	}
 }
 
-//
+// AddNextHop
 // fib表中添加下一跳
 //
 // @Description:fib表中添加下一跳并返回添加结果
@@ -106,7 +106,7 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 	return MakeControlResponse(200, "add next hop success", "")
 }
 
-//
+// RemoveNextHop
 // 根据logicface在fib表中删除下一跳
 //
 // @Description:根据logicface在fib表中删除下一跳并返回删除结果
@@ -144,7 +144,7 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 	return MakeControlResponse(200, "remove next hop success", "")
 }
 
-//
+// ListEntries
 // 获取fib表中所有的下一跳信息
 //
 // @Description:获取fib表中所有信息，并分片发送给客户端

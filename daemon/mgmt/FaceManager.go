@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -18,7 +18,7 @@ import (
 	"strconv"
 )
 
-//
+// FaceManager
 // face管理模块结构体
 //
 // @Description:face管理模块结构体
@@ -27,7 +27,7 @@ type FaceManager struct {
 	logicFaceTable *lf.LogicFaceTable
 }
 
-//
+// CreateFaceManager
 // 创建face管理模块函数
 //
 // @Description:创建face管理模块函数并返回指针
@@ -36,7 +36,7 @@ func CreateFaceManager() *FaceManager {
 	return &FaceManager{}
 }
 
-//
+// Init
 // face管理模块初始化注册命令
 //
 // @Description:face管理模块初始化注册命令，包括create、destroy、list
@@ -192,7 +192,7 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 	}
 }
 
-//
+// ValidateParameters
 // face管理模块的参数验证函数
 //
 // @Description:face管理模块的参数验证函数，条件语句中的为必需字段，若有一项不合规范则返回false

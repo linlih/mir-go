@@ -1,4 +1,4 @@
-//
+// Package fw
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -22,7 +22,7 @@ const (
 	DuplicateNonceOutOther = 1 << 3 // out-record 中存在一个来自不同 LogicFace 的重复
 )
 
-//
+// FindDuplicateNonce
 // 查询 PIT 条目中是否存在某个 in-record / out-record 与刚收到的兴趣包中的 Nonce 重复
 //
 // @Description:
@@ -57,7 +57,7 @@ func FindDuplicateNonce(pitEntry *table.PITEntry, nonce *component.Nonce, ingres
 	return result
 }
 
-//
+// HasPendingOutRecords
 // 判断 PIT 条目中是否存在仍在 pending 的 out-record
 //
 // @Description:

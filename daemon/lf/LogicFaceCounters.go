@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -7,7 +7,7 @@
 //
 package lf
 
-//
+// LogicFaceCounters
 // @Description: 统计信息对象，其关键成员有以下几个,用于统计一个logicFace的流量信息
 //
 type LogicFaceCounters struct {

@@ -33,7 +33,7 @@ func (c *CS) Init() {
 	c.lpm.Create()        //初始化锁
 }
 
-// 获得CS的表项数
+// Size 获得CS的表项数
 func (c *CS) Size() uint64 {
 	return c.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if _, ok := val.(*CSEntry); ok {
@@ -47,7 +47,7 @@ func (c *CS) Size() uint64 {
 	})
 }
 
-// 在CS中添加一个Data包 返回CSEntry表项
+// Insert 在CS中添加一个Data包 返回CSEntry表项
 func (c *CS) Insert(data *packet.Data) *CSEntry {
 	var PrefixList []string
 	for _, v := range data.GetName().GetComponents() {
@@ -67,7 +67,7 @@ func (c *CS) Insert(data *packet.Data) *CSEntry {
 	return val.(*CSEntry)
 }
 
-//通过标识删除CS表中的一个数据包
+// EraseByIdentifier 通过标识删除CS表中的一个数据包
 func (c *CS) EraseByIdentifier(identifier *component.Identifier) error {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
@@ -76,7 +76,7 @@ func (c *CS) EraseByIdentifier(identifier *component.Identifier) error {
 	return c.lpm.Delete(PrefixList)
 }
 
-// 通过兴趣包查询CS表项中的数据包
+// Find 通过兴趣包查询CS表项中的数据包
 func (c *CS) Find(interest *packet.Interest) *CSEntry {
 	var PrefixList []string
 	for _, v := range interest.GetName().GetComponents() {

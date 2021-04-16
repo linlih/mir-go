@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -9,24 +9,24 @@ package lf
 
 import "minlib/packet"
 
-//
+// ITransport
 // @Description:  Tranport 接口， 便于LogicFace声明成员。logicFace模块中的每一种tranport都必须实现ITransport声明的方法
 //
 type ITransport interface {
-	//
+	// Close
 	// @Description:  关闭
 	//
 	Close()
-	//
+	// Send
 	// @Description: 发送一个lpPacket
 	// @param lpPacket
 	//
 	Send(lpPacket *packet.LpPacket)
-	//
+	// Receive
 	// @Description: 从网络中接收到一段数据
 	//
 	Receive()
-	//
+	// GetRemoteUri
 	// @Description: 获得Transport的对端地址
 	//			格式 ：
 	//			TCP  tcp://192.238.3.3:7890
@@ -36,7 +36,7 @@ type ITransport interface {
 	// @return string	对端地址
 	//
 	GetRemoteUri() string
-	//
+	// GetLocalUri
 	// @Description: 获得Transport的本机地址
 	//			格式 ：
 	//			TCP  tcp://192.238.3.3:7890
@@ -46,7 +46,7 @@ type ITransport interface {
 	// @return string	本机地址
 	//
 	GetLocalUri() string
-	// @Description: 获得Transport的对端地址
+	// GetRemoteAddr @Description: 获得Transport的对端地址
 	//			格式 ：
 	//			TCP  192.238.3.3:7890
 	//			UDP  192.238.3.3:7890
@@ -55,7 +55,7 @@ type ITransport interface {
 	// @return string	对端地址
 	//
 	GetRemoteAddr() string
-	//
+	// GetLocalAddr
 	// @Description: 获得Transport的本机地址
 	//			格式 ：
 	//			TCP  192.238.3.3:7890

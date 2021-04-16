@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -17,7 +17,7 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// CsManager
 // CS管理模块结构体
 //
 // @Description:CS管理模块结构体
@@ -29,7 +29,7 @@ type CsManager struct {
 	enableAdd      bool // 是否可以添加缓存
 }
 
-//
+// CreateCsManager
 // 创建CS管理模块函数
 //
 // @Description:创建管理模块,进行初始化并返回指针
@@ -43,7 +43,7 @@ func CreateCsManager() *CsManager {
 	}
 }
 
-//
+// Init
 // CS管理模块初始化注册行为函数
 //
 // @Description:对CS管理模块注册三个必须的函数add、delete、list
@@ -121,7 +121,7 @@ func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.
 	}
 }
 
-//
+// ValidateParameters
 // 参数验证函数
 //
 // @Description:对传入的控制参数进行参数验证，条件判断语句中的为必需字段，有一项不存在则错误

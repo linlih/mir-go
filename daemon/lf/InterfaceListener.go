@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -17,7 +17,7 @@ import (
 	"net"
 )
 
-//
+// InterfaceListener
 // @Description:  etherFaceMap用于保存mac地址和LogicFace的映射关系表。
 //			key 的格式是收到以太网帧的 "<源MAC地址>"
 //			value 是logicFace对象指针
@@ -43,7 +43,7 @@ type InterfaceListener struct {
 	pcapHandle   *pcap.Handle          // pcap 抓包句柄
 }
 
-//
+// Init
 // @Description: 	初始化函数
 // @receiver i
 // @param name	网卡名
@@ -58,7 +58,7 @@ func (i *InterfaceListener) Init(name string, macAddr net.HardwareAddr, mtu int)
 	i.state = true
 }
 
-//
+// Close
 // @Description: 	关闭当前监听器，以及与该网卡相关的所有logicFace
 // @receiver i
 //
@@ -69,7 +69,7 @@ func (i *InterfaceListener) Close() {
 	}
 }
 
-// @Description: 启动当前监听器
+// Start @Description: 启动当前监听器
 // @receiver i
 // @return error 启动失败则返回错误
 //
@@ -85,7 +85,7 @@ func (i *InterfaceListener) Start() error {
 	return nil
 }
 
-//
+// GetLogicFaceByMacAddr
 // @Description: 	通过mac地址获得一个 LogicFace
 // @receiver i
 // @param macAddr
@@ -168,7 +168,7 @@ func (i *InterfaceListener) readPacketFromDev() {
 	}
 }
 
-//
+// DeleteLogicFace
 // @Description: 通过mac地址删除一个etherFaceMap中的logicFace
 // @receiver i
 // @param remoteMacAddr
@@ -177,7 +177,7 @@ func (i *InterfaceListener) DeleteLogicFace(remoteMacAddr string) {
 	delete(i.etherFaceMap, remoteMacAddr)
 }
 
-//
+// AddLogicFace
 // @Description: 往etherFaceMap中添加一个 LogicFace
 // @receiver i
 // @param remoteMacAddr

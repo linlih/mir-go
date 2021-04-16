@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -12,7 +12,7 @@ import (
 	"minlib/packet"
 )
 
-//
+// IncomingPacketData
 // 包装了一个 LogicFace 和 MINPacket 的指针，主要用于 LogicFace 和 Forwarder 进行通信
 //
 // @Description:

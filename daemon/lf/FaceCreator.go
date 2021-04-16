@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -18,7 +18,7 @@ import (
 // @Description: 外部接口，为其他模块提供创建各种接口的函数
 //
 
-//
+// CreateEtherLogicFace
 // @Description:	给其他模块调用，创建一个Ether类型的LogicFace，传入本地网卡地址和目的MAC地址。
 //					本函数会：
 //					（1）判断网卡是否存在，网卡是否已经启动； 如果网卡没启动，则返回错误信息；
@@ -47,7 +47,7 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (u
 	return logicFace.LogicFaceId, nil
 }
 
-//
+// CreateTcpLogicFace
 // @Description:  给其他模块调用，创建一个TCP类型的LogicFace，传入对方的TCP地址，格式是 "<ip>:<port>"，如"192.168.3.7:13899"。
 //				函数会执行以下操作：
 //				（1） 尝试连接远程TCP地址，如果连接不成功，则返回连接错误信息
@@ -68,7 +68,7 @@ func CreateTcpLogicFace(remoteUri string) (uint64, error) {
 	return logicFaceId, nil
 }
 
-//
+// CreateUdpLogicFace
 // @Description:	给其他模块调用，创建一个UDP类型的LogicFace，传入对方的UDP地址，格式是 "<ip>:<port>"，如"192.168.3.7:13899"
 //				函数会执行以下操作：
 //				（1） 尝试解析UDP地址，如果解析不成功，则返回连接错误信息
@@ -89,7 +89,7 @@ func CreateUdpLogicFace(remoteUri string) (uint64, error) {
 	return logicFaceId, nil
 }
 
-//
+// CreateUnixLogicFace
 // @Description:  给其他模块调用，创建一个unix socket类型的LogicFace，传入对方的unix地址，格式是 文件路径，如"/tmp/mirsock"。
 //				函数会执行以下操作：
 //				（1） 尝试解析unix地址，如果解析不成功，则返回连接错误信息
@@ -115,7 +115,7 @@ func CreateUnixLogicFace(remoteUri string) (uint64, error) {
 	return logicFaceId, nil
 }
 
-//
+// CreateInnerLogicFacePair
 // @Description: 创建一对相互收发包的内部logicFace，　需要调用者自己把要收包的logicface start 起来
 // @return *LogicFace	 转发器使用的logicFace
 // @return *logicface.LogicFace	其它模使用的logicFace

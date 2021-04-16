@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: Jianming Que | weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -26,12 +26,12 @@ const (
 	LogicFaceTypeInner LogicFaceType = 4
 )
 
-//
+// MaxIdolTimeMs
 // @Description:  超过 600s 没有接收数据或发送数据的logicFace会被logicFaceSystem的face cleaner销毁
 //
 const MaxIdolTimeMs = 600000
 
-//
+// LogicFace
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
 //		LogicFace-LinkService-Transport是一个 一一对应的关系，他们相互绑定
 //		在一个收包流程中网络数据最开始是通过transport流入的，由transport调用LinkService的 receive函数处理接收到的网络包，
@@ -48,7 +48,7 @@ type LogicFace struct {
 	state             bool              //  true 为 up , false 为down
 }
 
-//
+// Init
 // @Description: 	初始化logicFace
 // @receiver lf
 // @param transport	transport对象指针
@@ -63,13 +63,13 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
-//
+// ReceivePacket
 // @Description: 接收到包的处理函数，将包放入待处理缓冲区，更新统计数据
 // @receiver lf
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
-	common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId," " ,lf.GetRemoteUri())
+	common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
 	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
 		LogicFace: lf,
@@ -92,7 +92,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 
 }
 
-//
+// Start
 // @Description: 	启动接收数据协程
 // @receiver lf
 //
@@ -101,7 +101,7 @@ func (lf *LogicFace) Start() {
 	go lf.transport.Receive()
 }
 
-//
+// SendMINPacket
 // @Description:  发送一个MIN包
 // @receiver lf
 // @param packet
@@ -110,7 +110,7 @@ func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
 
 }
 
-//
+// SendInterest
 // @Description: 发送一个兴趣包
 // @receiver lf
 // @param interest
@@ -123,7 +123,7 @@ func (lf *LogicFace) SendInterest(interest *packet.Interest) {
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
-//
+// SendData
 // @Description: 发送一个数据包
 // @receiver lf
 // @param data
@@ -136,7 +136,7 @@ func (lf *LogicFace) SendData(data *packet.Data) {
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
-//
+// SendNack
 // @Description: 发送一个Nack
 // @receiver lf
 // @param nack
@@ -149,7 +149,7 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
-//
+// SendCPacket
 // @Description:  发送一个推送式包
 // @receiver lf
 // @param cPacket
@@ -162,7 +162,7 @@ func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
 }
 
-//
+// GetLocalUri
 // @Description: 获得本地地址
 // @receiver lf
 // @return string
@@ -171,7 +171,7 @@ func (lf *LogicFace) GetLocalUri() string {
 	return lf.transport.GetLocalUri()
 }
 
-//
+// GetRemoteUri
 // @Description: 获得对端地址
 // @receiver lf
 // @return string
@@ -180,7 +180,7 @@ func (lf *LogicFace) GetRemoteUri() string {
 	return lf.transport.GetRemoteUri()
 }
 
-//
+// Shutdown
 // @Description: 关闭face
 // @receiver lf
 //

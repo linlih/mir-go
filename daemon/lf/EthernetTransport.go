@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-//
+// EthernetTransport
 // @Description:  用来发送和接收以太网帧
 //   |---- 8字节目的Mac地址----|---- 8字节源Mac地址----|-2字节协议号-|-LpPacket-|
 //
@@ -35,7 +35,7 @@ type EthernetTransport struct {
 
 }
 
-//
+// Init
 // @Description: 初始化本对象
 // @receiver e
 // @param ifName	网卡名称
@@ -83,7 +83,7 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	}
 }
 
-//
+// SetLinkService
 // @Description: 	设置linkService
 // @receiver e
 // @param service	linkService对象指针
@@ -92,7 +92,7 @@ func (e *EthernetTransport) SetLinkService(service *LinkService) {
 	e.linkService = service
 }
 
-//
+// Close
 // @Description: 	关闭
 // @receiver e
 //
@@ -100,7 +100,7 @@ func (e *EthernetTransport) Close() {
 	e.handle.Close()
 }
 
-// //
+// Send //
 // @Description: 发送以太网包
 // @receiver e
 // @param lpPacket	以太网包对象
@@ -131,7 +131,7 @@ func (e *EthernetTransport) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 	// TODO 暂时不用这个函数
 }
 
-//
+// Receive
 // @Description: 	阻塞读，由上层线程或协程调用
 // @receiver e
 //

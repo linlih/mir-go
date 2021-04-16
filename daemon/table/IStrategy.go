@@ -1,4 +1,4 @@
-//
+// Package table
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -17,7 +17,7 @@ type IStrategy interface {
 	//// Triggers
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//
+	// AfterReceiveInterest
 	// 当收到一个兴趣包时，会触发本触发器
 	//
 	// @Description:
@@ -32,7 +32,7 @@ type IStrategy interface {
 	//
 	AfterReceiveInterest(ingress *lf.LogicFace, interest *packet.Interest, pitEntry *PITEntry)
 
-	//
+	// AfterContentStoreHit
 	// 当兴趣包命中缓存时，会触发本触发器
 	//
 	// @Description:
@@ -43,7 +43,7 @@ type IStrategy interface {
 	//
 	AfterContentStoreHit(ingress *lf.LogicFace, data *packet.Data, entry *PITEntry)
 
-	//
+	// AfterReceiveData
 	// 当收到一个 Data 时，会触发本触发器
 	//
 	// @Description:
@@ -56,7 +56,7 @@ type IStrategy interface {
 	//
 	AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *PITEntry)
 
-	//
+	// AfterReceiveNack
 	// 当收到一个 Nack 时，会触发本触发器
 	//
 	// @Description:
@@ -67,7 +67,7 @@ type IStrategy interface {
 	//
 	AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *PITEntry)
 
-	//
+	// AfterReceiveCPacket
 	// 当收到一个 CPacket 时，会触发本触发器
 	//
 	// @Description:

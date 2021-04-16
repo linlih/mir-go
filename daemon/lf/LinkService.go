@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -14,7 +14,7 @@ import (
 	"minlib/packet"
 )
 
-//
+// LinkService
 // @Description:  链路服务层，用于分包发送，把接收到的包分片合并
 //		LinkService-LogicFace-Transport是一个一一对应的关系，他们相互绑定
 //		在一个收包流程中网络数据最开始是通过transport流入的，由transport调用LinkService的 receive函数处理接收到的网络包，
@@ -54,7 +54,7 @@ func (l *LinkService) calculateLpPacketHeadSize() {
 	}
 }
 
-//
+// Init
 // @Description: 初始化linkService
 // @receiver l
 // @param mtu	MTU，最大传输单元
@@ -86,7 +86,7 @@ func getMINPacketFromLpPacket(lpPacket *packet.LpPacket) (*packet.MINPacket, err
 	return &minPacket, nil
 }
 
-//
+// ReceivePacket
 // @Description: 	收到lpPacket包的处理函数，该函数被相关联的 transport 的 receive 函数调用
 // @receiver l
 // @param lpPacket 	lpPacket对象指针
@@ -159,7 +159,7 @@ func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
 	l.lpPacketId++
 }
 
-//
+// SendInterest
 // @Description: 	发送一个兴趣包
 // @receiver l
 // @param interest	兴趣包对象指针
@@ -185,7 +185,7 @@ func (l *LinkService) SendInterest(interest *packet.Interest) {
 
 }
 
-//
+// SendData
 // @Description:  发送一个数据包
 // @receiver l
 // @param data	数据包对象指针
@@ -211,7 +211,7 @@ func (l *LinkService) SendData(data *packet.Data) {
 
 }
 
-//
+// SendNack
 // @Description:  发送一个Nack包
 // @receiver l
 // @param nack	Nack包对象指针
@@ -237,7 +237,7 @@ func (l *LinkService) SendNack(nack *packet.Nack) {
 
 }
 
-//
+// SendCPacket
 // @Description: 	发送一个普通推送式网络包
 // @receiver l
 // @param cPacket

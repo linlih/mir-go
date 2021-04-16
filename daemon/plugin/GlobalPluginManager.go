@@ -1,4 +1,4 @@
-//
+// Package plugin
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -14,7 +14,7 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// GlobalPluginManager
 // 全局的插件管理程序，主要包含以下功能
 //
 // @Description:
@@ -40,7 +40,7 @@ func (gpm *GlobalPluginManager) doInEveryPlugins(task Task) int {
 	return result
 }
 
-//
+// RegisterPlugin
 // 注册一个插件
 //
 // @Description:

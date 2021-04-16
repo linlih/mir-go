@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -9,7 +9,7 @@ package lf
 
 import "sync"
 
-//
+// LogicFaceTable
 // @Description:  用于保存LogicFaceId和真正Face对象的映射关系。
 //
 type LogicFaceTable struct {
@@ -25,7 +25,7 @@ func (l *LogicFaceTable) Init() {
 	l.mSize = 0
 }
 
-//
+// AddLogicFace
 // @Description: 往LogicFaceTable添加一个LogicFace
 // @receiver logicFaceTable
 // @param logicFacePtr LogicFace对象指针
@@ -42,7 +42,7 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 	return lfid
 }
 
-//
+// GetLogicFacePtrById
 // @Description: 通过LogicFaceId来获得LogicFace对象指针。
 // @receiver logicFaceTable
 // @param logicFaceId 	logicFace号
@@ -56,7 +56,7 @@ func (l *LogicFaceTable) GetLogicFacePtrById(logicFaceId uint64) *LogicFace {
 	return logicFacePtr
 }
 
-//
+// Size
 // @Description: 获得当前表大小。
 // @receiver logicFaceTable
 // @return uint64  表中LogicFace个数
@@ -65,7 +65,7 @@ func (l *LogicFaceTable) Size() uint64 {
 	return uint64(len(l.mLogicFaceTable))
 }
 
-//
+// RemoveByLogicFaceId
 // @Description:  通过LogicFaceId来删除某个表项。
 // @receiver logicFaceTable
 // @param logicFaceId logicFace号
@@ -78,7 +78,7 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 
 }
 
-//
+// GetAllFaceList
 // @Description:  获取所有face表项
 // @return []*LogicFace 逻辑face列表
 //

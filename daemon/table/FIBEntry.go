@@ -15,7 +15,7 @@ import (
 	"sync"
 )
 
-//
+// NextHop
 // 下一跳结构体
 //
 // @Description:下一跳结构体 用于存储下一跳信息
@@ -25,7 +25,7 @@ type NextHop struct {
 	Cost      uint64        //路由开销
 }
 
-//
+// FIBEntry
 // FIBEntry结构体 对应FIB表项
 //
 // @Description:
@@ -40,7 +40,7 @@ type FIBEntry struct {
 	RWlock      *sync.RWMutex       //读写锁
 }
 
-//
+// CreateFIBEntry
 // 初始化FIBEntry并返回
 //
 // @Description:
@@ -53,7 +53,7 @@ func CreateFIBEntry() *FIBEntry {
 	return f
 }
 
-//
+// GetIdentifier
 // 返回FIBEntry的标识
 //
 // @Description:
@@ -61,7 +61,7 @@ func CreateFIBEntry() *FIBEntry {
 //
 func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.Identifier }
 
-//
+// GetNextHops
 // 返回FIBEntry中的下一跳列表 列表应该按cost从小到大排序
 //
 // @Description:
@@ -85,7 +85,7 @@ func (f *FIBEntry) GetNextHops() []*NextHop {
 	return NextHopList
 }
 
-//
+// HasNextHops
 // 判断有没有下一跳的信息 true表示有数据 false表示没有数据
 //
 // @Description:
@@ -98,7 +98,7 @@ func (f *FIBEntry) HasNextHops() bool {
 	return len(f.NextHopList) != 0
 }
 
-//
+// HasNextHop
 // 判断logicFaceId是否在下一跳列表中
 //
 // @Description:
@@ -116,7 +116,7 @@ func (f *FIBEntry) HasNextHop(logicFace *lf.LogicFace) bool {
 	return ok
 }
 
-//
+// AddOrUpdateNextHop
 // 添加或更新下一跳信息
 //
 // @Description:
@@ -132,7 +132,7 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFace *lf.LogicFace, cost uint64) {
 	f.RWlock.Unlock()
 }
 
-//
+// RemoveNextHop
 // 删除下一跳信息
 //
 // @Description:

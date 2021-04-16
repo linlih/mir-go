@@ -1,4 +1,4 @@
-//
+// Package utils
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//
+// BlockQueue
 // 基于 Chan 实现一个阻塞队列，用于 LogicFace 和 Forwarder 进行 FIFO 的包传递
 //
 // @Description:
@@ -22,7 +22,7 @@ type BlockQueue struct {
 	size    uint             // buffer size
 }
 
-//
+// CreateBlockQueue
 // 新建一个阻塞队列
 //
 // @Description:
@@ -49,7 +49,7 @@ func (b *BlockQueue) Read() interface{} {
 	return <-b.bufChan
 }
 
-//
+// ReadUntil
 // 尝试从缓存队列里面读取一个数据，并且在队列为空时等待一段时间
 //
 // @Description:
@@ -82,7 +82,7 @@ func (b *BlockQueue) Write(data interface{}) {
 	b.bufChan <- data
 }
 
-//
+// WriteUtil
 // 尝试往缓存队列里面写入一个数据，并且在队列满时等待一段时间
 //
 // @Description:

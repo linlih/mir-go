@@ -1,4 +1,4 @@
-//
+// Package plugin
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -14,7 +14,7 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// BasePlugin
 // 插件的基准实现，所有的锚点都返回默认的 0
 //
 // @Description:

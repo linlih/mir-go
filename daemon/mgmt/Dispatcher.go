@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -21,7 +21,7 @@ import (
 	"sync"
 )
 
-//
+// Module
 // 行为模块结构体
 //
 // @Description:行为模块结构体，一个行为对应一个模块，如add、delete、list等
@@ -37,7 +37,7 @@ type Module struct {
 	missStorage        InterestHandler       // 没有命中缓存的回调函数
 }
 
-//
+// Dispatcher
 // 调度器结构体
 //
 // @Description:调度器结构体，全局变量定义在Init.go中，包含顶级域map、行为模块map、
@@ -72,7 +72,7 @@ func authorizationReject(errorType int) {
 
 }
 
-//
+// Start
 // 调度器启动函数
 //
 // @Description:启动调度器进行收包监听
@@ -159,7 +159,7 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 	return true
 }
 
-//
+// CreateDispatcher
 // 创建调度器函数
 //pp
 // @Description:创建调度器函数，对调度器进行初始化
@@ -174,7 +174,7 @@ func CreateDispatcher() *Dispatcher {
 	}
 }
 
-//
+// AddTopPrefix
 // 添加顶级域函数
 //
 // @Description:在顶级域map中注册顶级域 顶级域分为本地:/min-mir/mgmt/localhost
@@ -186,7 +186,7 @@ func (d *Dispatcher) AddTopPrefix(topPrefix *component.Identifier) {
 	d.topPrefixList[topPrefix.ToUri()] = topPrefix
 }
 
-//
+// RemoveTopPrefix
 // 删除顶级域函数
 //
 // @Description:在map中删除顶级域
@@ -197,7 +197,7 @@ func (d *Dispatcher) RemoveTopPrefix(topPrefix *component.Identifier) {
 	delete(d.topPrefixList, topPrefix.ToUri())
 }
 
-//
+// AddControlCommand
 // 注册控制命令函数
 //
 // @Description:注册控制命令函数,如:add、delete等控制命令
@@ -223,7 +223,7 @@ func (d *Dispatcher) AddControlCommand(relPrefix *component.Identifier, authoriz
 	return nil
 }
 
-//
+// AddStatusDataset
 // 注册数据集命令函数
 //
 // @Description:注册数据集命令函数,如:list 等数据集命令

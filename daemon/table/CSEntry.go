@@ -22,7 +22,7 @@ type CSEntry struct {
 	RWlock    *sync.RWMutex    // 读写锁
 }
 
-// 获取表项中的数据包指针
+// CreateCSEntry 获取表项中的数据包指针
 func CreateCSEntry() *CSEntry {
 	var c = &CSEntry{}
 	c.Data = &packet.Data{}
@@ -36,33 +36,33 @@ func (c *CSEntry) GetData() *packet.Data {
 	return c.Data
 }
 
-//获取表项中数据包的标识指针
+// GetIdentifier 获取表项中数据包的标识指针
 func (c *CSEntry) GetIdentifier() *component.Identifier {
 	return c.Data.GetName()
 }
 
-//获得表项变旧时间
+// GetStaleTime 获得表项变旧时间
 func (c *CSEntry) GetStaleTime() int64 {
 	c.RWlock.RLock()
 	defer c.RWlock.RUnlock()
 	return c.StaleTime
 }
 
-//判断表项是否已经变得不新鲜
+// IsStale 判断表项是否已经变得不新鲜
 func (c *CSEntry) IsStale() bool {
 	c.RWlock.RLock()
 	defer c.RWlock.RUnlock()
 	return c.StaleTime < time.Now().Unix()
 }
 
-//更新表项的变旧时间
+// UpdateStaleTime 更新表项的变旧时间
 func (c *CSEntry) UpdateStaleTime(newStaleTime int64) {
 	c.RWlock.Lock()
 	defer c.RWlock.Unlock()
 	c.StaleTime = newStaleTime
 }
 
-// 判断表项是否可以与某个兴趣包匹配 参考C++语言代码
+// CanSatisfy 判断表项是否可以与某个兴趣包匹配 参考C++语言代码
 func (c *CSEntry) CanSatisfy(interest *packet.Interest) bool {
 	if !interest.MatchesData(c.Data) {
 		return false

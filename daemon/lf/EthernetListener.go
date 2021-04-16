@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-//
+// EthernetListener
 // @Description: 监听所有网卡信息，使用协程来从每个网卡读取包，每个网卡对应一个 InterfaceListener， 一个 InterfaceListener
 //			用于专门接收一个网卡的包
 //
@@ -22,7 +22,7 @@ type EthernetListener struct {
 	badDev              map[string]int                // 用于保存无法启动的网卡名
 }
 
-//
+// Init
 // @Description: 初始化对象
 // @receiver e
 //
@@ -31,7 +31,7 @@ func (e *EthernetListener) Init() {
 	e.badDev = make(map[string]int)
 }
 
-//
+// Start
 // @Description:  启动所有的协程
 // @receiver e
 //
@@ -76,7 +76,7 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 	}
 }
 
-//
+// CreateInterfaceListener
 // @Description: 	创建一个网卡监听器，用于从特定的网卡读取网络包
 // @receiver e
 // @param ifName	网卡名
@@ -111,7 +111,7 @@ func (e *EthernetListener) monitorDev() {
 	}
 }
 
-//
+// DeleteLogicFace
 // @Description: 	删除一个logicFace
 // @receiver e
 // @param localMacAddr	本地mac地址

@@ -1,4 +1,4 @@
-//
+// Package plugin
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -14,13 +14,13 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// IPlugin
 // 插件接口，所有的插件都应该实现以下接口
 //
 // @Description:
 //
 type IPlugin interface {
-	//
+	// OnIncomingInterest
 	// Incoming Interest 管道锚点
 	//
 	// @Description:
@@ -31,7 +31,7 @@ type IPlugin interface {
 	//
 	OnIncomingInterest(ingress *lf.LogicFace, interest *packet.Interest) int
 
-	//
+	// OnInterestLoop
 	// Interest Loop 管道锚点
 	//
 	// @Description:
@@ -42,7 +42,7 @@ type IPlugin interface {
 	//
 	OnInterestLoop(ingress *lf.LogicFace, interest *packet.Interest) int
 
-	//
+	// OnContentStoreMiss
 	// ContentStore miss 管道锚点
 	//
 	// @Description:
@@ -54,7 +54,7 @@ type IPlugin interface {
 	//
 	OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) int
 
-	//
+	// OnContentStoreHit
 	// ContentStore hit 管道锚点
 	//
 	// @Description:
@@ -66,7 +66,7 @@ type IPlugin interface {
 	//
 	OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest, data *table.CSEntry) int
 
-	//
+	// OnOutgoingInterest
 	// Outgoing Interest 管道锚点
 	//
 	// @Description:
@@ -77,7 +77,7 @@ type IPlugin interface {
 	//
 	OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) int
 
-	//
+	// OnInterestFinalize
 	// Interest Finalize 管道锚点
 	//
 	// @Description:
@@ -86,7 +86,7 @@ type IPlugin interface {
 	//
 	OnInterestFinalize(pitEntry *table.PITEntry) int
 
-	//
+	// OnIncomingData
 	// Incoming Data 管道锚点
 	//
 	// @Description:
@@ -96,7 +96,7 @@ type IPlugin interface {
 	//
 	OnIncomingData(ingress *lf.LogicFace, data *packet.Data) int
 
-	//
+	// OnDataUnsolicited
 	// Data unsolicited 管道锚点
 	//
 	// @Description:
@@ -106,7 +106,7 @@ type IPlugin interface {
 	//
 	OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) int
 
-	//
+	// OnOutgoingData
 	// Outgoing Data 管道锚点
 	//
 	// @Description:
@@ -116,7 +116,7 @@ type IPlugin interface {
 	//
 	OnOutgoingData(egress *lf.LogicFace, data *packet.Data) int
 
-	//
+	// OnIncomingNack
 	// Incoming Nack 管道锚点
 	//
 	// @Description:
@@ -126,7 +126,7 @@ type IPlugin interface {
 	//
 	OnIncomingNack(ingress *lf.LogicFace, nack *packet.Nack) int
 
-	//
+	// OnOutgoingNack
 	// Outgoing Nack 管道锚点
 	//
 	// @Description:
@@ -137,7 +137,7 @@ type IPlugin interface {
 	//
 	OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) int
 
-	//
+	// OnIncomingCPacket
 	// Incoming CPacket 管道锚点
 	//
 	// @Description:
@@ -147,7 +147,7 @@ type IPlugin interface {
 	//
 	OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) int
 
-	//
+	// OnOutgoingCPacket
 	// Outgoing CPacket 管道锚点
 	//
 	// @Description:

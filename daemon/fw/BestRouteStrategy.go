@@ -1,4 +1,4 @@
-//
+// Package fw
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -16,7 +16,7 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// BestRouteStrategy
 // 最佳路由转发策略实现
 //
 // @Description:

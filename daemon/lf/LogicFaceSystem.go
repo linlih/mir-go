@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -21,7 +21,7 @@ var gLogicFaceSystem *LogicFaceSystem
 
 var gkeyChain *security.KeyChain
 
-//
+// LogicFaceSystem
 // @Description: 启动所有类型的Face监听
 //
 type LogicFaceSystem struct {
@@ -38,7 +38,7 @@ func (l *LogicFaceSystem) LogicFaceTable() *LogicFaceTable {
 	return l.logicFaceTable
 }
 
-//
+// Init
 // @Description: 初始化LogicFaceSystem对象
 // @receiver l
 // @param table
@@ -63,7 +63,7 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	gkeyChain = mkeyChain
 }
 
-//
+// Start
 // @Description: 启动所有类型的Face监听,启用logicFace的清理协程
 //		清理协程的工作机制是：每隔300秒扫描一篇logicFaceTable中的Face，如果logicFace在状态等于false，或者logicFace的超时时间已经过期，
 //		则清理logicFace。
