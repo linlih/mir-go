@@ -25,7 +25,7 @@ type FaceInfo struct {
 	Mtu         int
 }
 
-// face管理模块结构体
+// FaceManager face管理模块结构体
 //
 // @Description:face管理模块结构体
 //

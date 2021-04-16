@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -24,28 +24,28 @@ const (
 	FINALIZED
 )
 
-//
+// DataSender
 // 发送数据包回调
 //
 // @Description:发送数据包回调
 //
 type DataSender func(data *packet.Data)
 
-//
+// DataSaver
 // 保存数据包回调
 //
 // @Description:发送数据包回调
 //
 type DataSaver func(data *packet.Data)
 
-//
+// NackSender
 // 发送错误信息回调
 //
 // @Description:发送错误信息回调
 //
 type NackSender func(response *mgmt.ControlResponse, interest *packet.Interest)
 
-//
+// StatusDatasetContext
 // 分片数据集上下文结构体
 //
 // @Description:分片数据集上下文结构体
@@ -68,7 +68,7 @@ type ResponseHeader struct {
 	FragNums int
 }
 
-//
+// CreateSDC
 // 创建数据集上下文函数
 //
 // @Description:创建数据集上下文函数
@@ -84,7 +84,7 @@ func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender Nack
 	}
 }
 
-//
+// Append
 // 对数据集分片并缓存和发送
 //
 // @Description:
@@ -145,7 +145,7 @@ func (s *StatusDatasetContext) Append() []*packet.Data {
 	return dataList
 }
 
-//
+// Reject
 // 如果在生成数据集的过程中发送了错误，可以通过本方法往用户侧发送一个表示错误的响应
 //
 // @Description:

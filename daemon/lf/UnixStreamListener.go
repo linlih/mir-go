@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -47,7 +47,7 @@ func (u *UnixStreamListener) accept() {
 	}
 }
 
-//
+// Start
 // @Description:  启动监听协程
 // @receiver t
 //

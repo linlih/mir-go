@@ -1,7 +1,6 @@
 package mgmt
 
 import (
-	"minlib/component"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
 )
@@ -20,10 +19,6 @@ func (m *ManagementSystem) Init(dispatcher *Dispatcher, logicFaceTable *lf.Logic
 
 func (m *ManagementSystem) SetFIB(fib *table.FIB) {
 	m.fibManager.fib = fib
-}
-
-func (m *ManagementSystem) AddInnerFace(identifier *component.Identifier, logicFace *lf.LogicFace, cost uint64) {
-	m.fibManager.fib.AddOrUpdate(identifier, logicFace, cost)
 }
 
 func CreateMgmtSystem() *ManagementSystem {
