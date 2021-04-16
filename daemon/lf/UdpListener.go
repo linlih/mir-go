@@ -99,7 +99,7 @@ func (u *UdpListener) doReceive() {
 		common2.LogWarn(err)
 		return
 	}
-	common2.LogDebug("recv from : ", remoteUdpAddr)
+	common2.LogInfo("recv from : ", remoteUdpAddr)
 	lpPacket, err := parseByteArray2LpPacket(u.recvBuf[:readLen])
 	if err != nil {
 		common2.LogWarn(err)
