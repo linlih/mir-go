@@ -159,7 +159,7 @@ func (i *InterfaceListener) processReceivedFrame(readPktChan <-chan gopacket.Pac
 func (i *InterfaceListener) readPacketFromDev() {
 	readPktChan := make(chan gopacket.Packet, 10000)
 	for threadn := 0; threadn < 3; threadn++ {
-		i.processReceivedFrame(readPktChan)
+		go i.processReceivedFrame(readPktChan)
 	}
 
 	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())
