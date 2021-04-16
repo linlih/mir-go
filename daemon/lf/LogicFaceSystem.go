@@ -31,6 +31,7 @@ type LogicFaceSystem struct {
 	unixListener     UnixStreamListener
 	logicFaceTable   *LogicFaceTable
 	packetValidator  IPacketValidator
+	config           *common.MIRConfig
 }
 
 func (l *LogicFaceSystem) LogicFaceTable() *LogicFaceTable {
@@ -47,10 +48,12 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	logicFaceTable.Init()
 	l.logicFaceTable = &logicFaceTable
 	l.packetValidator = packetValidator
+
 	l.ethernetListener.Init()
-	l.tcpListener.Init()
-	l.udpListener.Init()
-	l.unixListener.Init()
+	l.tcpListener.Init(config.TCPPort)
+	l.udpListener.Init(config.UDPPort)
+	l.unixListener.Init(config.UnixPath)
+
 	gLogicFaceSystem = l
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {
@@ -67,9 +70,15 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 //
 func (l *LogicFaceSystem) Start() {
 	l.ethernetListener.Start()
-	l.tcpListener.Start()
-	l.udpListener.Start()
-	l.unixListener.Start()
+	if l.config.SupportTCP {
+		l.tcpListener.Start()
+	}
+	if l.config.SupportUDP {
+		l.udpListener.Start()
+	}
+	if l.config.SupportUnix {
+		l.unixListener.Start()
+	}
 	go l.faceCleaner()
 }
 

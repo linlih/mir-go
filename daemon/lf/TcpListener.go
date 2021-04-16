@@ -27,8 +27,8 @@ type TcpListener struct {
 // @receiver t
 // @param logicFaceTable  全局logicFace表指针
 //
-func (t *TcpListener) Init() {
-	t.TcpPort = 13899
+func (t *TcpListener) Init(port int) {
+	t.TcpPort = uint16(port)
 }
 
 //

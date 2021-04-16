@@ -31,8 +31,8 @@ type UdpListener struct {
 	recvBuf        []byte // 接收缓冲区，大小为  9000
 }
 
-func (u *UdpListener) Init() {
-	u.udpPort = 13899
+func (u *UdpListener) Init(port int) {
+	u.udpPort = uint16(port)
 	u.udpAddrFaceMap = make(map[string]*LogicFace)
 	u.recvBuf = make([]byte, 9000)
 }
@@ -85,7 +85,7 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 		return
 	}
 	logicFace, _ = createUdpLogicFace(u.conn, remoteUdpAddr)
-	u.AddLogicFace( remoteUdpAddr.String() ,logicFace)
+	u.AddLogicFace(remoteUdpAddr.String(), logicFace)
 	logicFace.linkService.ReceivePacket(lpPacket)
 }
 

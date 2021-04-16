@@ -19,8 +19,8 @@ type UnixStreamListener struct {
 	filepath string
 }
 
-func (u *UnixStreamListener) Init() {
-	u.filepath = "/tmp/mirsock"
+func (u *UnixStreamListener) Init(path string) {
+	u.filepath = path
 }
 
 //
