@@ -9,6 +9,7 @@ package lf_test
 
 import (
 	"fmt"
+	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"minlib/security"
@@ -169,13 +170,14 @@ func TestUdpTransport_Receive(t *testing.T) {
 	}()
 
 	for true {
-		time.Sleep(10 * time.Second)
-		fmt.Println("等待收包")
-		//time.Sleep(10 * time.Millisecond)
-		//common2.LogInfo("\n\n======")
-		//for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
-		//	common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
-		//}
-		//common2.LogInfo("======\n\n")
+		//time.Sleep(10 * time.Second)
+		//fmt.Println("等待收包")
+		time.Sleep(3 * time.Second)
+		common2.LogInfo("\n\n======")
+		for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
+			common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
+		}
+		common2.LogInfo("======\n\n")
 	}
+
 }

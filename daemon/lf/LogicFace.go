@@ -11,9 +11,12 @@ import (
 	common2 "minlib/common"
 	"minlib/encoding"
 	"minlib/packet"
+	"sync"
 )
 
 type LogicFaceType uint32
+
+var lock sync.Mutex
 
 //
 // @Description:  LogicFace的类型
@@ -69,12 +72,12 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
-	common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
+	//common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
-	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
-		LogicFace: lf,
-		MinPacket: minPacket,
-	})
+	//gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
+	//	LogicFace: lf,
+	//	MinPacket: minPacket,
+	//})
 	identifier, err := minPacket.GetIdentifier(0)
 	if err != nil {
 		common2.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
@@ -83,7 +86,10 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
 		lf.logicFaceCounters.InCPacketN++
 	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentInterest {
+		lock.Lock()
 		lf.logicFaceCounters.InInterestN++
+		lock.Unlock()
+		//common2.LogInfo(lf.logicFaceCounters.InInterestN)
 	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentData {
 		lf.logicFaceCounters.InDataN++
 	}

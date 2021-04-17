@@ -158,7 +158,7 @@ func (i *InterfaceListener) processReceivedFrame(readPktChan <-chan gopacket.Pac
 //
 func (i *InterfaceListener) readPacketFromDev() {
 	readPktChan := make(chan gopacket.Packet, 10000)
-	for threadn := 0; threadn < 3; threadn++ {
+	for threadn := 0; threadn < 8; threadn++ {
 		go i.processReceivedFrame(readPktChan)
 	}
 
