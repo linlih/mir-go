@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -15,7 +15,7 @@ import (
 	"net"
 )
 
-//
+// StreamTransport
 // @Description: 流式通道共用类， TcpTransport, UnixStreamTransport
 //			流式传输通信的通用类，主要是提供了一套解决粘包问题的接收方法
 //
@@ -26,7 +26,7 @@ type StreamTransport struct {
 	recvLen uint64 // 当前数据接收缓冲区中的有效数据的长度
 }
 
-//
+// Close
 // @Description:
 // @receiver t
 //
@@ -37,7 +37,7 @@ func (t *StreamTransport) Close() {
 	}
 }
 
-//
+// Send
 // @Description: 将lpPacket对象编码成字节数组后，通过流式通道发送出去
 // @receiver t
 // @param lpPacket
@@ -144,7 +144,7 @@ func (t *StreamTransport) onReceive() error {
 	return nil
 }
 
-//
+// Receive
 // @Description:  用协程调用，不断地从流式通道中读出数据
 //			（1） 从流式通道中读出数据，如果读出错，则关闭face
 //			（2） 如果读到数据，则调用onReceive尝试处理接收到的数据

@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -13,7 +13,7 @@ import (
 	"net"
 )
 
-//
+// UdpTransport
 // @Description:  Udp通信隧道
 //
 type UdpTransport struct {
@@ -22,7 +22,7 @@ type UdpTransport struct {
 	remoteUdpAddr net.UDPAddr  // 对端UDP地址，用于发送UDP包
 }
 
-//
+// Init
 // @Description: 	用于接收数据的transport的初始化函数
 // @receiver u
 // @param conn		UDP句俩
@@ -42,7 +42,7 @@ func (u *UdpTransport) Init(conn *net.UDPConn, remoteUdpAddr *net.UDPAddr) {
 	}
 }
 
-//
+// Close
 // @Description: 关闭函数
 // @receiver u
 //
@@ -53,7 +53,7 @@ func (u *UdpTransport) Close() {
 	}
 }
 
-//
+// Send
 // @Description: 往remoteUdpAddr这个地址发送一个UDP包，UDP包里装着一个lpPacket
 // @receiver u
 // @param lpPacket
@@ -77,7 +77,7 @@ func (u *UdpTransport) doReceive() {
 	// 目前用不到
 }
 
-//
+// Receive
 // @Description: 通过创建一个协程来负责调用这个函数
 // @receiver u
 //

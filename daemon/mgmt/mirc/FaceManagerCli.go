@@ -98,8 +98,10 @@ func GetAllFaceInfo(c *cli.Context) error {
 		return err
 	}
 
+	commandInterest := newCommandInterest(moduleName, actionList)
+	common.LogError(commandInterest.ToUri())
 	// 首先拉取到元数据
-	face.ExpressInterest(newCommandInterest(moduleName, actionList),
+	face.ExpressInterest(commandInterest,
 		func(interest *packet.Interest, data *packet.Data) {
 			// OnData
 			common.LogInfo("OnData")

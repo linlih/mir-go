@@ -74,10 +74,10 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	//common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
-	//gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
-	//	LogicFace: lf,
-	//	MinPacket: minPacket,
-	//})
+	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
+		LogicFace: lf,
+		MinPacket: minPacket,
+	})
 	identifier, err := minPacket.GetIdentifier(0)
 	if err != nil {
 		common2.LogWarn(err, "face ", lf.LogicFaceId, " receive packet has no identifier")
