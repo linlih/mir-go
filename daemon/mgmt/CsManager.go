@@ -71,7 +71,7 @@ func (c *CsManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTab
 // @receiver c
 //
 func (c *CsManager) changeConfig(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	c.enableServe = true
 	return nil
 }
@@ -128,7 +128,7 @@ func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.
 // @receiver c
 // @Return:bool
 //
-func (c *CsManager) ValidateParameters(parameters *mgmt.ControlParameters) bool {
+func (c *CsManager) ValidateParameters(parameters *component.ControlParameters) bool {
 	if parameters.ControlParameterPrefix.IsInitial() &&
 		parameters.ControlParameterCount.IsInitial() &&
 		parameters.ControlParameterCapacity.IsInitial() {

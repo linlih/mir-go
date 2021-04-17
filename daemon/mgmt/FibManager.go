@@ -48,7 +48,7 @@ func CreateFibManager() *FibManager {
 func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
 	identifier, _ := component.CreateIdentifierByString("/fib-mgmt/add")
-	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
+	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() &&
 			parameters.ControlParameterCost.IsInitial() {
@@ -60,7 +60,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 		common.LogError("add add-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/delete")
-	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
+	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
@@ -84,7 +84,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 // @receiver f
 //
 func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
 
 	prefix := parameters.ControlParameterPrefix.Prefix()
 	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
@@ -113,7 +113,7 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 // @receiver f
 //
 func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	// 获取前缀
 	prefix := parameters.ControlParameterPrefix.Prefix()
 	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()

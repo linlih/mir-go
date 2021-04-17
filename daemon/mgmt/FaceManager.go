@@ -51,7 +51,7 @@ func CreateFaceManager() *FaceManager {
 func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
 	identifier, _ := component.CreateIdentifierByString("/face-mgmt/add")
-	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
+	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterUri.IsInitial() &&
 			parameters.ControlParameterLocalUri.IsInitial() &&
 			parameters.ControlParameterMtu.IsInitial() &&
@@ -65,7 +65,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	}
 
 	identifier, _ = component.CreateIdentifierByString("/face-mgmt/destroy")
-	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *mgmt.ControlParameters) bool {
+	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
 		}
@@ -90,7 +90,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 // @Return:*mgmt.ControlResponse返回创建结果
 //
 func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	uriScheme := parameters.ControlParameterUriScheme.UriScheme()
 	uri := parameters.ControlParameterUri.Uri()
 	localUri := parameters.ControlParameterLocalUri.LocalUri()
@@ -150,7 +150,7 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 // @Return:*mgmt.ControlResponse返回删除结果
 //
 func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse {
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	logicFaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
 	if face == nil {
@@ -201,6 +201,7 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 			context.dataSaver(data)
 			if i == 0 {
 				// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
+				data.NoCache.SetNoCache(true) // 元数据不缓存
 				context.dataSender(data)
 			}
 		}
@@ -214,7 +215,7 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 // @receiver f
 // @Return:bool
 //
-func (f *FaceManager) ValidateParameters(parameters *mgmt.ControlParameters) bool {
+func (f *FaceManager) ValidateParameters(parameters *component.ControlParameters) bool {
 
 	if parameters.ControlParameterUri.IsInitial() &&
 		parameters.ControlParameterLocalUri.IsInitial() &&

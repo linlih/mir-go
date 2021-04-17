@@ -63,6 +63,7 @@ func (brs *BestRouteStrategy) AfterReceiveInterest(ingress *lf.LogicFace, intere
 	// 尝试找到可用的下一跳进行转发
 	fibEntry := brs.lookupFibForInterest(interest)
 
+	// 找到开销最小的下一跳
 	miniHop := brs.findLowestCostNextHop(ingress, fibEntry)
 
 	if miniHop == nil {

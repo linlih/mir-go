@@ -35,7 +35,7 @@ const defaultInterestLifetime = 4000
 // @return string
 //
 func buildPrefix(moduleName string, action string) string {
-	return topPrefix + moduleName + action
+	return topPrefix + "/" + moduleName + "/" + action
 }
 
 func newCommandInterest(moduleName string, action string) *packet.Interest {
@@ -44,5 +44,6 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 	interest.SetName(identifier)
 	interest.SetTtl(2)
 	interest.InterestLifeTime.SetInterestLifeTime(defaultInterestLifetime)
+	interest.IsCommandInterest = true
 	return interest
 }

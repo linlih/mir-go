@@ -49,7 +49,7 @@ type AuthorizationReject func(errorType int)
 // @return unc
 //
 type Authorization func(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters,
+	parameters *component.ControlParameters,
 	accept AuthorizationAccept,
 	reject AuthorizationReject) bool
 
@@ -60,7 +60,7 @@ type Authorization func(topPrefix *component.Identifier, interest *packet.Intere
 // @param parameters	要验证的参数
 // @return bool
 //
-type ValidateParameters func(parameters *mgmt.ControlParameters) bool
+type ValidateParameters func(parameters *component.ControlParameters) bool
 
 // ControlCommandHandler
 // 一个回调函数，用于对收到的已授权的命令进行处理（每个管理模块会通过传入本回调函数自己实现对特定命令的处理逻辑）
@@ -72,7 +72,7 @@ type ValidateParameters func(parameters *mgmt.ControlParameters) bool
 // @return *mgmt.ControlResponse	返回一个 ControlResponse 返回给调用方
 //
 type ControlCommandHandler func(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters) *mgmt.ControlResponse
+	parameters *component.ControlParameters) *mgmt.ControlResponse
 
 // StatusDatasetHandler
 // 一个回调函数，处理收到的请求数据集的命令

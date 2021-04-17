@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-//
+// InRecord
 // 流入记录表结构体
 //
 // @Description:流入记录表结构体
@@ -31,7 +31,7 @@ type InRecord struct {
 	LastNonce  component.Nonce  //与最后加入记录表的兴趣包中的nonce一致
 }
 
-//
+// OutRecord
 // 流出记录表结构体
 //
 // @Description:流出记录表结构体
@@ -43,7 +43,7 @@ type OutRecord struct {
 	NackHeader *component.NackHeader
 }
 
-//
+// PITEntry
 // PITEntry结构体 PIT表项
 //
 // @Description:PITEntry结构体 PIT表项 存储在PIT前缀树的节点中
@@ -61,7 +61,7 @@ type PITEntry struct {
 	isDeletedAtomicValue   atomic.Value          // 是否已经从 PIT 表中移除
 }
 
-//
+// CreatePITEntry
 // 初始化PITEntry并返回
 //
 // @Description:
@@ -79,7 +79,7 @@ func CreatePITEntry() *PITEntry {
 	return p
 }
 
-//
+// IsSatisfied
 // 返回当前 PITEntry 是否已经被满足
 //
 // @Description:
@@ -90,7 +90,7 @@ func (p *PITEntry) IsSatisfied() bool {
 	return p.isSatisfiedAtomicValue.Load().(bool)
 }
 
-//
+// SetSatisfied
 // 设置当前 PITEntry 是否已经被满足
 //
 // @Description:
@@ -101,7 +101,7 @@ func (p *PITEntry) SetSatisfied(isSatisfied bool) {
 	p.isSatisfiedAtomicValue.Store(isSatisfied)
 }
 
-//
+// IsDeleted
 // 返回当前 PITEntry 是否已经从 PIT 表中移除
 //
 // @Description:
@@ -112,7 +112,7 @@ func (p *PITEntry) IsDeleted() bool {
 	return p.isDeletedAtomicValue.Load().(bool)
 }
 
-//
+// SetDeleted
 // 设置当前 PITEntry 是否已经从 PIT 表中移除
 //
 // @Description:
@@ -123,7 +123,7 @@ func (p *PITEntry) SetDeleted(isDeleted bool) {
 	p.isDeletedAtomicValue.Store(isDeleted)
 }
 
-//
+// SetExpiryTimer
 // 设置超时定时器 经过duration时间段 自动调用函数f 并且可以在中途调用CancelTimer取消
 //
 // @Description:
@@ -157,7 +157,7 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 	}
 }
 
-//
+// CancelTimer
 // 取消定时器
 //
 // @Description:
@@ -171,7 +171,7 @@ func (p *PITEntry) CancelTimer() {
 	common2.LogWarn("the ticker not start")
 }
 
-//
+// GetInterest
 // 获得表项中的兴趣包指针 表项中的所有兴趣包都是相同的 但是其他属性不同
 //
 // @Description:
@@ -186,7 +186,7 @@ func (p *PITEntry) GetInterest() (*packet.Interest, bool) {
 	return nil, false
 }
 
-//
+// GetIdentifier
 // 获得表项中的标识指针
 //
 // @Description:
@@ -196,7 +196,7 @@ func (p *PITEntry) GetIdentifier() *component.Identifier {
 	return p.Identifier
 }
 
-//
+// CanMatch
 // 判断表项是否和传入的兴趣包匹配 随机取一个 因为表项中存储的兴趣包都一样
 //
 // @Description:
@@ -211,7 +211,7 @@ func (p *PITEntry) CanMatch(interest *packet.Interest) (bool, error) {
 	return false, createPITEntryErrorByType(InterestNotExistedError)
 }
 
-//
+// GetInRecords
 // 获得流入记录列表
 //
 // @Description:
@@ -227,7 +227,7 @@ func (p *PITEntry) GetInRecords() []*InRecord {
 	return InRecordList
 }
 
-//
+// HasInRecords
 // 判断流入记录列表是否为空 true 不空 false 空
 //
 // @Description:
@@ -239,7 +239,7 @@ func (p *PITEntry) HasInRecords() bool {
 	return len(p.InRecordList) != 0
 }
 
-//
+// GetInRecord
 // 根据logicFace从流入记录表中取出对应的流入记录
 //
 // @Description:
@@ -254,7 +254,7 @@ func (p *PITEntry) GetInRecord(logicFace *lf.LogicFace) (*InRecord, error) {
 	return &InRecord{}, createPITEntryErrorByType(InRecordNotExistedError)
 }
 
-//
+// InsertOrUpdateInRecord
 // 在PITEntry中插入或更新流入记录
 //
 // @Description:
@@ -277,7 +277,7 @@ func (p *PITEntry) InsertOrUpdateInRecord(logicFace *lf.LogicFace, interest *pac
 	return inRecord
 }
 
-//
+// DeleteInRecord
 // 根据logicFace删除PITEntry中的流入记录
 //
 // @Description:
@@ -294,7 +294,7 @@ func (p *PITEntry) DeleteInRecord(logicFace *lf.LogicFace) error {
 	return createPITEntryErrorByType(InRecordNotExistedError)
 }
 
-//
+// ClearInRecords
 // 清空流入记录表
 //
 // @Description:
@@ -305,7 +305,7 @@ func (p *PITEntry) ClearInRecords() {
 	p.InRecordList = make(map[uint64]*InRecord)
 }
 
-//
+// GetOutRecords
 // 获得流出记录列表
 //
 // @Description:
@@ -321,7 +321,7 @@ func (p *PITEntry) GetOutRecords() []*OutRecord {
 	return OutRecordList
 }
 
-//
+// HasOutRecords
 // 判断流出记录列表是否为空 true 不空 false 空
 //
 // @Description:
@@ -333,7 +333,7 @@ func (p *PITEntry) HasOutRecords() bool {
 	return len(p.OutRecordList) != 0
 }
 
-//
+// GetOutRecord
 // 根据logicFace从流出记录表中取出对应的流出记录
 //
 // @Description:
@@ -349,7 +349,7 @@ func (p *PITEntry) GetOutRecord(logicFace *lf.LogicFace) (*OutRecord, error) {
 	return &OutRecord{}, createPITEntryErrorByType(OutRecordNotExistedError)
 }
 
-//
+// InsertOrUpdateOutRecord
 // 在PITEntry中插入或更新流出记录
 //
 // @Description:
@@ -368,7 +368,7 @@ func (p *PITEntry) InsertOrUpdateOutRecord(logicFace *lf.LogicFace, interest *pa
 	return outRecord
 }
 
-//
+// DeleteOutRecord
 // 根据logicFace删除PITEntry中的流出记录
 //
 // @Description:
@@ -385,7 +385,7 @@ func (p *PITEntry) DeleteOutRecord(logicFace *lf.LogicFace) error {
 	return createPITEntryErrorByType(OutRecordNotExistedError)
 }
 
-//
+// ClearOutRecords
 // 清空流出记录表
 //
 // @Description:

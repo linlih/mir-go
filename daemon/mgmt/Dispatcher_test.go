@@ -44,7 +44,7 @@ func Test(t *testing.T) {
 	face.Start()
 
 	interest := &packet.Interest{}
-	parameters := &mgmt.ControlParameters{}
+	parameters := &component.ControlParameters{}
 	prefix, _ := component.CreateIdentifierByString("/min")
 	parameters.SetPrefix(prefix)
 	parameters.SetCost(10)

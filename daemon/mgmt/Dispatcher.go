@@ -145,13 +145,11 @@ func (d *Dispatcher) Start() {
 			}
 
 			// 解析命令参数
-			parameters := &mgmt.ControlParameters{}
-			err = parameters.Parse(interest)
+			parameters, err := mgmt.ParseControlParameters(interest)
 			if err != nil {
 				common.LogWarnWithFields(logrus.Fields{
 					"interest": interest.ToUri(),
 				}, "Parse command interest parameters failed!", err)
-				continue
 			}
 
 			// 进行权限验证
@@ -164,6 +162,7 @@ func (d *Dispatcher) Start() {
 
 					// 如果是管理命令，则调用管理命令处理
 					if module.ccHandler != nil {
+						common.LogDebug("CCHandler")
 						if module.validateParameters != nil && !module.validateParameters(parameters) {
 							response := MakeControlResponse(400, "Parameters validate failed!", "")
 							d.sendControlResponse(response, interest)
@@ -179,6 +178,7 @@ func (d *Dispatcher) Start() {
 
 					// 如果是请求数据集的命令，则调用数据集处理回调进行处理
 					if module.sdHandler != nil {
+						common.LogDebug("SDHandler")
 						var context = CreateSDC(interest, d.sendData, d.sendControlResponse, d.saveData)
 						module.sdHandler(topPrefix, interest, context)
 					}
@@ -198,7 +198,7 @@ func (d *Dispatcher) Start() {
 // @Return:bool
 //
 func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *packet.Interest,
-	parameters *mgmt.ControlParameters,
+	parameters *component.ControlParameters,
 	accept AuthorizationAccept,
 	reject AuthorizationReject) bool {
 	if _, ok := d.topPrefixList[topPrefix.ToUri()]; !ok {
@@ -279,7 +279,10 @@ func (d *Dispatcher) AddControlCommand(relPrefix *component.Identifier, authoriz
 		relPrefix:          relPrefix,
 		authorization:      authorization,
 		validateParameters: validateParameters,
-		ccHandler:          handler}
+		ccHandler:          handler,
+		sdHandler:          nil,
+		missStorage:        nil,
+	}
 	return nil
 }
 
@@ -304,9 +307,11 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 	moduleLock.Lock()
 	defer moduleLock.Unlock()
 	d.module[relPrefix.ToUri()] = &Module{
-		relPrefix:     relPrefix,
-		authorization: authorization,
-		sdHandler:     handler}
+		relPrefix:          relPrefix,
+		authorization:      authorization,
+		validateParameters: nil,
+		ccHandler:          nil,
+		sdHandler:          handler}
 	return nil
 
 }
