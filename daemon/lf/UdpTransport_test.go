@@ -63,7 +63,7 @@ func TestUdpTransport_Init(t *testing.T) {
 	logicFace.SendInterest(&interest)
 }
 
-func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int) {
+func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
 	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
@@ -82,9 +82,10 @@ func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume in
 	for i := 0; i < volume; i++ {
 		logicFace.SendInterest(&interest)
 	}
+	wg.Done()
 }
 
-func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int) {
+func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
 	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
@@ -111,6 +112,7 @@ func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, vo
 	for i := 0; i < volume; i++ {
 		logicFace.SendInterest(&interest)
 	}
+	wg.Done()
 }
 
 func TestUdpTransport_Speed(t *testing.T) {
@@ -123,9 +125,13 @@ func TestUdpTransport_Speed(t *testing.T) {
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
 
-	for i := 0; i < 1; i++ {
-		go udpTransportSend(&faceSystem, 1500, 10000)
-	}
+	var goRoutineNum int = 1
+        var wg sync.WaitGroup
+        wg.Add(goRoutineNum)
+        for i := 0; i < goRoutineNum; i++ {
+                go udpTransportSend(&faceSystem, 8000, 1000000, &wg)
+        }
+        wg.Wait()
 }
 
 func TestUdpTransport_SpeedAndSign(t *testing.T) {
@@ -138,16 +144,20 @@ func TestUdpTransport_SpeedAndSign(t *testing.T) {
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
 
-	for i := 0; i < 1; i++ {
+	var goRoutineNum int = 1
+        var wg sync.WaitGroup
+        wg.Add(goRoutineNum)
+        for i := 0; i < goRoutineNum; i++ {
 		go udpTransportSendAndSign(&faceSystem, 1500, 10000)
-	}
+        }
+        wg.Wait()
 }
 
 func TestUdpTransport_Receive(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
 	blockQueue := utils.CreateBlockQueue(10)
-	packetValidator.Init(2, false, blockQueue)
+	packetValidator.Init(1, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
