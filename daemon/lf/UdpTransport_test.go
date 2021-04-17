@@ -18,6 +18,7 @@ import (
 	"mir-go/daemon/utils"
 	"net/http"
 	_ "net/http/pprof"
+	"sync"
 	"testing"
 	"time"
 )
@@ -126,12 +127,12 @@ func TestUdpTransport_Speed(t *testing.T) {
 	faceSystem.Start()
 
 	var goRoutineNum int = 1
-        var wg sync.WaitGroup
-        wg.Add(goRoutineNum)
-        for i := 0; i < goRoutineNum; i++ {
-                go udpTransportSend(&faceSystem, 8000, 1000000, &wg)
-        }
-        wg.Wait()
+	var wg sync.WaitGroup
+	wg.Add(goRoutineNum)
+	for i := 0; i < goRoutineNum; i++ {
+		go udpTransportSend(&faceSystem, 8000, 1000000, &wg)
+	}
+	wg.Wait()
 }
 
 func TestUdpTransport_SpeedAndSign(t *testing.T) {
@@ -145,12 +146,12 @@ func TestUdpTransport_SpeedAndSign(t *testing.T) {
 	faceSystem.Start()
 
 	var goRoutineNum int = 1
-        var wg sync.WaitGroup
-        wg.Add(goRoutineNum)
-        for i := 0; i < goRoutineNum; i++ {
-		go udpTransportSendAndSign(&faceSystem, 1500, 10000)
-        }
-        wg.Wait()
+	var wg sync.WaitGroup
+	wg.Add(goRoutineNum)
+	for i := 0; i < goRoutineNum; i++ {
+		go udpTransportSendAndSign(&faceSystem, 1500, 10000, &wg)
+	}
+	wg.Wait()
 }
 
 func TestUdpTransport_Receive(t *testing.T) {
