@@ -16,6 +16,7 @@ import (
 	"mir-go/daemon/lf"
 	"net"
 	"strconv"
+	"strings"
 )
 
 type FaceInfo struct {
@@ -53,7 +54,6 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	identifier, _ := component.CreateIdentifierByString("/face-mgmt/add")
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterUri.IsInitial() &&
-			parameters.ControlParameterLocalUri.IsInitial() &&
 			parameters.ControlParameterMtu.IsInitial() &&
 			parameters.ControlParameterLogicFacePersistency.IsInitial() {
 			return true
@@ -94,50 +94,43 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 	uriScheme := parameters.ControlParameterUriScheme.UriScheme()
 	uri := parameters.ControlParameterUri.Uri()
 	localUri := parameters.ControlParameterLocalUri.LocalUri()
+	uriItems := strings.Split(uri, "://")
+	if len(uriItems) != 2 {
+		return MakeControlResponse(400, "Remote uri is wrong, expect one '://' item, "+uri, "")
+	}
 	switch uriScheme {
 	case component.ControlParameterUriSchemeEther:
 		remoteMacAddr, err := net.ParseMAC(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "parse remote address fail,the err is:"+err.Error(), "")
-
 		}
 		logicFaceId, err := lf.CreateEtherLogicFace(localUri, remoteMacAddr)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+err.Error(), "")
 		} else {
-			common.LogInfo("create face success")
 			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 		}
 	case component.ControlParameterUriSchemeTCP:
-		logicFaceId, err := lf.CreateTcpLogicFace(uri)
+		logicFaceId, err := lf.CreateTcpLogicFace(uriItems[1])
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create TcpLogicFace fail,the err is:"+err.Error(), "")
 		} else {
-			common.LogInfo("create face success")
 			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 		}
 	case component.ControlParameterUriSchemeUDP:
 		logicFaceId, err := lf.CreateUdpLogicFace(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create UdpLogicFace fail,the err is:"+err.Error(), "")
 		}
-		common.LogInfo("create face success")
 		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 	case component.ControlParameterUriSchemeUnix:
 		logicFaceId, err := lf.CreateUnixLogicFace(uri)
 		if err != nil {
-			common.LogError("create face fail!the err is:", err)
 			return MakeControlResponse(400, "create UnixLogicFace fail,the err is:"+err.Error(), "")
 		}
-		common.LogInfo("create face success")
 		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
 
 	default:
-		common.LogError("create face fail!the err is:Unsupported protocol")
 		return MakeControlResponse(400, "Unsupported protocol", "")
 	}
 }

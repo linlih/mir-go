@@ -20,9 +20,8 @@ import (
 	mgmtlib "minlib/mgmt"
 	"minlib/packet"
 	"mir-go/daemon/mgmt"
+	"strings"
 )
-
-var remote string
 
 const moduleName = "face-mgmt"
 
@@ -51,20 +50,23 @@ var CreateNewFaceCommand = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "remote",
-			Value:    "",
 			Usage:    "remote address for connect",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:  "local",
-			Value: "",
 			Usage: "local address for accept",
 		},
-		//&cli.StringFlag{
-		//	Name:  "scheme",
-		//	Value: "",
-		//	Usage: "create connection type",
-		//}
+		&cli.Uint64Flag{
+			Name:  "mtu",
+			Value: 1500,
+			Usage: "MTU",
+		},
+		&cli.StringFlag{
+			Name:  "persistency",
+			Usage: "Persistency of LogicFace, persist/on-demand",
+			Value: "persist",
+		},
 	},
 }
 
@@ -75,13 +77,18 @@ var DestroyFaceCommand = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			//远端地址
-			Name:        "id",
-			Value:       "",
-			Destination: &remote,
+			Name:  "id",
+			Value: "",
 		},
 	},
 }
 
+// GetAllFaceInfo 获取所有Face信息并展示
+//
+// @Description:
+// @param c
+// @return error
+//
 func GetAllFaceInfo(c *cli.Context) error {
 	// 接入路由器
 	face := logicface.LogicFaceICN{}
@@ -131,6 +138,12 @@ func GetAllFaceInfo(c *cli.Context) error {
 	return nil
 }
 
+// CreateNewFace 创建一个新的 LogicFace 连接到另一个路由器
+//
+// @Description:
+// @param c
+// @return error
+//
 func CreateNewFace(c *cli.Context) error {
 	face := logicface.LogicFaceICN{}
 	// 建立unix连接
@@ -142,10 +155,21 @@ func CreateNewFace(c *cli.Context) error {
 	commandInterest := newCommandInterest(moduleName, actionAdd)
 	commandInterest.GetName()
 
+	remoteUri := c.String("remote")
+	localUri := c.String("local")
+	mtu := c.Uint64("mtu")
+	persistency := c.String("persistency")
+
+	remoteUriItems := strings.Split(remoteUri, "://")
+	if len(remoteUriItems) != 2 {
+		common.LogFatal("Remote uri is wrong, expect one '://' item, ", remoteUri, remoteUriItems)
+	}
 	parameters := &component.ControlParameters{}
-	parameters.SetUriScheme(c.Uint64("scheme"))
-	parameters.SetLocalUri(c.String("local"))
-	parameters.SetUri(c.String("remote"))
+	parameters.SetUri(remoteUri)
+	parameters.SetUriScheme(uint64(component.GetUriSchemeByString(remoteUriItems[0])))
+	parameters.SetMtu(mtu)
+	parameters.SetLocalUri(localUri)
+	parameters.SetPersistency(uint64(component.GetPersistencyByString(persistency)))
 
 	if err := commandInterest.AppendCommandParameters(parameters); err != nil {
 		common.LogFatal("Append parameters failed!")
