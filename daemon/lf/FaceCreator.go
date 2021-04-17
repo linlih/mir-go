@@ -30,21 +30,21 @@ import (
 // @return uint64		logicFaceId
 // @return error		错误信息
 //
-func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (uint64, error) {
+func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (*LogicFace, error) {
 	ifListener, ok := gLogicFaceSystem.ethernetListener.mInterfaceListeners[localIfName]
 	if !ok {
-		return 0, errors.New("can not find local dev name : " + localIfName)
+		return nil, errors.New("can not find local dev name : " + localIfName)
 	}
 	logicFace := ifListener.GetLogicFaceByMacAddr(remoteMacAddr.String())
 	if logicFace != nil {
-		return logicFace.LogicFaceId, nil
+		return nil, nil
 	}
 	logicFace, _ = createEtherLogicFace(localIfName, ifListener.macAddr, remoteMacAddr, ifListener.mtu)
 	if logicFace == nil {
-		return 0, errors.New("create ether logic face fail")
+		return nil, errors.New("create ether logic face fail")
 	}
 	ifListener.AddLogicFace(remoteMacAddr.String(), logicFace)
-	return logicFace.LogicFaceId, nil
+	return logicFace, nil
 }
 
 // CreateTcpLogicFace
@@ -57,15 +57,15 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (u
 // @return uint64		logicFaceId
 // @return error		错误信息
 //
-func CreateTcpLogicFace(remoteUri string) (uint64, error) {
+func CreateTcpLogicFace(remoteUri string) (*LogicFace, error) {
 	conn, err := net.Dial("tcp", remoteUri)
 	if err != nil {
 		common2.LogWarn(err)
-		return 0, err
+		return nil, err
 	}
-	logicFace, logicFaceId := createTcpLogicFace(conn)
+	logicFace, _ := createTcpLogicFace(conn)
 	logicFace.Start()
-	return logicFaceId, nil
+	return logicFace, nil
 }
 
 // CreateUdpLogicFace
@@ -78,19 +78,19 @@ func CreateTcpLogicFace(remoteUri string) (uint64, error) {
 // @return uint64
 // @return error
 //
-func CreateUdpLogicFace(remoteUri string) (uint64, error) {
+func CreateUdpLogicFace(remoteUri string) (*LogicFace, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp4", remoteUri)
 	if err != nil {
 		common2.LogWarn(err)
-		return 0, err
+		return nil, err
 	}
 	udpConn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		return 0,err
+		return nil, err
 	}
-	logicFace, logicFaceId := createUdpLogicFace(udpConn, udpAddr)
+	logicFace, _ := createUdpLogicFace(udpConn, udpAddr)
 	gLogicFaceSystem.udpListener.AddLogicFace(remoteUri, logicFace)
-	return logicFaceId, nil
+	return logicFace, nil
 }
 
 // CreateUnixLogicFace
@@ -104,19 +104,19 @@ func CreateUdpLogicFace(remoteUri string) (uint64, error) {
 // @return uint64		logicFaceId
 // @return error		错误信息
 //
-func CreateUnixLogicFace(remoteUri string) (uint64, error) {
+func CreateUnixLogicFace(remoteUri string) (*LogicFace, error) {
 	addr, err := net.ResolveUnixAddr("unix", remoteUri)
 	if err != nil {
 		common2.LogWarn(err)
-		return 0, err
+		return nil, err
 	}
 	conn, err := net.DialUnix("unix", nil, addr)
 	if err != nil {
 		panic("DialUnix failed.")
 	}
-	logicFace, logicFaceId := createUnixLogicFace(conn)
+	logicFace, _ := createUnixLogicFace(conn)
 	logicFace.Start()
-	return logicFaceId, nil
+	return logicFace, nil
 }
 
 // CreateInnerLogicFacePair

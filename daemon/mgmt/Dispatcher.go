@@ -57,24 +57,6 @@ type Dispatcher struct {
 	Cache         *Cache                           // 存储数据包分片缓存
 }
 
-// TODO:暂未实现
-// 授权成功回调
-//
-// @Description:如果授权成功执行此函数进行相应处理
-//
-func authorizationAccept() {
-
-}
-
-// TODO:暂未实现
-// 授权失败回调
-//
-// @Description:如果授权失败执行此函数进行相应处理
-//
-func authorizationReject(errorType int) {
-
-}
-
 // Start
 // 调度器启动函数
 //
@@ -153,6 +135,7 @@ func (d *Dispatcher) Start() {
 			}
 
 			// 进行权限验证
+			// TODO: 要求发送管理命令的用户拥有一定级别的权限
 			module.authorization(topPrefix, interest, parameters, func() {
 				// Accept => 权限验证通过，进行进一步处理
 

@@ -51,11 +51,10 @@ func TestEthernetTransport_Send(t *testing.T) {
 	if err1 != nil {
 		fmt.Println("local mac", err1)
 	}
-	faceid, faceErr := lf.CreateEtherLogicFace("ens33", remoteMac)
+	logicFace, faceErr := lf.CreateEtherLogicFace("ens33", remoteMac)
 	if faceErr != nil {
 		common2.LogError(faceErr)
 	}
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(faceid)
 	//指定pprof对外提供的http服务的ip和端口，配置为0.0.0.0表示可以非本机访问
 	go func() {
 		http.ListenAndServe("0.0.0.0:9999", nil)
@@ -103,7 +102,7 @@ func randByte() []byte {
 func EtherTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
 	remote := "00:0c:29:a1:35:bf"
 	remoteAddr, _ := net.ParseMAC(remote)
-	id, err := lf.CreateEtherLogicFace("ens33", remoteAddr)
+	logicFace, err := lf.CreateEtherLogicFace("ens33", remoteAddr)
 	if err != nil {
 		fmt.Println("Create Ethernet logic face failed", err.Error())
 		return
@@ -115,7 +114,6 @@ func EtherTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume 
 	interest.SetNonce(1234)
 
 	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	for i := 0; i < volume; i++ {
@@ -144,7 +142,7 @@ func TestEtherTransport_Speed(t *testing.T) {
 }
 
 func EtherTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
-	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
 		return
@@ -165,7 +163,6 @@ func EtherTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, 
 	keyChain.SetCurrentIdentity(i, "pkusz123pkusz123")
 	keyChain.SignInterest(&interest)
 
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	for i := 0; i < volume; i++ {
 		logicFace.SendInterest(&interest)

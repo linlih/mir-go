@@ -42,7 +42,7 @@ func TestUdpTransport_Init(t *testing.T) {
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
 
-	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		t.Fatal("Create UDP logic face failed", err.Error())
 	}
@@ -59,14 +59,13 @@ func TestUdpTransport_Init(t *testing.T) {
 	var buf []byte = []byte("hello world!")
 
 	interest.Payload.SetValue(buf[:])
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	logicFace.SendInterest(&interest)
 }
 
 func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
-	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
 		return
@@ -78,7 +77,6 @@ func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume in
 	interest.SetNonce(1234)
 
 	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	for i := 0; i < volume; i++ {
@@ -88,7 +86,7 @@ func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume in
 }
 
 func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
-	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
 		return
@@ -109,7 +107,6 @@ func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, vo
 	keyChain.SetCurrentIdentity(i, "pkusz123pkusz123")
 	keyChain.SignInterest(&interest)
 
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
 	for i := 0; i < volume; i++ {
 		logicFace.SendInterest(&interest)

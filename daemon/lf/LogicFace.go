@@ -49,6 +49,8 @@ type LogicFace struct {
 	logicFaceCounters LogicFaceCounters // logicFace 流量统计对象
 	expireTime        int64             // 超时时间 ms
 	state             bool              //  true 为 up , false 为down
+	Mtu               uint64            // 最大传输单元 MTU
+	Persistency       uint64            // 持久性
 }
 
 // Init

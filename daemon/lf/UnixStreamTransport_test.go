@@ -2,7 +2,7 @@
 // @Author: Lihong Lin
 // @Description:
 // @Version: 1.0.0
-// @Date: 2021/4/16 下午8:45 
+// @Date: 2021/4/16 下午8:45
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
 package lf_test
@@ -30,7 +30,7 @@ func TestUnixStreamTransport_Send(t *testing.T) {
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
 
-	id, err := lf.CreateUnixLogicFace("/tmp/mir.sock")
+	logicFace, err := lf.CreateUnixLogicFace("/tmp/mir.sock")
 	if err != nil {
 		t.Fatal("Create UDP logic face failed", err.Error())
 	}
@@ -42,7 +42,6 @@ func TestUnixStreamTransport_Send(t *testing.T) {
 	var buf []byte = []byte("hello world!")
 
 	interest.Payload.SetValue(buf[:])
-	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
 	for i := 0; i < 10; i++ {
 		logicFace.SendInterest(&interest)
 	}

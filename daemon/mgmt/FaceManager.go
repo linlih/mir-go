@@ -51,20 +51,25 @@ func CreateFaceManager() *FaceManager {
 //
 func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
+
+	// /face-mgmt/add => 添加一个逻辑接口
 	identifier, _ := component.CreateIdentifierByString("/face-mgmt/add")
-	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
-		if parameters.ControlParameterUri.IsInitial() &&
-			parameters.ControlParameterMtu.IsInitial() &&
-			parameters.ControlParameterLogicFacePersistency.IsInitial() {
-			return true
-		}
-		return false
-	}, f.createFace)
+	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
+		func(parameters *component.ControlParameters) bool {
+			if parameters.ControlParameterUri.IsInitial() &&
+				parameters.ControlParameterMtu.IsInitial() &&
+				parameters.ControlParameterLogicFacePersistency.IsInitial() {
+				return true
+			}
+			return false
+		},
+		f.createFace)
 	if err != nil {
 		common.LogError("face add create-command fail,the err is:", err)
 	}
 
-	identifier, _ = component.CreateIdentifierByString("/face-mgmt/destroy")
+	// /face-mgmt/del => 删除一个逻辑接口
+	identifier, _ = component.CreateIdentifierByString("/face-mgmt/del")
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
@@ -75,6 +80,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 		common.LogError("face add destroy-command fail,the err is:", err)
 	}
 
+	// /face-mgmt/list => 获取所有逻辑接口
 	identifier, _ = component.CreateIdentifierByString("/face-mgmt/list")
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listFaces)
 	if err != nil {
@@ -91,44 +97,70 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 //
 func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
+
+	// 提取参数
 	uriScheme := parameters.ControlParameterUriScheme.UriScheme()
 	uri := parameters.ControlParameterUri.Uri()
 	localUri := parameters.ControlParameterLocalUri.LocalUri()
+	mtu := parameters.ControlParameterMtu.Mtu()
+	persistency := parameters.ControlParameterLogicFacePersistency.Persistency()
+
+	// 判断Uri格式是否正确
 	uriItems := strings.Split(uri, "://")
 	if len(uriItems) != 2 {
 		return MakeControlResponse(400, "Remote uri is wrong, expect one '://' item, "+uri, "")
 	}
+
+	// 根据不同的 Uri scheme，创建不同的逻辑接口
 	switch uriScheme {
 	case component.ControlParameterUriSchemeEther:
 		remoteMacAddr, err := net.ParseMAC(uri)
 		if err != nil {
 			return MakeControlResponse(400, "parse remote address fail,the err is:"+err.Error(), "")
 		}
-		logicFaceId, err := lf.CreateEtherLogicFace(localUri, remoteMacAddr)
-		if err != nil {
-			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+err.Error(), "")
-		} else {
-			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
+		logicFace, err := lf.CreateEtherLogicFace(localUri, remoteMacAddr)
+		if err != nil || logicFace == nil {
+			msg := ""
+			if err != nil {
+				msg = err.Error()
+			}
+			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+msg, "")
 		}
+		logicFace.Mtu = mtu
+		logicFace.Persistency = persistency
+		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
 	case component.ControlParameterUriSchemeTCP:
-		logicFaceId, err := lf.CreateTcpLogicFace(uriItems[1])
-		if err != nil {
-			return MakeControlResponse(400, "create TcpLogicFace fail,the err is:"+err.Error(), "")
-		} else {
-			return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
+		logicFace, err := lf.CreateTcpLogicFace(uriItems[1])
+		if err != nil || logicFace == nil {
+			msg := ""
+			if err != nil {
+				msg = err.Error()
+			}
+			return MakeControlResponse(400, "create TcpLogicFace fail,the err is:"+msg, "")
 		}
+		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
 	case component.ControlParameterUriSchemeUDP:
-		logicFaceId, err := lf.CreateUdpLogicFace(uri)
-		if err != nil {
-			return MakeControlResponse(400, "create UdpLogicFace fail,the err is:"+err.Error(), "")
+		logicFace, err := lf.CreateUdpLogicFace(uri)
+		if err != nil || logicFace == nil {
+			msg := ""
+			if err != nil {
+				msg = err.Error()
+			}
+			return MakeControlResponse(400, "create UdpLogicFace fail,the err is:"+msg, "")
 		}
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
+		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
 	case component.ControlParameterUriSchemeUnix:
-		logicFaceId, err := lf.CreateUnixLogicFace(uri)
-		if err != nil {
-			return MakeControlResponse(400, "create UnixLogicFace fail,the err is:"+err.Error(), "")
+		logicFace, err := lf.CreateUnixLogicFace(uri)
+		if err != nil || logicFace == nil {
+			msg := ""
+			if err != nil {
+				msg = err.Error()
+			}
+			return MakeControlResponse(400, "create UnixLogicFace fail,the err is:"+msg, "")
 		}
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFaceId, 10), "")
+		logicFace.Mtu = mtu
+		logicFace.Persistency = persistency
+		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
 
 	default:
 		return MakeControlResponse(400, "Unsupported protocol", "")
