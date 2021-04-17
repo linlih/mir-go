@@ -63,7 +63,7 @@ func (u *UdpTransport) Send(lpPacket *packet.LpPacket) {
 	if encodeBufLen <= 0 {
 		return
 	}
-	_, err := u.conn.WriteToUDP(encodeBuf, &u.remoteUdpAddr)
+	_, err := u.conn.Write(encodeBuf)
 	if err != nil {
 		common2.LogWarn(err)
 	}
