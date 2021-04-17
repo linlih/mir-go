@@ -67,10 +67,11 @@ func TestEthernetTransport_Send(t *testing.T) {
 	start := time.Now()
 	for {
 		logicFace.SendInterest(interest)
+		//time.Sleep(1*time.Nanosecond)
 		counter++
 		//time.Sleep(30 * time.Microsecond)
 		//common2.LogInfo(counter)
-		if counter == 10000000 {
+		if counter == 1000000 {
 			eclipase := time.Since(start)
 			common2.LogInfo(eclipase)
 			break
@@ -90,7 +91,7 @@ func createInterest() *packet.Interest {
 }
 
 func randByte() []byte {
-	token := make([]byte, 8000)
+	token := make([]byte, 1300)
 	rand.Read(token)
 
 	return token
