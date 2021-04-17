@@ -14,6 +14,7 @@ import (
 	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
+	"minlib/security"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
@@ -21,6 +22,7 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"sync"
 	"testing"
 	"time"
 )
@@ -91,8 +93,100 @@ func createInterest() *packet.Interest {
 }
 
 func randByte() []byte {
-	token := make([]byte, 1300)
+	token := make([]byte, 8000)
 	rand.Read(token)
 
 	return token
+}
+
+//benchmark test
+func EtherTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
+	remote := "00:0c:29:a1:35:bf"
+	remoteAddr, _ := net.ParseMAC(remote)
+	id, err := lf.CreateEtherLogicFace("ens33", remoteAddr)
+	if err != nil {
+		fmt.Println("Create Ethernet logic face failed", err.Error())
+		return
+	}
+
+	var interest packet.Interest
+	interest.SetNameByString("/pkusz")
+	interest.SetCanBePrefix(true)
+	interest.SetNonce(1234)
+
+	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
+
+	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
+	for i := 0; i < volume; i++ {
+		logicFace.SendInterest(&interest)
+	}
+	wg.Done()
+}
+
+func TestEtherTransport_Speed(t *testing.T) {
+	var faceSystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
+
+	var goRoutineNum int = 3
+	var wg sync.WaitGroup
+	wg.Add(goRoutineNum)
+	for i := 0; i < goRoutineNum; i++ {
+		go EtherTransportSend(&faceSystem, 8000, 1000000, &wg)
+	}
+	wg.Wait()
+}
+
+func EtherTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
+	id, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+	if err != nil {
+		fmt.Println("Create UDP logic face failed", err.Error())
+		return
+	}
+	var interest packet.Interest
+	interest.SetNameByString("/min/pkusz")
+	interest.SetCanBePrefix(true)
+	interest.SetNonce(1234)
+	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
+
+	keyChain, err := security.CreateKeyChain()
+	if err != nil {
+		fmt.Println("Create KeyChain failed ", err.Error())
+		return
+	}
+	// 测试前需要保证两条机器有相同的秘钥，需要用程序在一台主机上生成下，再拷贝到另外一台机器上
+	i := keyChain.IdentifyManager.GetIdentifyByName("/pkusz")
+	keyChain.SetCurrentIdentity(i, "pkusz123pkusz123")
+	keyChain.SignInterest(&interest)
+
+	logicFace := faceSystem.LogicFaceTable().GetLogicFacePtrById(id)
+	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
+	for i := 0; i < volume; i++ {
+		logicFace.SendInterest(&interest)
+	}
+	wg.Done()
+}
+func TestEtherTransport_SpeedAndSign(t *testing.T) {
+	var faceSystem lf.LogicFaceSystem
+	var packetValidator fw.PacketValidator
+	blockQueue := utils.BlockQueue{}
+	packetValidator.Init(100, true, &blockQueue)
+	var mir common.MIRConfig
+	mir.Init()
+	faceSystem.Init(&packetValidator, &mir)
+	faceSystem.Start()
+
+	var goRoutineNum int = 3
+	var wg sync.WaitGroup
+	wg.Add(goRoutineNum)
+	for i := 0; i < goRoutineNum; i++ {
+		go EtherTransportSendAndSign(&faceSystem, 1500, 10000, &wg)
+	}
+	wg.Wait()
 }
