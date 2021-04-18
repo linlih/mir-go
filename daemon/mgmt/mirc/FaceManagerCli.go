@@ -9,15 +9,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"minlib/common"
 	"minlib/component"
-	"minlib/logicface"
 	mgmtlib "minlib/mgmt"
-	"minlib/packet"
 	"mir-go/daemon/mgmt"
 	"strings"
 )
@@ -94,61 +91,22 @@ func ListLogicFace(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// 执行命令拉取结果
 	response, err := commandExecutor.Start()
 	if err != nil {
 		return err
 	}
 
-	// 接入路由器
-	face := logicface.LogicFaceICN{}
-	err := face.InitWithUnixSocket(unixPath)
+	// 反序列化，输出结果
+	var faceInfoList []mgmt.FaceInfo
+	err = json.Unmarshal(response.GetBytes(), &faceInfoList)
 	if err != nil {
-		common.LogError("connect MIR fail!the err is:", err)
-		return err
+		common.LogError("parse data fail!the err is:", err)
 	}
-
-	commandInterest := newCommandInterest(moduleName, actionList)
-	// 首先拉取到元数据
-	face.ExpressInterest(commandInterest,
-		func(interest *packet.Interest, data *packet.Data) {
-			// OnData
-			common.LogInfo("OnData")
-			var responseHeader *mgmt.ResponseHeader
-			_ = json.Unmarshal(data.GetValue(), &responseHeader)
-
-			bytesBuilder := bytes.Buffer{}
-			for i := 1; i <= responseHeader.FragNums; i++ {
-				identifierFrag := data.GetName()
-				identifierFrag.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(i)))
-				interest.SetName(identifierFrag)
-				interest.SetTtl(5)
-				interest.InterestLifeTime.SetInterestLifeTime(4000)
-
-				face.SendInterest(interest)
-				data, _ := face.ReceiveData()
-				bytesBuilder.Write(data.Payload.GetValue())
-			}
-			var faceInfoList []mgmt.FaceInfo
-			err = json.Unmarshal(bytesBuilder.Bytes(), &faceInfoList)
-			if err != nil {
-				common.LogError("parse data fail!the err is:", err)
-				return
-			}
-			for _, v := range faceInfoList {
-				fmt.Printf("%+v\n", v)
-			}
-
-			common.LogInfo("shutdown")
-			// do shutdown
-			_ = face.Shutdown()
-		}, func(interest *packet.Interest) {
-			// OnTimeout
-			common.LogInfo("OnTimeout")
-		}, func(interest *packet.Interest, nack *packet.Nack) {
-			// OnNack
-			common.LogInfo("OnNack")
-		})
-	face.ProcessEvent()
+	for _, v := range faceInfoList {
+		fmt.Printf("%+v\n", v)
+	}
 	return nil
 }
 

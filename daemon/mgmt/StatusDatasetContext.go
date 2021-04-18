@@ -9,19 +9,11 @@ package mgmt
 
 import (
 	"encoding/json"
-	"minlib/common"
+	"fmt"
 	"minlib/component"
-	"minlib/encoding"
 	"minlib/mgmt"
 	"minlib/packet"
-	"mir-go/daemon/utils"
 	"time"
-)
-
-const (
-	INITIAL = iota
-	RESPONDED
-	FINALIZED
 )
 
 // DataSender
@@ -38,12 +30,12 @@ type DataSender func(data *packet.Data)
 //
 type DataSaver func(data *packet.Data)
 
-// NackSender
+// ResponseSender
 // 发送错误信息回调
 //
 // @Description:发送错误信息回调
 //
-type NackSender func(response *mgmt.ControlResponse, interest *packet.Interest)
+type ResponseSender func(response *mgmt.ControlResponse, interest *packet.Interest)
 
 // StatusDatasetContext
 // 分片数据集上下文结构体
@@ -52,20 +44,13 @@ type NackSender func(response *mgmt.ControlResponse, interest *packet.Interest)
 // @receiver s
 //
 type StatusDatasetContext struct {
-	interest   *packet.Interest     // 兴趣包指针
-	Prefix     component.Identifier // 要发布的数据的前缀
-	FreshTime  time.Duration        // 生成的 Data 的新鲜期，默认为 1 s
-	state      int                  // 兴趣包状态
-	segmentNo  int                  // 分片号
-	data       []byte               // 分片数据
-	dataSender DataSender           // 发送数据包回调
-	nackSender NackSender           // 发送错误信息回调
-	dataSaver  DataSaver            // 保存数据回调
-}
-
-type ResponseHeader struct {
-	Code     int
-	FragNums int
+	interest       *packet.Interest // 兴趣包指针
+	FreshTime      time.Duration    // 生成的 Data 的新鲜期，默认为 1 s
+	items          []interface{}    // 数据
+	SliceSize      int              // 每个分片的大小
+	dataSender     DataSender       // 发送数据包回调
+	responseSender ResponseSender   // 发送错误信息回调
+	dataSaver      DataSaver        // 保存数据回调
 }
 
 // CreateSDC
@@ -73,76 +58,81 @@ type ResponseHeader struct {
 //
 // @Description:创建数据集上下文函数
 //
-func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender NackSender, dataSaver DataSaver) *StatusDatasetContext {
+func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender ResponseSender, dataSaver DataSaver) *StatusDatasetContext {
 	return &StatusDatasetContext{
-		Prefix:     *interest.GetName(),
-		state:      INITIAL,
-		FreshTime:  100 * time.Millisecond,
-		dataSender: dataSender,
-		nackSender: nackSender,
-		dataSaver:  dataSaver,
+		interest:       interest,
+		FreshTime:      1000 * 1000 * time.Millisecond,
+		SliceSize:      7000,
+		dataSender:     dataSender,
+		responseSender: nackSender,
+		dataSaver:      dataSaver,
 	}
 }
 
-// Append
-// 对数据集分片并缓存和发送
+// Append 添加一条要发布的数据
 //
 // @Description:
 // @receiver s
+// @param item
 //
-func (s *StatusDatasetContext) Append() []*packet.Data {
-	var dataList []*packet.Data
-	if s.state == FINALIZED {
-		common.LogWarn("state is in FINALIZED")
-		return nil
-	}
-	s.state = RESPONDED
-	size := encoding.SizeT(len(s.data))
+func (s *StatusDatasetContext) Append(item interface{}) {
+	s.items = append(s.items, item)
+}
 
-	// 加入分片头部
-	dataFrag := &packet.Data{}
-	var responseHeader = &ResponseHeader{Code: 200, FragNums: int(size / encoding.MaxPacketSize)}
-	if size%encoding.MaxPacketSize != 0 {
-		responseHeader.FragNums++
-	}
-	headerData, err := json.Marshal(responseHeader)
+// AppendArray 添加一组要发布的数据
+//
+// @Description:
+// @receiver s
+// @param items
+//
+func (s *StatusDatasetContext) AppendArray(items []interface{}) {
+	s.items = append(s.items, items...)
+}
+
+// Done 启动数据分片和缓存流程
+//
+// @Description:
+// @receiver s
+// @return uint64		返回分片数量
+// @return error
+//
+func (s *StatusDatasetContext) Done(version uint64) error {
+	data, err := json.Marshal(s.items)
 	if err != nil {
-		common.LogError("mashal err,the err is : ", err)
-		return nil
+		return err
 	}
-	prefix := s.Prefix
-	dataFrag.SetName(&prefix)
-	dataFrag.Payload.SetValue(headerData)
-	dataFrag.SetTtl(5)
 
-	dataList = append(dataList, dataFrag)
+	// 分片数量
+	var sliceNum = len(data)/s.SliceSize + 1
 
-	// 分片内容
-	byteArrLeft := size
-	for byteArrLeft > 0 {
-		nBytesAppend := utils.Min(byteArrLeft, encoding.MaxPacketSize)
-		dataFrag := &packet.Data{}
-
-		// 从1开始是分片
-		s.segmentNo += 1
-		//解引用防止篡改源数据
-		prefix := s.Prefix
-		// 原前缀上面加入分片号
-		prefix.Append(component.CreateIdentifierComponentByNonNegativeInteger(uint64(s.segmentNo)))
-		// 设置好兴趣包
-		dataFrag.SetName(&prefix)
-		dataFrag.Payload.SetValue(s.data[size-byteArrLeft : size-byteArrLeft+nBytesAppend])
-		dataFrag.SetTtl(5)
-
-		byteArrLeft -= nBytesAppend
-		if byteArrLeft <= 0 {
-			s.state = FINALIZED
+	currentIdentifier := s.interest.GetName()
+	// 构造分片并缓存
+	for i := 0; i < sliceNum; i++ {
+		tempIdentifier, err := component.CreateIdentifierByComponents(currentIdentifier.GetComponents())
+		if err != nil {
+			s.Reject(MakeControlResponse(mgmt.ControlResponseCodeCommonError,
+				fmt.Sprintf("Copy identifier failed => %v", err), ""))
 		}
-		//dispatcher.Cache.Add(s.Prefix.ToUri()+"/"+strconv.Itoa(s.segmentNo), data)
-		dataList = append(dataList, dataFrag)
+		tempIdentifier.AppendVersionNumber(version)
+		tempIdentifier.AppendFragmentNumber(uint64(i))
+		dataPacket := new(packet.Data)
+		dataPacket.SetName(tempIdentifier)
+		length := sliceNum
+		if i == sliceNum-1 {
+			length = len(data) - i*sliceNum
+		}
+		dataPacket.Payload.SetValue(data[i*sliceNum : i*sliceNum+length])
+		s.dataSaver(dataPacket)
 	}
 
-	return dataList
+	// 构造并返回元数据
+	response, err := mgmt.CreateMetaDataControlResponse(version, uint64(sliceNum))
+	if err != nil {
+		s.Reject(MakeControlResponse(mgmt.ControlResponseCodeCommonError,
+			fmt.Sprintf("Create meta response failed => %v", err), ""))
+	}
+	s.responseSender(response, s.interest)
+	return nil
 }
 
 // Reject
@@ -153,10 +143,5 @@ func (s *StatusDatasetContext) Append() []*packet.Data {
 // @param response
 //
 func (s *StatusDatasetContext) Reject(response *mgmt.ControlResponse) {
-	if s.state != INITIAL {
-		common.LogWarn("state is in RESPONDED or FINALIZED")
-		return
-	}
-	s.state = FINALIZED
-	s.nackSender(response, s.interest)
+	s.responseSender(response, s.interest)
 }

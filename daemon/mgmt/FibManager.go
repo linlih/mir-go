@@ -8,7 +8,6 @@
 package mgmt
 
 import (
-	"encoding/json"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -151,32 +150,32 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 // @receiver f
 //
 func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
-	var response *mgmt.ControlResponse
-	fibEntrys := f.fib.GetAllEntry()
-	data, err := json.Marshal(fibEntrys)
-	if err != nil {
-		common.LogError("get fib info fail,the err is", err)
-		response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
-		context.nackSender(response, interest)
-		return
-	}
-	context.data = data
-	// 返回分片列表，并将分片放入缓存中去
-	dataList := context.Append()
-	if dataList == nil {
-		common.LogError("get fib info fail,the err is", err)
-		response = MakeControlResponse(400, "slice data packet err!", "")
-		context.nackSender(response, interest)
-		return
-	} else {
-		common.LogInfo("get fib info success")
-		for i, data := range dataList {
-			// 包编码放在dataSender中
-			context.dataSaver(data)
-			if i == 0 {
-				// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
-				context.dataSender(data)
-			}
-		}
-	}
+	//var response *mgmt.ControlResponse
+	//fibEntrys := f.fib.GetAllEntry()
+	//data, err := json.Marshal(fibEntrys)
+	//if err != nil {
+	//	common.LogError("get fib info fail,the err is", err)
+	//	response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
+	//	context.responseSender(response, interest)
+	//	return
+	//}
+	//context.data = data
+	//// 返回分片列表，并将分片放入缓存中去
+	//dataList := context.Append()
+	//if dataList == nil {
+	//	common.LogError("get fib info fail,the err is", err)
+	//	response = MakeControlResponse(400, "slice data packet err!", "")
+	//	context.responseSender(response, interest)
+	//	return
+	//} else {
+	//	common.LogInfo("get fib info success")
+	//	for i, data := range dataList {
+	//		// 包编码放在dataSender中
+	//		context.dataSaver(data)
+	//		if i == 0 {
+	//			// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
+	//			context.dataSender(data)
+	//		}
+	//	}
+	//}
 }

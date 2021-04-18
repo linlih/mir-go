@@ -8,7 +8,6 @@
 package mgmt
 
 import (
-	"encoding/json"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -83,42 +82,42 @@ func (c *CsManager) changeConfig(topPrefix *component.Identifier, interest *pack
 // @receiver c
 //
 func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
-	var response *mgmt.ControlResponse
-	if c.enableServe {
-		var CSInfo = struct {
-			enableServe bool
-			enableAdd   bool
-			size        uint64
-			hits        uint64
-			misses      uint64
-		}{
-			enableServe: c.enableServe,
-			enableAdd:   c.enableAdd,
-			size:        c.cs.Size(),
-			hits:        c.cs.Hits,
-			misses:      c.cs.Misses,
-		}
-		data, err := json.Marshal(CSInfo)
-		if err != nil {
-			response = MakeControlResponse(400, "mashal CSInfo fail , the err is:"+err.Error(), "")
-			context.nackSender(response, interest)
-		}
-		context.data = data
-		dataList := context.Append()
-		if dataList == nil {
-			response = MakeControlResponse(400, "slice data packet err!", "")
-			context.nackSender(response, interest)
-			return
-		} else {
-			for _, data := range dataList {
-				// 包编码放在dataSender中
-				context.dataSender(data)
-			}
-		}
-	} else {
-		response = MakeControlResponse(400, "have no Permission to get CsInfo!", "")
-		context.nackSender(response, interest)
-	}
+	//var response *mgmt.ControlResponse
+	//if c.enableServe {
+	//	var CSInfo = struct {
+	//		enableServe bool
+	//		enableAdd   bool
+	//		size        uint64
+	//		hits        uint64
+	//		misses      uint64
+	//	}{
+	//		enableServe: c.enableServe,
+	//		enableAdd:   c.enableAdd,
+	//		size:        c.cs.Size(),
+	//		hits:        c.cs.Hits,
+	//		misses:      c.cs.Misses,
+	//	}
+	//	data, err := json.Marshal(CSInfo)
+	//	if err != nil {
+	//		response = MakeControlResponse(400, "mashal CSInfo fail , the err is:"+err.Error(), "")
+	//		context.responseSender(response, interest)
+	//	}
+	//	context.data = data
+	//	dataList := context.Append()
+	//	if dataList == nil {
+	//		response = MakeControlResponse(400, "slice data packet err!", "")
+	//		context.responseSender(response, interest)
+	//		return
+	//	} else {
+	//		for _, data := range dataList {
+	//			// 包编码放在dataSender中
+	//			context.dataSender(data)
+	//		}
+	//	}
+	//} else {
+	//	response = MakeControlResponse(400, "have no Permission to get CsInfo!", "")
+	//	context.responseSender(response, interest)
+	//}
 }
 
 // ValidateParameters

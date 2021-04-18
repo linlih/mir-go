@@ -306,7 +306,6 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 //
 func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
-
 	if v, ok := d.Cache.Get(interest.GetName().ToUri()); ok {
 		common.LogInfo("hit the cache")
 		d.sendData(v.(*packet.Data))

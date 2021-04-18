@@ -8,7 +8,7 @@
 package mgmt
 
 import (
-	"encoding/json"
+	"math"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -23,7 +23,7 @@ type FaceInfo struct {
 	LogicFaceId uint64
 	RemoteUri   string
 	LocalUri    string
-	Mtu         int
+	Mtu         uint64
 }
 
 // FaceManager face管理模块结构体
@@ -31,7 +31,8 @@ type FaceInfo struct {
 // @Description:face管理模块结构体
 //
 type FaceManager struct {
-	logicFaceTable *lf.LogicFaceTable
+	logicFaceTable            *lf.LogicFaceTable
+	lastLogicFaceTableVersion uint64
 }
 
 // CreateFaceManager
@@ -40,7 +41,9 @@ type FaceManager struct {
 // @Description:创建face管理模块函数并返回指针
 //
 func CreateFaceManager() *FaceManager {
-	return &FaceManager{}
+	faceManager := new(FaceManager)
+	faceManager.lastLogicFaceTableVersion = math.MaxUint64
+	return faceManager
 }
 
 // Init
@@ -183,7 +186,6 @@ func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *pa
 		return MakeControlResponse(400, "the face is not existed", "")
 	}
 	f.logicFaceTable.RemoveByLogicFaceId(logicFaceId)
-	common.LogInfo("del face success")
 	return MakeControlResponse(200, "del face success!", "")
 }
 
@@ -194,43 +196,22 @@ func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *pa
 // @receiver f
 //
 func (f *FaceManager) listLogicFace(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
-	var response *mgmt.ControlResponse
-
-	// 得到逻辑接口
+	// 获取逻辑接口表的信息
 	faceList := f.logicFaceTable.GetAllFaceList()
-	var faceInfoList []*FaceInfo
 	for _, face := range faceList {
 		faceInfo := &FaceInfo{
 			LogicFaceId: face.LogicFaceId,
 			RemoteUri:   face.GetRemoteUri(),
 			LocalUri:    face.GetLocalUri(),
+			Mtu:         face.Mtu,
 		}
-		faceInfoList = append(faceInfoList, faceInfo)
+		context.Append(faceInfo)
 	}
-	data, err := json.Marshal(faceInfoList)
-	if err != nil {
-		common.LogError("get face info fail,the err is:", err)
-		response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
-		context.nackSender(response, interest)
-	}
-	context.data = data
-	// 返回分片列表，并将分片放入缓存中去
-	dataList := context.Append()
-	if dataList == nil {
-		common.LogError("get face info fail,the err is:", err)
-		response = MakeControlResponse(400, "slice data packet err!", "")
-		context.nackSender(response, interest)
-		return
-	} else {
-		common.LogInfo("get face info success")
-		for i, data := range dataList {
-			// 包编码放在dataSender中
-			context.dataSaver(data)
-			if i == 0 {
-				// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
-				data.NoCache.SetNoCache(true) // 元数据不缓存
-				context.dataSender(data)
-			}
-		}
-	}
+
+	// 获取当前 LogicFace 表的版本号
+	currentVersion := f.logicFaceTable.GetVersion()
+
+	// 1. 根据传入的数据构造一个元数据包，当做 interest 的响应
+	// 2. 对 LogicFace 表的数据进行分片和并缓存到管理模块的缓存当中
+	_ = context.Done(currentVersion)
 }
