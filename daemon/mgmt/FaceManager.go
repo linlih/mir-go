@@ -75,7 +75,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 			return true
 		}
 		return false
-	}, f.destroyFace)
+	}, f.delLogicFace)
 	if err != nil {
 		common.LogError("face add destroy-command fail,the err is:", err)
 	}
@@ -168,23 +168,23 @@ func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *pack
 }
 
 //
-// 根据LogicfaceId从全局FaceTable中删除face
+// 根据LogicFaceId从全局FaceTable中删除face
 //
-// @Description:根据LogicfaceId从全局FaceTable中删除face
+// @Description: 根据LogicFaceId从全局FaceTable中删除face
 // @receiver f
 // @Return:*mgmt.ControlResponse返回删除结果
 //
-func (f *FaceManager) destroyFace(topPrefix *component.Identifier, interest *packet.Interest,
+func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	logicFaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
 	if face == nil {
-		common.LogError("destory face fail,the err is: inner face is null")
+		common.LogError("del face fail,the err is: inner face is null")
 		return MakeControlResponse(400, "the face is not existed", "")
 	}
 	f.logicFaceTable.RemoveByLogicFaceId(logicFaceId)
-	common.LogInfo("destory face success")
-	return MakeControlResponse(200, "destory face success!", "")
+	common.LogInfo("del face success")
+	return MakeControlResponse(200, "del face success!", "")
 }
 
 //
@@ -231,21 +231,4 @@ func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packe
 			}
 		}
 	}
-}
-
-// ValidateParameters
-// face管理模块的参数验证函数
-//
-// @Description:face管理模块的参数验证函数，条件语句中的为必需字段，若有一项不合规范则返回false
-// @receiver f
-// @Return:bool
-//
-func (f *FaceManager) ValidateParameters(parameters *component.ControlParameters) bool {
-
-	if parameters.ControlParameterUri.IsInitial() &&
-		parameters.ControlParameterLocalUri.IsInitial() &&
-		parameters.ControlParameterUriScheme.IsInitial() {
-		return true
-	}
-	return false
 }

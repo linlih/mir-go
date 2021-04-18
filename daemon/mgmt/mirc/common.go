@@ -9,6 +9,8 @@ package main
 
 import (
 	"minlib/component"
+	"minlib/logicface"
+	mgmtlib "minlib/mgmt"
 	"minlib/packet"
 )
 
@@ -46,4 +48,21 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 	interest.InterestLifeTime.SetInterestLifeTime(defaultInterestLifetime)
 	interest.IsCommandInterest = true
 	return interest
+}
+
+// GetController 构造一个通用的用 Unix 通信的本地命令控制器
+//
+// @Description:
+// @return *mgmtlib.MIRController
+//
+func GetController() *mgmtlib.MIRController {
+	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFaceICN, error) {
+		face := new(logicface.LogicFaceICN)
+		// 建立unix连接
+		if err := face.InitWithUnixSocket(unixPath); err != nil {
+			return nil, err
+		}
+		return face, nil
+	})
+	return controller
 }

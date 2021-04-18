@@ -99,7 +99,6 @@ func GetAllFaceInfo(c *cli.Context) error {
 	}
 
 	commandInterest := newCommandInterest(moduleName, actionList)
-	common.LogError(commandInterest.ToUri())
 	// 首先拉取到元数据
 	face.ExpressInterest(commandInterest,
 		func(interest *packet.Interest, data *packet.Data) {
@@ -129,6 +128,10 @@ func GetAllFaceInfo(c *cli.Context) error {
 			for _, v := range faceInfoList {
 				fmt.Printf("%+v\n", v)
 			}
+
+			common.LogInfo("shutdown")
+			// do shutdown
+			_ = face.Shutdown()
 		}, func(interest *packet.Interest) {
 			// OnTimeout
 			common.LogInfo("OnTimeout")
@@ -147,16 +150,7 @@ func GetAllFaceInfo(c *cli.Context) error {
 // @return error
 //
 func CreateNewFace(c *cli.Context) error {
-	face := logicface.LogicFaceICN{}
-	// 建立unix连接
-	err := face.InitWithUnixSocket(unixPath)
-	if err != nil {
-		common.LogError("connect MIR fail!the err is:", err)
-		return err
-	}
-	commandInterest := newCommandInterest(moduleName, actionAdd)
-	commandInterest.GetName()
-
+	// 从命令行解析参数
 	remoteUri := c.String("remote")
 	localUri := c.String("local")
 	mtu := c.Uint64("mtu")
@@ -173,27 +167,24 @@ func CreateNewFace(c *cli.Context) error {
 	parameters.SetLocalUri(localUri)
 	parameters.SetPersistency(uint64(component.GetPersistencyByString(persistency)))
 
-	if err := commandInterest.AppendCommandParameters(parameters); err != nil {
-		common.LogFatal("Append parameters failed!")
+	// 发起一个请求命令得到结果
+	controller := GetController()
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceAddCommand(topPrefix, parameters))
+	if err != nil {
+		return err
+	}
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
 	}
 
-	face.ExpressInterest(commandInterest,
-		func(interest *packet.Interest, data *packet.Data) {
-			// OnData
-			var response mgmtlib.ControlResponse
-			if err := json.Unmarshal(data.GetValue(), &response); err != nil {
-				common.LogError("parse data fail!the err is:", err)
-				return
-			}
-			fmt.Printf("%+v\n", response)
-		}, func(interest *packet.Interest) {
-			// OnTimeout
-			common.LogError("onTimeout")
-		}, func(interest *packet.Interest, nack *packet.Nack) {
-			// OnNack
-			common.LogError("onNack")
-		})
-	face.ProcessEvent()
+	// 如果请求成功，则输出结果
+	if response.Code == mgmtlib.ControlResponseCodeSuccess {
+		fmt.Printf("%+v\n", response)
+	} else {
+		// 请求失败，则
+		fmt.Printf("%+v\n", response)
+	}
 	return nil
 }
 

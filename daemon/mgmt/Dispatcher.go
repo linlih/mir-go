@@ -317,7 +317,7 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 	}
 }
 
-//	TODO:暂未实现
+//
 // 发送控制回复给客户端
 //
 // @Description:发送控制回复给客户端
@@ -327,6 +327,7 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 		data := &packet.Data{}
 		data.SetName(interest.GetName())
 		data.SetValue(dataByte)
+		common.LogDebug("what? ", string(dataByte))
 		d.sendData(data)
 	} else {
 		common.LogError("Mashal data fail!,the err is:", err)
@@ -347,7 +348,8 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 // @Description:发送数据包给客户端
 //
 func (d *Dispatcher) sendData(data *packet.Data) {
-
+	// 直接发出的包设置不缓存
+	data.NoCache.SetNoCache(true)
 	if err := d.FaceClient.SendData(data); err != nil {
 		common.LogError("send data fail!the err is :", err)
 		return
