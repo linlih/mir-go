@@ -63,7 +63,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 			}
 			return false
 		},
-		f.createFace)
+		f.addLogicFace)
 	if err != nil {
 		common.LogError("face add create-command fail,the err is:", err)
 	}
@@ -82,7 +82,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 
 	// /face-mgmt/list => 获取所有逻辑接口
 	identifier, _ = component.CreateIdentifierByString("/face-mgmt/list")
-	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listFaces)
+	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listLogicFace)
 	if err != nil {
 		common.LogError("face add list-command fail,the err is:", err)
 	}
@@ -95,7 +95,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 // @receiver f
 // @Return:*mgmt.ControlResponse返回创建结果
 //
-func (f *FaceManager) createFace(topPrefix *component.Identifier, interest *packet.Interest,
+func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
 
 	// 提取参数
@@ -193,8 +193,10 @@ func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *pa
 // @Description:获取所有的逻辑face并分片发送给客户端
 // @receiver f
 //
-func (f *FaceManager) listFaces(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
+func (f *FaceManager) listLogicFace(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
 	var response *mgmt.ControlResponse
+
+	// 得到逻辑接口
 	faceList := f.logicFaceTable.GetAllFaceList()
 	var faceInfoList []*FaceInfo
 	for _, face := range faceList {

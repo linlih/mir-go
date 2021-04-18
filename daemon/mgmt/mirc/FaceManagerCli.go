@@ -15,7 +15,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"minlib/common"
 	"minlib/component"
-	"minlib/encoding"
 	"minlib/logicface"
 	mgmtlib "minlib/mgmt"
 	"minlib/packet"
@@ -40,13 +39,13 @@ var faceCommands = cli.Command{
 var GetFaceInfoCommand = cli.Command{
 	Name:   "list",
 	Usage:  "Show all face info",
-	Action: GetAllFaceInfo,
+	Action: ListLogicFace,
 }
 
 var CreateNewFaceCommand = cli.Command{
 	Name:   "add",
 	Usage:  "Create new face",
-	Action: CreateNewFace,
+	Action: AddLogicFace,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "remote",
@@ -73,7 +72,7 @@ var CreateNewFaceCommand = cli.Command{
 var DestroyFaceCommand = cli.Command{
 	Name:   "del",
 	Usage:  "Delete face",
-	Action: DeleteFace,
+	Action: DelLogicFace,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			//远端地址
@@ -83,13 +82,23 @@ var DestroyFaceCommand = cli.Command{
 	},
 }
 
-// GetAllFaceInfo 获取所有Face信息并展示
+// ListLogicFace 获取所有Face信息并展示
 //
 // @Description:
 // @param c
 // @return error
 //
-func GetAllFaceInfo(c *cli.Context) error {
+func ListLogicFace(c *cli.Context) error {
+	controller := GetController()
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceListCommand(topPrefix))
+	if err != nil {
+		return err
+	}
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
 	// 接入路由器
 	face := logicface.LogicFaceICN{}
 	err := face.InitWithUnixSocket(unixPath)
@@ -143,13 +152,13 @@ func GetAllFaceInfo(c *cli.Context) error {
 	return nil
 }
 
-// CreateNewFace 创建一个新的 LogicFace 连接到另一个路由器
+// AddLogicFace 创建一个新的 LogicFace 连接到另一个路由器
 //
 // @Description:
 // @param c
 // @return error
 //
-func CreateNewFace(c *cli.Context) error {
+func AddLogicFace(c *cli.Context) error {
 	// 从命令行解析参数
 	remoteUri := c.String("remote")
 	localUri := c.String("local")
@@ -188,33 +197,32 @@ func CreateNewFace(c *cli.Context) error {
 	return nil
 }
 
-func DeleteFace(c *cli.Context) error {
-	face := logicface.LogicFace{}
-	// 建立unix连接
-	err := face.InitWithUnixSocket("/tmp/mirsock")
+// DelLogicFace 根据 LogicFaceId 删除一个 LogicFace
+//
+// @Description:
+// @param c
+// @return error
+//
+func DelLogicFace(c *cli.Context) error {
+	logicFaceId := c.Uint64("id")
+
+	// 发起一个请求命令得到结果
+	controller := GetController()
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceDelCommand(topPrefix, logicFaceId))
 	if err != nil {
-		common.LogError("connect MIR fail!the err is:", err)
 		return err
 	}
-	interest := &packet.Interest{}
-	identifierHead, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost/face-mgmt/destroy")
-	interest.SetName(identifierHead)
-	interest.SetTtl(5)
-	interest.InterestLifeTime.SetInterestLifeTime(4000)
-	parameters := &component.ControlParameters{}
-	parameters.SetLogicFaceId(c.Uint64("id"))
-	var encoder = &encoding.Encoder{}
-	encoder.EncoderReset(encoding.MaxPacketSize, 0)
-	parameters.WireEncode(encoder)
-	buf, _ := encoder.GetBuffer()
-	identifierHead.Append(component.CreateIdentifierComponentByByteArray(buf))
-	face.SendInterest(interest)
-	data, err := face.ReceiveData()
-	var response mgmtlib.ControlResponse
-	if err := json.Unmarshal(data.GetValue(), &response); err != nil {
-		common.LogError("parse data fail!the err is:", err)
+	response, err := commandExecutor.Start()
+	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", response)
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmtlib.ControlResponseCodeSuccess {
+		fmt.Printf("%+v\n", response)
+	} else {
+		// 请求失败，则
+		fmt.Printf("%+v\n", response)
+	}
 	return nil
 }

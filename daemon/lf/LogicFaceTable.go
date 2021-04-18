@@ -17,6 +17,17 @@ type LogicFaceTable struct {
 	mSize           uint64
 	tableLock       sync.Mutex
 	lastId          uint64
+	version         uint64 // 版本
+}
+
+// GetVersion 获取版本号
+//
+// @Description:
+// @receiver l
+// @return uint64
+//
+func (l *LogicFaceTable) GetVersion() uint64 {
+	return l.version
 }
 
 func (l *LogicFaceTable) Init() {
