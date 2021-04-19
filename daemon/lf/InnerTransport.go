@@ -16,10 +16,10 @@ type InnerTransport struct {
 func (i *InnerTransport) Init(sendChan chan<- *packet.LpPacket, recvChan <-chan *packet.LpPacket) {
 	i.sendChan = sendChan
 	i.recvChan = recvChan
-	i.localAddr = "nil"
-	i.localUri = "nil"
+	i.localAddr = "inner://nil"
+	i.localUri = "inner://nil"
 	i.remoteAddr = "inner://nil"
-	i.remoteAddr = "inner://nil"
+	i.remoteUri = "inner://nil"
 }
 
 // Close
