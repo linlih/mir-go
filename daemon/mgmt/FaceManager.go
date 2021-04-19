@@ -199,13 +199,15 @@ func (f *FaceManager) listLogicFace(topPrefix *component.Identifier, interest *p
 	// 获取逻辑接口表的信息
 	faceList := f.logicFaceTable.GetAllFaceList()
 	for _, face := range faceList {
-		faceInfo := &FaceInfo{
-			LogicFaceId: face.LogicFaceId,
-			RemoteUri:   face.GetRemoteUri(),
-			LocalUri:    face.GetLocalUri(),
-			Mtu:         face.Mtu,
+		if face.GetState() { // 只提取 UP 状态的逻辑接口
+			faceInfo := &FaceInfo{
+				LogicFaceId: face.LogicFaceId,
+				RemoteUri:   face.GetRemoteUri(),
+				LocalUri:    face.GetLocalUri(),
+				Mtu:         face.Mtu,
+			}
+			context.Append(faceInfo)
 		}
-		context.Append(faceInfo)
 	}
 
 	// 获取当前 LogicFace 表的版本号

@@ -11,11 +11,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli/v2"
 	"minlib/common"
 	"minlib/component"
 	mgmtlib "minlib/mgmt"
 	"mir-go/daemon/mgmt"
+	"os"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -108,9 +112,24 @@ func ListLogicFace(c *cli.Context) error {
 	if err != nil {
 		common.LogError("parse data fail!the err is:", err)
 	}
+
+	// 使用表格美化输出
+	table := tablewriter.NewWriter(os.Stdout)
+	sort.Slice(faceInfoList, func(i, j int) bool {
+		return faceInfoList[i].LogicFaceId < faceInfoList[j].LogicFaceId
+	})
 	for _, v := range faceInfoList {
-		fmt.Printf("%+v\n", v)
+		table.Append([]string{strconv.FormatUint(v.LogicFaceId, 10), v.LocalUri, v.RemoteUri, strconv.FormatUint(v.Mtu, 10)})
 	}
+	table.SetHeader([]string{"LogicFaceId", "LocalUri", "RemoteUri", "Mtu"})
+	table.SetHeaderColor(
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgCyanColor},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor})
+	table.SetCaption(true, "LogicFace Table Info")
+	table.SetAlignment(tablewriter.ALIGN_CENTER)
+	table.Render()
 	return nil
 }
 

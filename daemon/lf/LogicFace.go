@@ -53,6 +53,16 @@ type LogicFace struct {
 	Persistency       uint64            // 持久性
 }
 
+// GetState 获取接口状态
+//
+// @Description:
+// @receiver lf
+// @return bool
+//
+func (lf *LogicFace) GetState() bool {
+	return lf.state
+}
+
 // Init
 // @Description: 	初始化logicFace
 // @receiver lf
