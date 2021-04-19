@@ -34,6 +34,7 @@ func (l *LogicFaceTable) Init() {
 	l.lastId = 0
 	l.mLogicFaceTable = make(map[uint64]*LogicFace)
 	l.mSize = 0
+	l.version = 0
 }
 
 // AddLogicFace
@@ -46,10 +47,11 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 	lfid := l.lastId
 	l.tableLock.Lock()
 	l.mLogicFaceTable[l.lastId] = logicFacePtr
-	l.mSize++
-	l.tableLock.Unlock()
 	logicFacePtr.LogicFaceId = l.lastId
+	l.mSize++
 	l.lastId++
+	l.version++
+	l.tableLock.Unlock()
 	return lfid
 }
 
@@ -85,6 +87,7 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	l.tableLock.Lock()
 	delete(l.mLogicFaceTable, logicFaceId)
 	l.mSize--
+	l.version--
 	l.tableLock.Unlock()
 
 }

@@ -116,6 +116,7 @@ func (l *LogicFaceSystem) faceCleaner() {
 	for true {
 		l.doFaceClean()
 		time.Sleep(time.Second * 300)
+		common2.LogInfo("clean logic face table ---------------------------- ")
 	}
 }
 
