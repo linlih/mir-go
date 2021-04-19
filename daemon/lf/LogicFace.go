@@ -48,9 +48,9 @@ type LogicFace struct {
 	linkService       *LinkService      // 与logicFace绑定的linkService
 	logicFaceCounters LogicFaceCounters // logicFace 流量统计对象
 	expireTime        int64             // 超时时间 ms
-	state             bool              //  true 为 up , false 为down
+	state             bool              //  true 为 up , false 为 down
 	Mtu               uint64            // 最大传输单元 MTU
-	Persistency       uint64            // 持久性
+	Persistence       uint64            // 持久性
 }
 
 // GetState 获取接口状态
@@ -76,6 +76,8 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.logicFaceType = faceType
 	lf.state = true
 	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.Mtu = uint64(linkService.mtu)
+	lf.Persistence = 0
 }
 
 // ReceivePacket
@@ -216,4 +218,8 @@ func (lf *LogicFace) Shutdown() {
 
 func (lf *LogicFace) GetCounter() uint64 {
 	return lf.logicFaceCounters.InInterestN
+}
+
+func (lf *LogicFace) SetPersistence(persistence uint64) {
+	lf.Persistence = persistence
 }
