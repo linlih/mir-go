@@ -58,11 +58,11 @@ var AddLogicFaceCommand = cli.Command{
 			Name:  "local",
 			Usage: "local address for accept",
 		},
-		&cli.Uint64Flag{
-			Name:  "mtu",
-			Value: 1500,
-			Usage: "MTU",
-		},
+		//&cli.Uint64Flag{
+		//	Name:  "mtu",
+		//	Value: 1500,
+		//	Usage: "MTU",
+		//},
 		&cli.StringFlag{
 			Name:  "persistency",
 			Usage: "Persistency of LogicFace, persist/on-demand",
@@ -143,7 +143,6 @@ func AddLogicFace(c *cli.Context) error {
 	// 从命令行解析参数
 	remoteUri := c.String("remote")
 	localUri := c.String("local")
-	mtu := c.Uint64("mtu")
 	persistency := c.String("persistency")
 
 	remoteUriItems := strings.Split(remoteUri, "://")
@@ -153,7 +152,6 @@ func AddLogicFace(c *cli.Context) error {
 	parameters := &component.ControlParameters{}
 	parameters.SetUri(remoteUri)
 	parameters.SetUriScheme(uint64(component.GetUriSchemeByString(remoteUriItems[0])))
-	parameters.SetMtu(mtu)
 	parameters.SetLocalUri(localUri)
 	parameters.SetPersistency(uint64(component.GetPersistencyByString(persistency)))
 

@@ -126,9 +126,9 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			if err != nil {
 				msg = err.Error()
 			}
-			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+msg, "")
+			return MakeControlResponse(400, "Create EtherLogicFace fail, the err is:"+msg, "")
 		}
-		logicFace.Persistency = persistency
+		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeTCP:
 		logicFace, err := lf.CreateTcpLogicFace(uriItems[1])
@@ -139,6 +139,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			}
 			return MakeControlResponse(400, "Create TcpLogicFace failed, the err is:"+msg, "")
 		}
+		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUDP:
 		logicFace, err := lf.CreateUdpLogicFace(uri)
@@ -149,6 +150,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			}
 			return MakeControlResponse(400, "Create UdpLogicFace failed, the err is:"+msg, "")
 		}
+		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUnix:
 		logicFace, err := lf.CreateUnixLogicFace(uri)
@@ -159,7 +161,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			}
 			return MakeControlResponse(400, "Create UnixLogicFace failed, the err is:"+msg, "")
 		}
-		logicFace.Persistency = persistency
+		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	default:
 		return MakeControlResponse(400, "Unsupported protocol", "")
