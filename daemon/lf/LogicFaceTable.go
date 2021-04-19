@@ -87,7 +87,7 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	l.tableLock.Lock()
 	delete(l.mLogicFaceTable, logicFaceId)
 	l.mSize--
-	l.version--
+	l.version++
 	l.tableLock.Unlock()
 
 }
