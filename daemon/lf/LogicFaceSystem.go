@@ -100,6 +100,7 @@ func (l *LogicFaceSystem) doFaceClean() {
 	curTime := getTimestampMS()
 	for k, v := range l.logicFaceTable.mLogicFaceTable {
 		if v.state == false {
+			common2.LogInfo("remove logicface id = ", v.LogicFaceId)
 			l.destroyFace(k, v)
 		} else if v.expireTime < curTime { // logicFace已经超时
 			v.Shutdown()        // 调用shutdown关闭logicFace
