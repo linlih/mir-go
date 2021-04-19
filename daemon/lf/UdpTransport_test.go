@@ -8,6 +8,7 @@
 package lf_test
 
 import (
+	"flag"
 	"fmt"
 	common2 "minlib/common"
 	"minlib/component"
@@ -64,8 +65,8 @@ func TestUdpTransport_Init(t *testing.T) {
 	logicFace.SendInterest(&interest)
 }
 
-func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
-	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+func udpTransportSend(remoteAddr string, payloadSize int, nums int, wg *sync.WaitGroup) {
+	logicFace, err := lf.CreateUdpLogicFace(remoteAddr + ":13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
 		return
@@ -79,14 +80,14 @@ func udpTransportSend(faceSystem *lf.LogicFaceSystem, payloadSize int, volume in
 	interest.Payload.SetValue(utils.RandomBytes(payloadSize))
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
-	for i := 0; i < volume; i++ {
+	for i := 0; i < nums; i++ {
 		logicFace.SendInterest(&interest)
 	}
 	wg.Done()
 }
 
-func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, volume int, wg *sync.WaitGroup) {
-	logicFace, err := lf.CreateUdpLogicFace("192.168.0.9:13899")
+func udpTransportSendAndSign(remoteAddr string, payloadSize int, nums int, wg *sync.WaitGroup) {
+	logicFace, err := lf.CreateUdpLogicFace(remoteAddr + ":13899")
 	if err != nil {
 		fmt.Println("Create UDP logic face failed", err.Error())
 		return
@@ -108,11 +109,17 @@ func udpTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, vo
 	keyChain.SignInterest(&interest)
 
 	// tcpdump command: sudo tcpdump -i ens33 -nn -s0 -vv -X port 13899
-	for i := 0; i < volume; i++ {
+	for i := 0; i < nums; i++ {
 		logicFace.SendInterest(&interest)
 	}
 	wg.Done()
 }
+// 增加命令行参数后的测试命令如下：
+// go test . -test.run "TestUdpTransport_SpeedAnd" -v -count=1 -args -remoteAddr=192.168.0.8 -payloadSize=2000 -nums=2 -routineNum=2
+var remoteAddr  = flag.String("remoteAddr", "127.0.0.1", "UDP remote connect address")
+var nums        = flag.Int("nums", 1, "number of UDP interest packet")
+var payloadSize = flag.Int("payloadSize", 1300, "payload's size of UDP sending interest packet")
+var routineNum  = flag.Int("routineNum", 1, "number of routine to send UDP interest")
 
 func TestUdpTransport_Speed(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
@@ -123,12 +130,13 @@ func TestUdpTransport_Speed(t *testing.T) {
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
+	flag.Parse()
 
-	var goRoutineNum int = 1
+	var goRoutineNum int = *routineNum
 	var wg sync.WaitGroup
 	wg.Add(goRoutineNum)
 	for i := 0; i < goRoutineNum; i++ {
-		go udpTransportSend(&faceSystem, 8000, 1000000, &wg)
+		go udpTransportSend(*remoteAddr, *payloadSize, *nums, &wg)
 	}
 	wg.Wait()
 }
@@ -142,12 +150,13 @@ func TestUdpTransport_SpeedAndSign(t *testing.T) {
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
+	flag.Parse()
 
-	var goRoutineNum int = 1
+	var goRoutineNum int = *routineNum
 	var wg sync.WaitGroup
 	wg.Add(goRoutineNum)
 	for i := 0; i < goRoutineNum; i++ {
-		go udpTransportSendAndSign(&faceSystem, 1500, 10000, &wg)
+		go udpTransportSendAndSign(*remoteAddr, *payloadSize, *nums, &wg)
 	}
 	wg.Wait()
 }
@@ -170,11 +179,11 @@ func TestUdpTransport_Receive(t *testing.T) {
 		//time.Sleep(10 * time.Second)
 		//fmt.Println("等待收包")
 		time.Sleep(3 * time.Second)
-		common2.LogInfo("\n\n======")
+		common2.LogInfo("======================")
 		for _, face := range faceSystem.LogicFaceTable().GetAllFaceList() {
 			common2.LogInfo(face.LogicFaceId, "=>", face.GetCounter())
 		}
-		common2.LogInfo("======\n\n")
+		common2.LogInfo("======================")
 	}
 
 }
