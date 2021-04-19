@@ -114,12 +114,13 @@ func udpTransportSendAndSign(remoteAddr string, payloadSize int, nums int, wg *s
 	}
 	wg.Done()
 }
+
 // 增加命令行参数后的测试命令如下：
 // go test . -test.run "TestUdpTransport_SpeedAnd" -v -count=1 -args -remoteAddr=192.168.0.8 -payloadSize=2000 -nums=2 -routineNum=2
-var remoteAddr  = flag.String("remoteAddr", "127.0.0.1", "UDP remote connect address")
-var nums        = flag.Int("nums", 1, "number of UDP interest packet")
-var payloadSize = flag.Int("payloadSize", 1300, "payload's size of UDP sending interest packet")
-var routineNum  = flag.Int("routineNum", 1, "number of routine to send UDP interest")
+var remoteUdpAddr = flag.String("remoteUdpAddr", "127.0.0.1", "UDP remote connect address")
+var udpNums = flag.Int("udpNums", 1, "number of UDP interest packet")
+var udpPayloadSize = flag.Int("udpPayloadSize", 1300, "payload's size of UDP sending interest packet")
+var udpRoutineNum = flag.Int("udpRoutineNum", 1, "number of routine to send UDP interest")
 
 func TestUdpTransport_Speed(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
@@ -132,11 +133,11 @@ func TestUdpTransport_Speed(t *testing.T) {
 	faceSystem.Start()
 	flag.Parse()
 
-	var goRoutineNum int = *routineNum
+	var goRoutineNum int = *udpRoutineNum
 	var wg sync.WaitGroup
 	wg.Add(goRoutineNum)
 	for i := 0; i < goRoutineNum; i++ {
-		go udpTransportSend(*remoteAddr, *payloadSize, *nums, &wg)
+		go udpTransportSend(*remoteUdpAddr, *udpPayloadSize, *udpNums, &wg)
 	}
 	wg.Wait()
 }
@@ -152,11 +153,11 @@ func TestUdpTransport_SpeedAndSign(t *testing.T) {
 	faceSystem.Start()
 	flag.Parse()
 
-	var goRoutineNum int = *routineNum
+	var goRoutineNum int = *udpRoutineNum
 	var wg sync.WaitGroup
 	wg.Add(goRoutineNum)
 	for i := 0; i < goRoutineNum; i++ {
-		go udpTransportSendAndSign(*remoteAddr, *payloadSize, *nums, &wg)
+		go udpTransportSendAndSign(*remoteUdpAddr, *udpPayloadSize, *udpNums, &wg)
 	}
 	wg.Wait()
 }

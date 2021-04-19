@@ -9,6 +9,7 @@
 package lf_test
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	common2 "minlib/common"
@@ -27,6 +28,13 @@ import (
 	"time"
 )
 
+// 增加命令行参数后的测试命令如下：
+// go test . -test.run "TestUdpTransport_SpeedAnd" -v -count=1 -args -remoteAddr=192.168.0.8 -payloadSize=2000 -nums=2 -routineNum=2
+var remoteMacAddr = flag.String("remoteMacAddr", "00:0c:29:a1:35:bf", "Ethernet remote connect address")
+var macNums = flag.Int("nums", 1, "number of UDP interest packet")
+var macPayloadSize = flag.Int("payloadSize", 1300, "payload's size of UDP sending interest packet")
+var macRoutineNum = flag.Int("routineNum", 1, "number of routine to send UDP interest")
+
 func TestEthernetTransport_Send(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
@@ -36,22 +44,13 @@ func TestEthernetTransport_Send(t *testing.T) {
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
-	time.Sleep(5 * time.Second)
-	str := "00:0c:29:fa:de:18"
-	remote := "00:0c:29:a1:35:bf"
+	time.Sleep(1 * time.Second)
 
+	flag.Parse()
 	interest := createInterest()
 	//localMac, err := net.ParseMAC(str)
-	_, err := net.ParseMAC(str)
-	if err != nil {
-		fmt.Println("local mac", err)
-	}
-	//remoteMac, err1 := net.ParseMAC(remote)
-	remoteMac, err1 := net.ParseMAC(remote)
-	if err1 != nil {
-		fmt.Println("local mac", err1)
-	}
-	logicFace, faceErr := lf.CreateEtherLogicFace("ens33", remoteMac)
+	remoteAddr, _ := net.ParseMAC(*remoteMacAddr)
+	logicFace, faceErr := lf.CreateEtherLogicFace("ens33", remoteAddr)
 	if faceErr != nil {
 		common2.LogError(faceErr)
 	}
@@ -59,12 +58,26 @@ func TestEthernetTransport_Send(t *testing.T) {
 	go func() {
 		http.ListenAndServe("0.0.0.0:9999", nil)
 	}()
+	//counter:=0
+	//start := time.Now()
+	//for {
+	//	logicFace.SendInterest(interest)
+	//	counter++
+	//	if counter == 1000000 {
+	//		eclipase := time.Since(start)
+	//		common2.LogInfo(eclipase)
+	//		break
+	//	}
+	//}
+	var wg sync.WaitGroup
+	wg.Add(*macRoutineNum)
+	for i := 0; i < *macRoutineNum; i++ {
+		go EtherTransportSend2(interest, logicFace, &wg)
+	}
+	wg.Wait()
+}
+func EtherTransportSend2(interest *packet.Interest, logicFace *lf.LogicFace, wg *sync.WaitGroup) {
 	counter := 0
-	//fmt.Println(faceid)
-
-	//var keychain security.KeyChain
-	//keychain.Init()
-	//keychain.CreateIdentityByName("/yb","123123123123")
 	start := time.Now()
 	for {
 		logicFace.SendInterest(interest)
@@ -78,6 +91,7 @@ func TestEthernetTransport_Send(t *testing.T) {
 			break
 		}
 	}
+	wg.Done()
 }
 func createInterest() *packet.Interest {
 	interest := new(packet.Interest)
