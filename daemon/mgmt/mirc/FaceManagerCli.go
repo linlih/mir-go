@@ -1,10 +1,10 @@
-/**
- * @Author: yzy
- * @Description:
- * @Version: 1.0.0
- * @Date: 2021/3/30 下午6:54
- *@Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
- */
+// Package main
+// @Author: Jianming Que
+// @Description:
+// @Version: 1.0.0
+// @Date: 2021/4/19 8:49 上午
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
 
 package main
 
@@ -19,27 +19,28 @@ import (
 	"strings"
 )
 
-const moduleName = "face-mgmt"
-
-const (
-	actionList = "list"
-	actionAdd  = "add"
-	actionDel  = "del"
-)
-
+// LogicFace 命令
+// @Description:
+//
 var faceCommands = cli.Command{
 	Name:        "lf",
 	Usage:       "logic Face Management",
-	Subcommands: []*cli.Command{&GetFaceInfoCommand, &CreateNewFaceCommand, &DestroyFaceCommand},
+	Subcommands: []*cli.Command{&ListLogicFaceCommand, &AddLogicFaceCommand, &DelLogicFaceCommand},
 }
 
-var GetFaceInfoCommand = cli.Command{
+// ListLogicFaceCommand 输出LogicFace列表
+// @Description:
+//
+var ListLogicFaceCommand = cli.Command{
 	Name:   "list",
 	Usage:  "Show all face info",
 	Action: ListLogicFace,
 }
 
-var CreateNewFaceCommand = cli.Command{
+// AddLogicFaceCommand 添加一个 LogicFace
+// @Description:
+//
+var AddLogicFaceCommand = cli.Command{
 	Name:   "add",
 	Usage:  "Create new face",
 	Action: AddLogicFace,
@@ -66,7 +67,10 @@ var CreateNewFaceCommand = cli.Command{
 	},
 }
 
-var DestroyFaceCommand = cli.Command{
+// DelLogicFaceCommand 删除一个 LogicFace
+// @Description:
+//
+var DelLogicFaceCommand = cli.Command{
 	Name:   "del",
 	Usage:  "Delete face",
 	Action: DelLogicFace,
