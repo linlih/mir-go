@@ -326,7 +326,6 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 		data := &packet.Data{}
 		data.SetName(interest.GetName())
 		data.SetValue(dataByte)
-		common.LogDebug("what? ", string(dataByte))
 		d.sendData(data)
 	} else {
 		common.LogError("Mashal data fail!,the err is:", err)

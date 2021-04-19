@@ -28,7 +28,7 @@ import (
 //
 var faceCommands = cli.Command{
 	Name:        "lf",
-	Usage:       "logic Face Management",
+	Usage:       "Logic Face Management",
 	Subcommands: []*cli.Command{&ListLogicFaceCommand, &AddLogicFaceCommand, &DelLogicFaceCommand},
 }
 

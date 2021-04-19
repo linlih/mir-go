@@ -46,7 +46,7 @@ func CreateFibManager() *FibManager {
 //
 func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
-	identifier, _ := component.CreateIdentifierByString("/fib-mgmt/add")
+	identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionAdd)
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() &&
@@ -58,7 +58,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add add-command fail,the err is:", err)
 	}
-	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/delete")
+	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionDel)
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() {
@@ -69,7 +69,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add delete-command fail,the err is:", err)
 	}
-	identifier, _ = component.CreateIdentifierByString("/fib-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionList)
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.ListEntries)
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
@@ -85,23 +85,25 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
 
+	// 提取参数
 	prefix := parameters.ControlParameterPrefix.Prefix()
-	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
+	logicFaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
 	cost := parameters.ControlParameterCost.Cost()
+
 	// 标识前缀 不能太长 太长返回错误信息
 	if prefix.Size() > table.MAX_DEPTH {
 		common.LogError("add next hop fail,the err is:the prefix is too long")
 		// 返回前缀太长的错误信息
 		return MakeControlResponse(414, "the prefix is too long ,cannot exceed "+strconv.Itoa(table.MAX_DEPTH)+"components", "")
 	}
-	// 根据Id从table中取出 logicface
-	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
+
+	// 根据Id从table中取出 LogicFace
+	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
 	if face == nil {
-		common.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicfaceId:"+strconv.FormatUint(logicfaceId, 10)+"failed!")
+		common.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicFaceId:"+strconv.FormatUint(logicFaceId, 10)+"failed!")
 		return MakeControlResponse(414, "the face is not found", "")
 	}
 	f.fib.AddOrUpdate(prefix, face, cost)
-	common.LogInfo("add next hop success")
 	return MakeControlResponse(200, "add next hop success", "")
 }
 

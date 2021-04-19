@@ -8,7 +8,6 @@
 package mgmt
 
 import (
-	"math"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -31,8 +30,7 @@ type FaceInfo struct {
 // @Description:face管理模块结构体
 //
 type FaceManager struct {
-	logicFaceTable            *lf.LogicFaceTable
-	lastLogicFaceTableVersion uint64
+	logicFaceTable *lf.LogicFaceTable
 }
 
 // CreateFaceManager
@@ -42,7 +40,6 @@ type FaceManager struct {
 //
 func CreateFaceManager() *FaceManager {
 	faceManager := new(FaceManager)
-	faceManager.lastLogicFaceTableVersion = math.MaxUint64
 	return faceManager
 }
 
@@ -56,7 +53,7 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	f.logicFaceTable = logicFaceTable
 
 	// /face-mgmt/add => 添加一个逻辑接口
-	identifier, _ := component.CreateIdentifierByString("/face-mgmt/add")
+	identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionAdd)
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 		func(parameters *component.ControlParameters) bool {
 			if parameters.ControlParameterUri.IsInitial() &&
@@ -68,11 +65,11 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 		},
 		f.addLogicFace)
 	if err != nil {
-		common.LogError("face add create-command fail,the err is:", err)
+		common.LogError("Face add create-command fail, the err is:", err)
 	}
 
 	// /face-mgmt/del => 删除一个逻辑接口
-	identifier, _ = component.CreateIdentifierByString("/face-mgmt/del")
+	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionDel)
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
@@ -80,14 +77,14 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 		return false
 	}, f.delLogicFace)
 	if err != nil {
-		common.LogError("face add destroy-command fail,the err is:", err)
+		common.LogError("Face add destroy-command fail,the err is:", err)
 	}
 
 	// /face-mgmt/list => 获取所有逻辑接口
-	identifier, _ = component.CreateIdentifierByString("/face-mgmt/list")
+	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionList)
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listLogicFace)
 	if err != nil {
-		common.LogError("face add list-command fail,the err is:", err)
+		common.LogError("Face add list-command fail,the err is:", err)
 	}
 }
 
@@ -178,14 +175,14 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	logicFaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
-	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
-	if face == nil {
-		common.LogError("del face fail,the err is: inner face is null")
-		return MakeControlResponse(400, "the face is not existed", "")
+	logicFace := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
+	if logicFace == nil {
+		return MakeControlResponse(400, "The logicFace is not existed", "")
 	}
-	face.Shutdown()
+	// 首先要关闭该 LogicFace
+	logicFace.Shutdown()
 	f.logicFaceTable.RemoveByLogicFaceId(logicFaceId)
-	return MakeControlResponse(200, "del face success!", "")
+	return MakeControlResponse(200, "", strconv.FormatUint(logicFaceId, 10))
 }
 
 //

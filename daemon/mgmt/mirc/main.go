@@ -20,6 +20,7 @@ func main() {
 	oApp.Usage = " MIR Management Cli Tools "
 	oApp.Commands = []*cli.Command{
 		&faceCommands,
+		&fibCommands,
 	}
 
 	if err := oApp.Run(os.Args); err != nil {
