@@ -110,7 +110,7 @@ func ListLogicFace(c *cli.Context) error {
 	var faceInfoList []mgmt.FaceInfo
 	err = json.Unmarshal(response.GetBytes(), &faceInfoList)
 	if err != nil {
-		common.LogError("parse data fail!the err is:", err)
+		return err
 	}
 
 	// 使用表格美化输出
@@ -123,10 +123,10 @@ func ListLogicFace(c *cli.Context) error {
 	}
 	table.SetHeader([]string{"LogicFaceId", "LocalUri", "RemoteUri", "Mtu"})
 	table.SetHeaderColor(
-		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgCyanColor},
-		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor},
-		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor},
-		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold, tablewriter.BgBlackColor})
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold},
+		tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold})
 	table.SetCaption(true, "LogicFace Table Info")
 	table.SetAlignment(tablewriter.ALIGN_CENTER)
 	table.Render()
@@ -148,7 +148,7 @@ func AddLogicFace(c *cli.Context) error {
 
 	remoteUriItems := strings.Split(remoteUri, "://")
 	if len(remoteUriItems) != 2 {
-		common.LogFatal("Remote uri is wrong, expect one '://' item, ", remoteUri, remoteUriItems)
+		return FaceManagerCliError{msg: fmt.Sprintf("Remote uri is wrong, expect one '://' item, %s", remoteUri)}
 	}
 	parameters := &component.ControlParameters{}
 	parameters.SetUri(remoteUri)
@@ -170,10 +170,10 @@ func AddLogicFace(c *cli.Context) error {
 
 	// 如果请求成功，则输出结果
 	if response.Code == mgmtlib.ControlResponseCodeSuccess {
-		fmt.Printf("%+v\n", response)
+		common.LogInfo("Add LogicFace success, id =", response.GetString())
 	} else {
-		// 请求失败，则
-		fmt.Printf("%+v\n", response)
+		// 请求失败，则输出错误信息
+		common.LogInfo("Add LogicFace failed, errMsg: ", response.Msg)
 	}
 	return nil
 }
@@ -200,10 +200,22 @@ func DelLogicFace(c *cli.Context) error {
 
 	// 如果请求成功，则输出结果
 	if response.Code == mgmtlib.ControlResponseCodeSuccess {
-		fmt.Printf("%+v\n", response)
+		common.LogInfo("Delete LogicFace success!")
 	} else {
-		// 请求失败，则
-		fmt.Printf("%+v\n", response)
+		// 请求失败，则输出错误信息
+		common.LogInfo("Delete LogicFace failed, errMsg: ", response.Msg)
 	}
 	return nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///// 错误处理
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type FaceManagerCliError struct {
+	msg string
+}
+
+func (f FaceManagerCliError) Error() string {
+	return fmt.Sprintf("FaceManagerCliError: %s", f.msg)
 }

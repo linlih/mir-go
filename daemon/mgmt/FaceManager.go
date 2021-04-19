@@ -105,7 +105,6 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 	uriScheme := parameters.ControlParameterUriScheme.UriScheme()
 	uri := parameters.ControlParameterUri.Uri()
 	localUri := parameters.ControlParameterLocalUri.LocalUri()
-	mtu := parameters.ControlParameterMtu.Mtu()
 	persistency := parameters.ControlParameterLogicFacePersistency.Persistency()
 
 	// 判断Uri格式是否正确
@@ -129,9 +128,8 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			}
 			return MakeControlResponse(400, "create EtherLogicFace fail,the err is:"+msg, "")
 		}
-		logicFace.Mtu = mtu
 		logicFace.Persistency = persistency
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
+		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeTCP:
 		logicFace, err := lf.CreateTcpLogicFace(uriItems[1])
 		if err != nil || logicFace == nil {
@@ -139,9 +137,9 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			if err != nil {
 				msg = err.Error()
 			}
-			return MakeControlResponse(400, "create TcpLogicFace fail,the err is:"+msg, "")
+			return MakeControlResponse(400, "Create TcpLogicFace failed, the err is:"+msg, "")
 		}
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
+		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUDP:
 		logicFace, err := lf.CreateUdpLogicFace(uri)
 		if err != nil || logicFace == nil {
@@ -149,9 +147,9 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			if err != nil {
 				msg = err.Error()
 			}
-			return MakeControlResponse(400, "create UdpLogicFace fail,the err is:"+msg, "")
+			return MakeControlResponse(400, "Create UdpLogicFace failed, the err is:"+msg, "")
 		}
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
+		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUnix:
 		logicFace, err := lf.CreateUnixLogicFace(uri)
 		if err != nil || logicFace == nil {
@@ -159,12 +157,10 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 			if err != nil {
 				msg = err.Error()
 			}
-			return MakeControlResponse(400, "create UnixLogicFace fail,the err is:"+msg, "")
+			return MakeControlResponse(400, "Create UnixLogicFace failed, the err is:"+msg, "")
 		}
-		logicFace.Mtu = mtu
 		logicFace.Persistency = persistency
-		return MakeControlResponse(200, "create face success,the id is "+strconv.FormatUint(logicFace.LogicFaceId, 10), "")
-
+		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	default:
 		return MakeControlResponse(400, "Unsupported protocol", "")
 	}
@@ -185,6 +181,7 @@ func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *pa
 		common.LogError("del face fail,the err is: inner face is null")
 		return MakeControlResponse(400, "the face is not existed", "")
 	}
+	face.Shutdown()
 	f.logicFaceTable.RemoveByLogicFaceId(logicFaceId)
 	return MakeControlResponse(200, "del face success!", "")
 }
