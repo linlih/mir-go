@@ -330,7 +330,6 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 	} else {
 		common.LogError("Mashal data fail!,the err is:", err)
 	}
-
 }
 
 // 发送数据包给客户端并缓存数据包

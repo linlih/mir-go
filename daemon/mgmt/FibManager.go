@@ -74,6 +74,10 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
 	}
+
+	// TODO: 加一个 registerIdentifier => register
+	// 参数：prefix: Identifier，cost
+	// 效果：在 FIB 添加一个条目，
 }
 
 // AddNextHop

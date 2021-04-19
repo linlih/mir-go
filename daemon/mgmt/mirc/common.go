@@ -64,5 +64,6 @@ func GetController() *mgmtlib.MIRController {
 		}
 		return face, nil
 	})
+
 	return controller
 }
