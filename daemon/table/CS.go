@@ -29,8 +29,8 @@ func CreateCS() *CS {
 }
 
 func (c *CS) Init() {
-	c.lpm = &LpmMatcher{} //初始化
-	c.lpm.Create()        //初始化锁
+	c.lpm = new(LpmMatcher) //初始化
+	c.lpm.Create()          //初始化锁
 }
 
 // Size 获得CS的表项数

@@ -51,7 +51,7 @@ type AuthorizationReject func(errorType int)
 type Authorization func(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	accept AuthorizationAccept,
-	reject AuthorizationReject) bool
+	reject AuthorizationReject)
 
 // ValidateParameters
 // 一个回调函数，用于对收到的控制命令参数进行验证

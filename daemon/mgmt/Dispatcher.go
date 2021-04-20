@@ -93,6 +93,8 @@ func (d *Dispatcher) Start() {
 			prefix := interest.GetName()
 			if prefix.Size() < 5 {
 				common.LogWarn("Command Interest's prefix size < 5! drop it")
+				response := MakeControlResponse(400, "Command Interest's prefix size < 5!", "")
+				d.sendControlResponse(response, interest)
 				continue
 			}
 
@@ -102,6 +104,8 @@ func (d *Dispatcher) Start() {
 				common.LogWarnWithFields(logrus.Fields{
 					"prefix": prefix.ToUri(),
 				}, "Get Command Interest's topPrefix failed!")
+				response := MakeControlResponse(400, "Get Command Interest's topPrefix failed!", "")
+				d.sendControlResponse(response, interest)
 				continue
 			}
 
@@ -111,6 +115,8 @@ func (d *Dispatcher) Start() {
 				common.LogWarnWithFields(logrus.Fields{
 					"prefix": prefix.ToUri(),
 				}, "Get Command Interest's relPrefix failed!")
+				response := MakeControlResponse(400, "Get Command Interest's relPrefix failed!", "")
+				d.sendControlResponse(response, interest)
 				continue
 			}
 
@@ -183,20 +189,19 @@ func (d *Dispatcher) Start() {
 func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	accept AuthorizationAccept,
-	reject AuthorizationReject) bool {
+	reject AuthorizationReject) {
 	if _, ok := d.topPrefixList[topPrefix.ToUri()]; !ok {
 		// 顶级域不存在
-		reject(5)
-		return false
+		reject(0)
+		return
 	}
 	// 没有权限
 	if topPrefix.ToUri() == "" {
-		reject(6)
-		return false
+		reject(1)
+		return
 	}
-
 	accept()
-	return true
+	return
 }
 
 // CreateDispatcher
@@ -323,12 +328,12 @@ func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *pac
 //
 func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interest *packet.Interest) {
 	if dataByte, err := json.Marshal(response); err == nil {
-		data := &packet.Data{}
+		data := new(packet.Data)
 		data.SetName(interest.GetName())
 		data.SetValue(dataByte)
 		d.sendData(data)
 	} else {
-		common.LogError("Mashal data fail!,the err is:", err)
+		common.LogError("Marshal data fail!,the err is:", err)
 	}
 }
 

@@ -44,8 +44,8 @@ func CreatePIT() *PIT {
 // @Description:
 //
 func (p *PIT) Init() {
-	p.lpm = &LpmMatcher{} //初始化
-	p.lpm.Create()        //初始化锁
+	p.lpm = new(LpmMatcher) //初始化
+	p.lpm.Create()          //初始化锁
 }
 
 //

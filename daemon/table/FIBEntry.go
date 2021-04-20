@@ -34,10 +34,9 @@ type NextHop struct {
 //	3.下一跳列表中的每一项应包含下一跳逻辑接口号（uint64）和路由开销
 //
 type FIBEntry struct {
-	Identifier *component.Identifier //标识对象指针
-	//Ttl         time.Duration         //表项有效期
-	NextHopList map[uint64]*NextHop //下一跳列表 用map实现是为了查找和删除方便
-	RWlock      *sync.RWMutex       //读写锁
+	identifier  *component.Identifier //标识对象指针
+	NextHopList map[uint64]*NextHop   //下一跳列表 用map实现是为了查找和删除方便
+	RWlock      *sync.RWMutex         //读写锁
 }
 
 // CreateFIBEntry
@@ -47,10 +46,10 @@ type FIBEntry struct {
 // @return *FIBEntry
 //
 func CreateFIBEntry() *FIBEntry {
-	var f = &FIBEntry{}
-	f.RWlock = new(sync.RWMutex)
-	f.NextHopList = make(map[uint64]*NextHop)
-	return f
+	return &FIBEntry{
+		RWlock:      new(sync.RWMutex),
+		NextHopList: make(map[uint64]*NextHop),
+	}
 }
 
 // GetIdentifier
@@ -59,7 +58,9 @@ func CreateFIBEntry() *FIBEntry {
 // @Description:
 // @return *component.Identifier
 //
-func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.Identifier }
+func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.identifier }
+
+func (f *FIBEntry) SetIdentifier(identifier *component.Identifier) { f.identifier = identifier }
 
 // GetNextHops
 // 返回FIBEntry中的下一跳列表 列表应该按cost从小到大排序
@@ -69,10 +70,6 @@ func (f *FIBEntry) GetIdentifier() *component.Identifier { return f.Identifier }
 //
 func (f *FIBEntry) GetNextHops() []*NextHop {
 	NextHopList := make([]*NextHop, 0)
-	//if f.NextHopList == nil {
-	//	f.NextHopList = make(map[uint64]NextHop)
-	//	return NextHopList
-	//}
 	f.RWlock.RLock()
 	for _, nextHop := range f.NextHopList {
 		NextHopList = append(NextHopList, nextHop)
@@ -92,9 +89,6 @@ func (f *FIBEntry) GetNextHops() []*NextHop {
 // @return bool
 //
 func (f *FIBEntry) HasNextHops() bool {
-	//if f.NextHopList == nil {
-	//	f.NextHopList = make(map[uint64]NextHop)
-	//}
 	return len(f.NextHopList) != 0
 }
 
@@ -106,11 +100,6 @@ func (f *FIBEntry) HasNextHops() bool {
 //
 func (f *FIBEntry) HasNextHop(logicFace *lf.LogicFace) bool {
 	f.RWlock.RLock()
-	//for _, nextHop := range f.NextHopList {
-	//	if nextHop.LogicFaceId == logicFaceId {
-	//		return true
-	//	}
-	//}
 	_, ok := f.NextHopList[logicFace.LogicFaceId]
 	f.RWlock.RUnlock()
 	return ok
@@ -123,9 +112,6 @@ func (f *FIBEntry) HasNextHop(logicFace *lf.LogicFace) bool {
 // @param logicFaceId,cost 下一跳信息
 //
 func (f *FIBEntry) AddOrUpdateNextHop(logicFace *lf.LogicFace, cost uint64) {
-	//if f.NextHopList == nil {
-	//	f.NextHopList = make(map[uint64]NextHop)
-	//}
 	f.RWlock.Lock()
 	delete(f.NextHopList, logicFace.LogicFaceId)
 	f.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFace: logicFace, Cost: cost}
@@ -139,10 +125,6 @@ func (f *FIBEntry) AddOrUpdateNextHop(logicFace *lf.LogicFace, cost uint64) {
 // @param logicFaceId 下一跳信息的logicFaceId
 //
 func (f *FIBEntry) RemoveNextHop(logicFace *lf.LogicFace) {
-	//if f.NextHopList == nil {
-	//	f.NextHopList = make(map[uint64]NextHop)
-	//	return
-	//}
 	f.RWlock.Lock()
 	delete(f.NextHopList, logicFace.LogicFaceId)
 	f.RWlock.Unlock()

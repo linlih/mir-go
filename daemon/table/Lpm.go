@@ -52,7 +52,7 @@ type nodeAndLock struct {
 // @return
 //
 func (n *node) Create() {
-	n.lock = &sync.RWMutex{}
+	n.lock = new(sync.RWMutex)
 }
 
 //
@@ -182,7 +182,7 @@ func (n *node) AddOrUpdate(key []string, val interface{}, f func(val interface{}
 		}
 		// 处理函数不空 对val进行处理
 		if f != nil {
-			n.val = f(&n.val)
+			n.val = f(n.val)
 		}
 		n.lock.Unlock()
 		return n.val

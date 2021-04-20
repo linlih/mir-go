@@ -1,4 +1,4 @@
-//
+// Package mgmt
 // @Author: yzy
 // @Description:
 // @Version: 1.0.0
@@ -9,9 +9,7 @@ package mgmt
 
 import "container/list"
 
-//
-// 分片缓存结构体
-//
+// Cache
 // @Description:分片缓存结构体 包含允许存入的最大包数、当前存入的包数、
 //				实现缓存的双链表结构和哈希map结构
 // 				最后一个是删除数据的回调函数，暂时保留
@@ -24,7 +22,7 @@ type Cache struct {
 	OnEvicted func(key string, value interface{}) // 某条记录被移除时的回调函数，可以为 nil
 }
 
-//
+// entry
 // 缓存中存储的具体内容
 //
 // @Description:缓存中存储的具体内容，第一个内容索引方便删除数据，第二个参数存储的具体内容
@@ -34,7 +32,7 @@ type entry struct {
 	value interface{}
 }
 
-//
+// New
 // 缓存初始化函数
 //
 // @Description:缓存初始化函数
@@ -48,7 +46,7 @@ func New(max int64, onEvicted func(string, interface{})) *Cache {
 	}
 }
 
-//
+// Get
 // 从缓存中获取数据
 //
 // @Description:从缓存中获取数据，规则遵循LRU
@@ -65,7 +63,7 @@ func (c *Cache) Get(key string) (value interface{}, ok bool) {
 	return
 }
 
-//
+// RemoveOldest
 // 从缓存中删除数据
 //
 // @Description:从缓存中删除数据，删除的规则遵循LRU
@@ -85,7 +83,7 @@ func (c *Cache) RemoveOldest() {
 	}
 }
 
-//
+// Add
 // 在缓存中添加数据
 //
 // @Description:在缓存中添加数据，规则遵循LRU
@@ -116,7 +114,7 @@ func (c *Cache) Add(key string, value interface{}) {
 	}
 }
 
-//
+// Len
 // 获取缓存中数据包个数
 //
 // @Description:获取缓存中数据包个数

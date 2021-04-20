@@ -101,10 +101,12 @@ func (s *StatusDatasetContext) Done(version uint64) error {
 	if err != nil {
 		return err
 	}
-
 	// 分片数量
 	var sliceNum = len(data)/s.SliceSize + 1
-
+	// 如果正好整除的话 分片数减一
+	if len(data)%s.SliceSize == 0 {
+		sliceNum -= 1
+	}
 	currentIdentifier := s.interest.GetName()
 	// 构造分片并缓存
 	for i := 0; i < sliceNum; i++ {

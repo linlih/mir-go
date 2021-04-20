@@ -93,7 +93,7 @@ func TestFIBAddOrUpdate(t *testing.T) {
 	// 测试异常情况 加入的标识未初始化
 	fibEntry := fib.AddOrUpdate(&component.Identifier{}, &lf.LogicFace{LogicFaceId: 1}, 1)
 	// 打印结果 &{{} {<nil>} []}
-	fmt.Println(fibEntry.Identifier)
+	fmt.Println(fibEntry.GetIdentifier())
 
 	// 测试add
 	identifier, err := component.CreateIdentifierByString("/min/pku/edu")

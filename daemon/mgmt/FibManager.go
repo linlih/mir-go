@@ -8,6 +8,7 @@
 package mgmt
 
 import (
+	"github.com/sirupsen/logrus"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -16,6 +17,16 @@ import (
 	"mir-go/daemon/table"
 	"strconv"
 )
+
+type FibInfo struct {
+	Identifier   string
+	NextHopsInfo []NextHopInfo
+}
+
+type NextHopInfo struct {
+	LogicFaceId uint64
+	Cost        uint64
+}
 
 // FibManager
 // fib管理模块结构体
@@ -46,7 +57,9 @@ func CreateFibManager() *FibManager {
 //
 func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
+	// /fib-mgmt/add => 添加一个转发表项
 	identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionAdd)
+	// 绑定控制函数，加入参数验证
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() &&
@@ -58,6 +71,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add add-command fail,the err is:", err)
 	}
+	// /fib-mgmt/del => 删除一个转发表项
 	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionDel)
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
@@ -69,6 +83,7 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add delete-command fail,the err is:", err)
 	}
+	// /fib-mgmt/list => 展示所有转发表条目
 	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionList)
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.ListEntries)
 	if err != nil {
@@ -96,43 +111,55 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 
 	// 标识前缀 不能太长 太长返回错误信息
 	if prefix.Size() > table.MAX_DEPTH {
-		common.LogError("add next hop fail,the err is:the prefix is too long")
+		common.LogDebugWithFields(logrus.Fields{
+			"max depth":          table.MAX_DEPTH,
+			"the size of prefix": prefix.Size(),
+		}, "the prefix is too long")
 		// 返回前缀太长的错误信息
-		return MakeControlResponse(414, "the prefix is too long ,cannot exceed "+strconv.Itoa(table.MAX_DEPTH)+"components", "")
+		return MakeControlResponse(400, "the prefix is too long ,cannot exceed "+strconv.Itoa(table.MAX_DEPTH)+"components", "")
 	}
 
 	// 根据Id从table中取出 LogicFace
 	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
 	if face == nil {
-		common.LogError("add next hop fail,the err is:", prefix.ToUri()+" logicFaceId:"+strconv.FormatUint(logicFaceId, 10)+"failed!")
-		return MakeControlResponse(414, "the face is not found", "")
+		common.LogDebugWithFields(logrus.Fields{
+			"prefix":      prefix.ToUri(),
+			"logicFaceId": strconv.FormatUint(logicFaceId, 10),
+		}, "the logicFace is not existed")
+		return MakeControlResponse(400, "the face is not found", "")
 	}
 	f.fib.AddOrUpdate(prefix, face, cost)
+	common.LogInfo("add next hop success")
 	return MakeControlResponse(200, "add next hop success", "")
 }
 
 // RemoveNextHop
-// 根据logicface在fib表中删除下一跳
+// 根据logicFace在fib表中删除下一跳
 //
-// @Description:根据logicface在fib表中删除下一跳并返回删除结果
+// @Description:根据logicFace在fib表中删除下一跳并返回删除结果
 // @receiver f
 //
 func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
 	// 获取前缀
 	prefix := parameters.ControlParameterPrefix.Prefix()
-	logicfaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
-	// 根据Id从table中取出 logicface
-	face := f.logicFaceTable.GetLogicFacePtrById(logicfaceId)
+	logicFaceId := parameters.ControlParameterLogicFaceId.LogicFaceId()
+
+	// 根据Id从table中取出 logicFace
+	face := f.logicFaceTable.GetLogicFacePtrById(logicFaceId)
 	if face == nil {
-		common.LogError("add next hop fail,the err is:face is not found")
-		return MakeControlResponse(410, "the face is not found", "")
+		common.LogDebugWithFields(logrus.Fields{
+			"logicFaceId": strconv.FormatUint(logicFaceId, 10),
+		}, "the logicFace is not existed")
+		return MakeControlResponse(400, "the face is not found", "")
 
 	}
 	fibEntry := f.fib.FindExactMatch(prefix)
 	if fibEntry == nil {
-		common.LogError("add next hop fail,the err is:the fibEntry is not found")
-		return MakeControlResponse(411, "the fibEntry is not found", "")
+		common.LogDebugWithFields(logrus.Fields{
+			"prefix": prefix.ToUri(),
+		}, "fibEntry is not found")
+		return MakeControlResponse(400, "the fibEntry is not found", "")
 	}
 	// 删除这个标识前缀对应 FIB表项中的某个下一跳
 	fibEntry.RemoveNextHop(face)
@@ -140,8 +167,10 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 		// 如果空 直接删除整个表项
 		err := f.fib.EraseByFIBEntry(fibEntry)
 		if err != nil {
-			common.LogError("add next hop fail,the err is", err)
-			return MakeControlResponse(412, err.Error(), "")
+			common.LogDebugWithFields(logrus.Fields{
+				"error": err,
+			}, "delete the fibEntry fail")
+			return MakeControlResponse(400, err.Error(), "")
 		}
 	}
 	// 返回成功
@@ -156,32 +185,20 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 // @receiver f
 //
 func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
-	//var response *mgmt.ControlResponse
-	//fibEntrys := f.fib.GetAllEntry()
-	//data, err := json.Marshal(fibEntrys)
-	//if err != nil {
-	//	common.LogError("get fib info fail,the err is", err)
-	//	response = MakeControlResponse(400, "mashal fibEntrys fail , the err is:"+err.Error(), "")
-	//	context.responseSender(response, interest)
-	//	return
-	//}
-	//context.data = data
-	//// 返回分片列表，并将分片放入缓存中去
-	//dataList := context.Append()
-	//if dataList == nil {
-	//	common.LogError("get fib info fail,the err is", err)
-	//	response = MakeControlResponse(400, "slice data packet err!", "")
-	//	context.responseSender(response, interest)
-	//	return
-	//} else {
-	//	common.LogInfo("get fib info success")
-	//	for i, data := range dataList {
-	//		// 包编码放在dataSender中
-	//		context.dataSaver(data)
-	//		if i == 0 {
-	//			// 第一个包是包头 发送 其他包暂时存放在缓存 不发送 等待前端继续请求
-	//			context.dataSender(data)
-	//		}
-	//	}
-	//}
+	fibEntryList := f.fib.GetAllEntry()
+	for _, fibEntry := range fibEntryList {
+		var nextHopInfo []NextHopInfo
+		for _, nextHop := range fibEntry.GetNextHops() {
+			nextHopInfo = append(nextHopInfo, NextHopInfo{LogicFaceId: nextHop.LogicFace.LogicFaceId, Cost: nextHop.Cost})
+		}
+		fibInfo := FibInfo{
+			Identifier:   fibEntry.GetIdentifier().ToString(),
+			NextHopsInfo: nextHopInfo,
+		}
+		context.Append(fibInfo)
+	}
+	// 获取当前表的版本号
+	currentVersion := f.fib.GetVersion()
+
+	_ = context.Done(currentVersion)
 }

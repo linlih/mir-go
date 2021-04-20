@@ -10,7 +10,7 @@ package table
 
 import (
 	"github.com/sirupsen/logrus"
-	common2 "minlib/common"
+	"minlib/common"
 	"minlib/component"
 	"mir-go/daemon/lf"
 )
@@ -21,7 +21,8 @@ import (
 // @Description:
 //
 type FIB struct {
-	lpm *LpmMatcher //最长前缀匹配器
+	lpm     *LpmMatcher //最长前缀匹配器
+	version uint64      //版本号
 }
 
 // CreateFIB
@@ -31,9 +32,10 @@ type FIB struct {
 // @return *FIB
 //
 func CreateFIB() *FIB {
-	var f = &FIB{}
-	f.lpm = &LpmMatcher{} //初始化
-	f.lpm.Create()        //初始化锁
+	var f = new(FIB)
+	f.lpm = new(LpmMatcher) //初始化
+	f.lpm.Create()          //初始化锁
+	f.version = 0           // 初始化版本号为0
 	return f
 }
 
@@ -43,8 +45,9 @@ func CreateFIB() *FIB {
 // @Description:
 //
 func (f *FIB) Init() {
-	f.lpm = &LpmMatcher{} //初始化
-	f.lpm.Create()        //初始化锁
+	f.lpm = new(LpmMatcher) //初始化
+	f.lpm.Create()          //初始化锁
+	f.version = 0
 }
 
 // FindLongestPrefixMatch
@@ -105,10 +108,11 @@ func (f *FIB) AddOrUpdate(identifier *component.Identifier, logicFace *lf.LogicF
 			val = fibEntry
 		}
 		entry := (val).(*FIBEntry)
-		entry.Identifier = identifier
+		entry.SetIdentifier(identifier)
 		entry.NextHopList[logicFace.LogicFaceId] = &NextHop{LogicFace: logicFace, Cost: cost}
 		return entry
 	})
+	f.version++
 	return val.(*FIBEntry)
 }
 
@@ -124,6 +128,7 @@ func (f *FIB) EraseByIdentifier(identifier *component.Identifier) error {
 	for _, v := range identifier.GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
 	}
+	f.version++
 	return f.lpm.Delete(PrefixList)
 }
 
@@ -136,9 +141,10 @@ func (f *FIB) EraseByIdentifier(identifier *component.Identifier) error {
 //
 func (f *FIB) EraseByFIBEntry(fibEntry *FIBEntry) error {
 	var PrefixList []string
-	for _, v := range fibEntry.Identifier.GetComponents() {
+	for _, v := range fibEntry.GetIdentifier().GetComponents() {
 		PrefixList = append(PrefixList, v.ToString())
 	}
+	f.version++
 	return f.lpm.Delete(PrefixList)
 }
 
@@ -150,6 +156,7 @@ func (f *FIB) EraseByFIBEntry(fibEntry *FIBEntry) error {
 // @return uint64
 //
 func (f *FIB) RemoveNextHopByFace(logicFace *lf.LogicFace) uint64 {
+	f.version++
 	return f.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if v, ok := val.(*FIBEntry); ok {
 			if v.HasNextHop(logicFace) {
@@ -157,7 +164,7 @@ func (f *FIB) RemoveNextHopByFace(logicFace *lf.LogicFace) uint64 {
 				return 1
 			}
 		} else {
-			common2.LogErrorWithFields(logrus.Fields{
+			common.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}
@@ -176,7 +183,7 @@ func (f *FIB) Size() uint64 {
 		if _, ok := val.(*FIBEntry); ok {
 			return 1
 		} else {
-			common2.LogErrorWithFields(logrus.Fields{
+			common.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}
@@ -184,23 +191,45 @@ func (f *FIB) Size() uint64 {
 	})
 }
 
+// GetDepth
+// 返回前缀树当前的深度
+//
+// @Description: 返回前缀树当前的深度
+// @return int
+//
 func (f *FIB) GetDepth() int {
 	// 根节点不存储数据
 	return f.lpm.GetDepth() - 1
 }
 
+// GetAllEntry
+// 返回FIB表中所有的表项
+//
+// @Description:返回FIB表中所有的表项
+// @return []*FIBEntry
+//
 func (f *FIB) GetAllEntry() []*FIBEntry {
-	var fibEntrys []*FIBEntry
+	var fibEntries []*FIBEntry
 	f.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if fibEntry, ok := val.(*FIBEntry); ok {
-			fibEntrys = append(fibEntrys, fibEntry)
+			fibEntries = append(fibEntries, fibEntry)
 			return 1
 		} else {
-			common2.LogErrorWithFields(logrus.Fields{
+			common.LogErrorWithFields(logrus.Fields{
 				"value": val,
 			}, "FIBEntry transform fail")
 		}
 		return 0
 	})
-	return fibEntrys
+	return fibEntries
+}
+
+// GetVersion
+// 返回FIB表当前的版本号
+//
+// @Description:返回FIB表当前的版本号
+// @return uint64
+//
+func (f *FIB) GetVersion() uint64 {
+	return f.version
 }

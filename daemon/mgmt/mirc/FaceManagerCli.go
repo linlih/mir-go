@@ -55,14 +55,10 @@ var AddLogicFaceCommand = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "local",
-			Usage: "local address for accept",
+			Name:     "local",
+			Usage:    "local address for accept",
+			Required: true,
 		},
-		//&cli.Uint64Flag{
-		//	Name:  "mtu",
-		//	Value: 1500,
-		//	Usage: "MTU",
-		//},
 		&cli.StringFlag{
 			Name:  "persistency",
 			Usage: "Persistency of LogicFace, persist/on-demand",
@@ -81,8 +77,8 @@ var DelLogicFaceCommand = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			//远端地址
-			Name:  "id",
-			Value: "",
+			Name:     "id",
+			Required: true,
 		},
 	},
 }
@@ -149,7 +145,7 @@ func AddLogicFace(c *cli.Context) error {
 	if len(remoteUriItems) != 2 {
 		return FaceManagerCliError{msg: fmt.Sprintf("Remote uri is wrong, expect one '://' item, %s", remoteUri)}
 	}
-	parameters := &component.ControlParameters{}
+	parameters := new(component.ControlParameters)
 	parameters.SetUri(remoteUri)
 	parameters.SetUriScheme(uint64(component.GetUriSchemeByString(remoteUriItems[0])))
 	parameters.SetLocalUri(localUri)
@@ -171,7 +167,7 @@ func AddLogicFace(c *cli.Context) error {
 		common.LogInfo("Add LogicFace success, id =", response.GetString())
 	} else {
 		// 请求失败，则输出错误信息
-		common.LogInfo("Add LogicFace failed, errMsg: ", response.Msg)
+		common.LogError("Add LogicFace failed, errMsg: ", response.Msg)
 	}
 	return nil
 }
@@ -201,7 +197,7 @@ func DelLogicFace(c *cli.Context) error {
 		common.LogInfo("Delete LogicFace success!")
 	} else {
 		// 请求失败，则输出错误信息
-		common.LogInfo("Delete LogicFace failed, errMsg: ", response.Msg)
+		common.LogError("Delete LogicFace failed, errMsg: ", response.Msg)
 	}
 	return nil
 }
