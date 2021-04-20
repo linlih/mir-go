@@ -42,15 +42,16 @@ const MaxIdolTimeMs = 600000
 //		在一个发送包的流程中，由logicFace调用linkService的发包函数，再由linkService调用transport的发包函数
 //
 type LogicFace struct {
-	LogicFaceId       uint64 // logicFaceID
-	logicFaceType     LogicFaceType
-	transport         ITransport        // 与logicFace绑定的transport
-	linkService       *LinkService      // 与logicFace绑定的linkService
-	logicFaceCounters LogicFaceCounters // logicFace 流量统计对象
-	expireTime        int64             // 超时时间 ms
-	state             bool              //  true 为 up , false 为 down
-	Mtu               uint64            // 最大传输单元 MTU
-	Persistence       uint64            // 持久性
+	LogicFaceId        uint64 // logicFaceID
+	logicFaceType      LogicFaceType
+	transport          ITransport               // 与logicFace绑定的transport
+	linkService        *LinkService             // 与logicFace绑定的linkService
+	logicFaceCounters  LogicFaceCounters        // logicFace 流量统计对象
+	expireTime         int64                    // 超时时间 ms
+	state              bool                     //  true 为 up , false 为 down
+	Mtu                uint64                   // 最大传输单元 MTU
+	Persistence        uint64                   // 持久性
+	onShutdownCallback func(logicFaceId uint64) // 传输logic face 关闭时的回调
 }
 
 // GetState 获取接口状态
@@ -209,11 +210,10 @@ func (lf *LogicFace) Shutdown() {
 	if lf.state == false {
 		return
 	}
-
 	if lf.logicFaceType != LogicFaceTypeUDP {
 		lf.transport.Close()
 	}
-	lf.state = false
+	lf.onLogicFaceShutDown()
 }
 
 func (lf *LogicFace) GetCounter() uint64 {
@@ -222,4 +222,15 @@ func (lf *LogicFace) GetCounter() uint64 {
 
 func (lf *LogicFace) SetPersistence(persistence uint64) {
 	lf.Persistence = persistence
+}
+
+func (lf *LogicFace) onLogicFaceShutDown() {
+	lf.state = false
+	if lf.onShutdownCallback != nil {
+		lf.onShutdownCallback(lf.LogicFaceId)
+	}
+}
+
+func (lf *LogicFace) SetOnShutdownCallback(callback func(logicFaceId uint64)) {
+	lf.onShutdownCallback = callback
 }
