@@ -1,4 +1,4 @@
-//
+// Package fw
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -17,7 +17,7 @@ import (
 	"mir-go/daemon/table"
 )
 
-//
+// StrategyBase
 // 本类包含策略类的一个基准实现，其它策略类可以内嵌本对象，并按需覆盖需要使用的回调即可
 //
 // @Description:
@@ -26,7 +26,7 @@ type StrategyBase struct {
 	forwarder *Forwarder
 }
 
-//
+// SetForwarder
 // 保存Forwarder指针
 //
 // @Description:
@@ -41,7 +41,7 @@ func (s *StrategyBase) SetForwarder(forwarder *Forwarder) {
 //// Triggers
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//
+// AfterReceiveInterest
 // 当收到一个兴趣包时，会触发本触发器（需要子类实现）
 //
 // @Description:
@@ -63,7 +63,7 @@ func (s *StrategyBase) AfterReceiveInterest(ingress *lf.LogicFace, interest *pac
 	// 收到一个兴趣包
 }
 
-//
+// AfterContentStoreHit
 // 当兴趣包命中缓存时，会触发本触发器
 //
 // @Description:
@@ -83,7 +83,7 @@ func (s *StrategyBase) AfterContentStoreHit(ingress *lf.LogicFace, data *packet.
 	s.sendData(ingress, data, entry)
 }
 
-//
+// AfterReceiveData
 // 当收到一个 Data 时，会触发本触发器
 //
 // @Description:
@@ -113,7 +113,7 @@ func (s *StrategyBase) AfterReceiveData(ingress *lf.LogicFace, data *packet.Data
 	s.sendDataToAll(ingress, data, pitEntry)
 }
 
-//
+// AfterReceiveNack
 // 当收到一个 Nack 时，会触发本触发器（默认不做任何处理）
 //
 // @Description:
@@ -136,7 +136,7 @@ func (s *StrategyBase) AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack
 	}, "After receive nack")
 }
 
-//
+// AfterReceiveCPacket
 // 当收到一个 CPacket 时，会触发本触发器（需要子类实现）
 //
 // @Description:
