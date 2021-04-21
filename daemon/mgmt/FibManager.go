@@ -142,7 +142,7 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 		return MakeControlResponse(400, "read only,the prefix can't be changed", "")
 	}
 	f.fib.AddOrUpdate(prefix, face, cost)
-	common.LogInfo("add next hop success")
+	common.LogInfo("Add next hop success:", prefix.ToUri(), "->", logicFaceId)
 	return MakeControlResponse(200, "add next hop success", "")
 }
 
@@ -192,8 +192,8 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 			return MakeControlResponse(400, err.Error(), "")
 		}
 	}
+	common.LogInfo("Remove next hop success:", prefix.ToUri(), "->", logicFaceId)
 	// 返回成功
-	common.LogInfo("remove next hop success")
 	return MakeControlResponse(200, "remove next hop success", "")
 }
 
@@ -239,7 +239,7 @@ func (f *FibManager) NextHopCleaner(logicFaceId uint64) {
 		}
 		fibEntry.RWlock.Unlock()
 	}
-	common.LogInfo("the face is deleted,clean next hop ---------------------------- ")
+	common.LogDebug("the face is deleted,clean next hop ---------------------------- ")
 }
 
 // RegisterPrefix 处理注册前缀

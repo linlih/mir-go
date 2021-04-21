@@ -143,10 +143,10 @@ func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
 		go func() {
 			select {
 			case <-p.Ticker.C:
-				common2.LogInfo("执行回调函数")
+				common2.LogDebug("执行回调函数")
 				f(p)
 			case p.ch <- 1:
-				common2.LogInfo("取消定时器 直接退出")
+				common2.LogDebug("取消定时器 直接退出")
 				p.ch = make(chan int)
 			}
 			p.Ticker.Stop()
@@ -168,7 +168,6 @@ func (p *PITEntry) CancelTimer() {
 		<-p.ch
 		return
 	}
-	common2.LogWarn("the ticker not start")
 }
 
 // GetInterest
