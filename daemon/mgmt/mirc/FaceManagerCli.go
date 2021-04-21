@@ -55,9 +55,9 @@ var AddLogicFaceCommand = cli.Command{
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:     "local",
-			Usage:    "local address for accept",
-			Required: true,
+			Name:  "local",
+			Usage: "local address for accept",
+			Value: "",
 		},
 		&cli.StringFlag{
 			Name:  "persistency",
@@ -148,7 +148,9 @@ func AddLogicFace(c *cli.Context) error {
 	parameters := new(component.ControlParameters)
 	parameters.SetUri(remoteUri)
 	parameters.SetUriScheme(uint64(component.GetUriSchemeByString(remoteUriItems[0])))
-	parameters.SetLocalUri(localUri)
+	if localUri != "" {
+		parameters.SetLocalUri(localUri)
+	}
 	parameters.SetPersistency(uint64(component.GetPersistencyByString(persistency)))
 
 	// 发起一个请求命令得到结果

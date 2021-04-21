@@ -57,7 +57,6 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 		func(parameters *component.ControlParameters) bool {
 			if parameters.ControlParameterUri.IsInitial() &&
-				parameters.ControlParameterMtu.IsInitial() &&
 				parameters.ControlParameterLogicFacePersistency.IsInitial() {
 				return true
 			}
