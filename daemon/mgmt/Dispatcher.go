@@ -71,7 +71,7 @@ func (d *Dispatcher) Start() {
 
 		// 开始循环处理管理命令兴趣包
 		for {
-			minPacket, err := d.FaceClient.ReceivePacket()
+			minPacket, err := d.FaceClient.ReceivePacket(-1)
 			if err != nil {
 				_ = d.FaceClient.Shutdown()
 				common.LogFatal("receive packet fail!the err is:", err)
@@ -312,11 +312,11 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 func (d *Dispatcher) queryStorage(topPrefix *component.Identifier, interest *packet.Interest, missStorage InterestHandler) {
 	// 如果在缓存中找到分片
 	if v, ok := d.Cache.Get(interest.GetName().ToUri()); ok {
-		common.LogInfo("hit the cache")
+		common.LogDebug("hit the cache")
 		d.sendData(v.(*packet.Data))
 	} else {
 		// 没找到 发起请求数据 并添加到缓存中
-		common.LogInfo("miss the cache")
+		common.LogDebug("miss the cache")
 		missStorage(topPrefix, interest)
 	}
 }
@@ -356,7 +356,6 @@ func (d *Dispatcher) sendData(data *packet.Data) {
 		common.LogError("send data fail!the err is :", err)
 		return
 	}
-	common.LogInfo("send data success")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

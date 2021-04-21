@@ -56,14 +56,14 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 // @return *mgmtlib.MIRController
 //
 func GetController() *mgmtlib.MIRController {
-	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFaceICN, error) {
-		face := new(logicface.LogicFaceICN)
+	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFace, error) {
+		face := new(logicface.LogicFace)
 		// 建立unix连接
 		if err := face.InitWithUnixSocket(unixPath); err != nil {
 			return nil, err
 		}
 		return face, nil
-	})
+	}, true)
 
 	return controller
 }

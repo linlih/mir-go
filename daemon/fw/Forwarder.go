@@ -397,7 +397,7 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	// 将对应的PIT条目从PIT表中移除
 	if err := f.PIT.EraseByPITEntry(pitEntry); err != nil {
 		// 删除 PIT 条目失败，在这边输出提示信息
-		common2.LogWarnWithFields(logrus.Fields{
+		common2.LogDebug(logrus.Fields{
 			"interest": pitEntry.GetIdentifier().ToUri(),
 		}, "Delete PITEntry failed")
 	}

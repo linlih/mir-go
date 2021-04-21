@@ -65,8 +65,6 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	packetValidator.Init(mirConfig.ParallelVerifyNum, mirConfig.VerifyPacket, packetQueue)
 
 	// LogicFaceSystem
-	logicFaceTable := new(lf.LogicFaceTable)
-	logicFaceTable.Init()
 	logicFaceSystem := new(lf.LogicFaceSystem)
 	logicFaceSystem.Init(packetValidator, mirConfig)
 	logicFaceSystem.Start()
