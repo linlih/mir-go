@@ -89,10 +89,6 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
 	}
-
-	// TODO: 加一个 registerIdentifier => register
-	// 参数：prefix: Identifier，cost
-	// 效果：在 FIB 添加一个条目，
 }
 
 // AddNextHop
@@ -128,6 +124,14 @@ func (f *FibManager) AddNextHop(topPrefix *component.Identifier, interest *packe
 		}, "the logicFace is not existed")
 		return MakeControlResponse(400, "the face is not found", "")
 	}
+	// 查找前缀是否存在 如果存在而且是只读的话 那么不可以改变
+	fibEntry := f.fib.FindExactMatch(prefix)
+	if fibEntry != nil && !fibEntry.IsChanged() {
+		common.LogDebugWithFields(logrus.Fields{
+			"prefix": fibEntry.GetIdentifier().ToUri(),
+		}, "change read only prefix")
+		return MakeControlResponse(400, "read only,the prefix can't be changed", "")
+	}
 	f.fib.AddOrUpdate(prefix, face, cost)
 	common.LogInfo("add next hop success")
 	return MakeControlResponse(200, "add next hop success", "")
@@ -162,6 +166,12 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 		return MakeControlResponse(400, "the fibEntry is not found", "")
 	}
 	// 删除这个标识前缀对应 FIB表项中的某个下一跳
+	if !fibEntry.IsChanged() {
+		common.LogDebugWithFields(logrus.Fields{
+			"prefix": fibEntry.GetIdentifier().ToUri(),
+		}, "change read only prefix")
+		return MakeControlResponse(400, "read only,the prefix can't be changed", "")
+	}
 	fibEntry.RemoveNextHop(face)
 	if !fibEntry.HasNextHops() {
 		// 如果空 直接删除整个表项
@@ -201,6 +211,26 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 	currentVersion := f.fib.GetVersion()
 
 	_ = context.Done(currentVersion)
+}
+
+// NextHopCleaner
+// 从fib表项中清除所有以指定id为下一跳的nextHop
+//
+// @Description:从fib表项中清除所有以指定id为下一跳的nextHop
+// @Parameters: logicFaceId uint64
+// @receiver f
+//
+func (f *FibManager) NextHopCleaner(logicFaceId uint64) {
+	fibEntryList := f.fib.GetAllEntry()
+	for _, fibEntry := range fibEntryList {
+		fibEntry.RWlock.Lock()
+		delete(fibEntry.NextHopList, logicFaceId)
+		if len(fibEntry.NextHopList) == 0 {
+			f.fib.EraseByFIBEntry(fibEntry)
+		}
+		fibEntry.RWlock.Unlock()
+	}
+	common.LogInfo("the face is deleted,clean next hop ---------------------------- ")
 }
 
 // RegisterPrefix 处理注册前缀

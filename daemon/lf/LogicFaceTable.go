@@ -18,6 +18,7 @@ type LogicFaceTable struct {
 	tableLock       sync.Mutex
 	lastId          uint64
 	version         uint64 // 版本
+	OnEvicted       func(uint64)
 }
 
 // GetVersion 获取版本号
@@ -88,6 +89,7 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	delete(l.mLogicFaceTable, logicFaceId)
 	l.mSize--
 	l.version++
+	l.OnEvicted(logicFaceId)
 	l.tableLock.Unlock()
 
 }

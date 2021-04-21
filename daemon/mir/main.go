@@ -75,6 +75,7 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	mgmtSystem := mgmt.CreateMgmtSystem()
 	mgmtSystem.SetFIB(forwarder.GetFIB())
+	mgmtSystem.BindFibCleaner(logicFaceSystem.LogicFaceTable())
 	dispatcher := mgmt.CreateDispatcher(mirConfig)
 	dispatcher.FaceClient = faceClient
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")

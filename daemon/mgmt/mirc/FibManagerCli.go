@@ -40,16 +40,19 @@ var AddFibCommand = cli.Command{
 		&cli.StringFlag{
 			Name:     "prefix",
 			Usage:    "Target identifier",
+			Aliases:  []string{"p"},
 			Required: true,
 		},
 		&cli.Uint64Flag{
 			Name:     "id",
 			Usage:    "Next hop logic face id",
+			Aliases:  []string{"i"},
 			Required: true,
 		},
 		&cli.Uint64Flag{
 			Name:     "cost",
 			Usage:    "Link cost",
+			Aliases:  []string{"c"},
 			Required: false,
 			Value:    0,
 		},
@@ -67,11 +70,13 @@ var DeleteNextHopCommand = cli.Command{
 		&cli.StringFlag{
 			Name:     "prefix",
 			Usage:    "Target identifier",
+			Aliases:  []string{"p"},
 			Required: true,
 		},
 		&cli.Uint64Flag{
 			Name:     "id",
 			Usage:    "Next hop logic face id",
+			Aliases:  []string{"i"},
 			Required: true,
 		},
 	},

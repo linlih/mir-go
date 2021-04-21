@@ -21,6 +21,10 @@ func (m *ManagementSystem) SetFIB(fib *table.FIB) {
 	m.fibManager.fib = fib
 }
 
+func (m *ManagementSystem) BindFibCleaner(l *lf.LogicFaceTable) {
+	l.OnEvicted = m.fibManager.NextHopCleaner
+}
+
 func CreateMgmtSystem() *ManagementSystem {
 	return &ManagementSystem{
 		csManager:   CreateCsManager(),

@@ -231,7 +231,7 @@ func (d *Dispatcher) AddTopPrefix(topPrefix *component.Identifier, fib *table.FI
 	d.topPrefixList[topPrefix.ToUri()] = topPrefix
 
 	// 在转发表中添加指向管理模块的前缀
-	fib.AddOrUpdate(topPrefix, serverFace, 0)
+	fib.AddOrUpdate(topPrefix, serverFace, 0).SetReadOnly()
 }
 
 // RemoveTopPrefix

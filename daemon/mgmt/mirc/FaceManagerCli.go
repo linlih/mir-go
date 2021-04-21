@@ -52,17 +52,20 @@ var AddLogicFaceCommand = cli.Command{
 		&cli.StringFlag{
 			Name:     "remote",
 			Usage:    "remote address for connect",
+			Aliases:  []string{"r"},
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "local",
-			Usage: "local address for accept",
-			Value: "",
+			Name:    "local",
+			Usage:   "local address for accept",
+			Aliases: []string{"l"},
+			Value:   "",
 		},
 		&cli.StringFlag{
-			Name:  "persistency",
-			Usage: "Persistency of LogicFace, persist/on-demand",
-			Value: "persist",
+			Name:    "persistency",
+			Usage:   "Persistency of LogicFace, persist/on-demand",
+			Aliases: []string{"p"},
+			Value:   "persist",
 		},
 	},
 }
@@ -78,6 +81,8 @@ var DelLogicFaceCommand = cli.Command{
 		&cli.StringFlag{
 			//远端地址
 			Name:     "id",
+			Usage:    "The LogicFaceId you need to delete",
+			Aliases:  []string{"i"},
 			Required: true,
 		},
 	},

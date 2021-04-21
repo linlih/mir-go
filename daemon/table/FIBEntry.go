@@ -36,6 +36,7 @@ type NextHop struct {
 type FIBEntry struct {
 	identifier  *component.Identifier //标识对象指针
 	NextHopList map[uint64]*NextHop   //下一跳列表 用map实现是为了查找和删除方便
+	readOnly    bool                  // 设置该fibEntry是否为只读
 	RWlock      *sync.RWMutex         //读写锁
 }
 
@@ -49,6 +50,7 @@ func CreateFIBEntry() *FIBEntry {
 	return &FIBEntry{
 		RWlock:      new(sync.RWMutex),
 		NextHopList: make(map[uint64]*NextHop),
+		readOnly:    false,
 	}
 }
 
@@ -128,4 +130,23 @@ func (f *FIBEntry) RemoveNextHop(logicFace *lf.LogicFace) {
 	f.RWlock.Lock()
 	delete(f.NextHopList, logicFace.LogicFaceId)
 	f.RWlock.Unlock()
+}
+
+// SetReadOnly
+// 设置只读
+//
+// @Description: 设置只读
+//
+func (f *FIBEntry) SetReadOnly() {
+	f.readOnly = true
+}
+
+// IsChanged
+// FIBEntry是否可变
+//
+// @Description: FIBEntry是否可变
+// @Return: bool
+//
+func (f *FIBEntry) IsChanged() bool {
+	return !f.readOnly
 }
