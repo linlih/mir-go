@@ -205,6 +205,9 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 		return
 	}
 
+	// 将入口逻辑接口id保存到 IncomingLogicFaceId
+	interest.IncomingLogicFaceId.SetIncomingLogicFaceId(ingress.LogicFaceId)
+
 	// is Pending ?
 	if pitEntry.HasInRecords() {
 		// 如果 PIT 条目中存在 in-record 则说明这是一个悬而未决（pending）的兴趣包，路由器中肯定没有对应的缓存

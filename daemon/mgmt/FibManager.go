@@ -202,3 +202,18 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 
 	_ = context.Done(currentVersion)
 }
+
+// RegisterPrefix 处理注册前缀
+//
+// @Description:
+// @receiver f
+// @param topPrefix
+// @param interest
+// @param parameters
+// @return *mgmt.ControlResponse
+//
+func (f *FibManager) RegisterPrefix(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters) *mgmt.ControlResponse {
+	parameters.SetLogicFaceId(interest.IncomingLogicFaceId.GetIncomingLogicFaceId())
+	return f.AddNextHop(topPrefix, interest, parameters)
+}
