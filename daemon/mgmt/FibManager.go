@@ -89,6 +89,15 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
 	}
+
+	// /fib-mgmt/register => 注册一个前缀监听
+	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionRegister)
+	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
+		return parameters.ControlParameterPrefix.IsInitial()
+	}, f.RegisterPrefix)
+	if err != nil {
+		common.LogError("add register-command fail,the err is:", err)
+	}
 }
 
 // AddNextHop
