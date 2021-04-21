@@ -12,7 +12,10 @@ import (
 	common2 "minlib/common"
 	"minlib/encoding"
 	"minlib/packet"
+	"sync/atomic"
 )
+
+var lpPacketId uint64 = 0 // 发送的lpPacket 包ID
 
 // LinkService
 // @Description:  链路服务层，用于分包发送，把接收到的包分片合并
@@ -26,9 +29,9 @@ type LinkService struct {
 	logicFace    *LogicFace   // LinkService关联的logicFace
 	lpReassemble LpReassemble // 包分片合并器
 
-	mtu              int    // MTU大小
-	lpPacketHeadSize int    // lpPacket 编码成数组时的头部大小
-	lpPacketId       uint64 // 发送的lpPacket 编码
+	mtu              int // MTU大小
+	lpPacketHeadSize int // lpPacket 编码成数组时的头部大小
+	//lpPacketId       uint64 // 发送的lpPacket 包ID
 }
 
 //
@@ -63,7 +66,7 @@ func (l *LinkService) Init(mtu int) {
 	l.mtu = mtu
 	l.lpReassemble.Init()
 	l.calculateLpPacketHeadSize()
-	l.lpPacketId = 0
+	//l.lpPacketId = 0
 }
 
 //
@@ -151,12 +154,13 @@ func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
 		if fragmentLen > bufLen-startIdx {
 			fragmentLen = bufLen - startIdx
 		}
-		l.sendFragment(buf[startIdx:startIdx+fragmentLen], fragmentLen, l.lpPacketId, uint64(fragmentNum),
+		l.sendFragment(buf[startIdx:startIdx+fragmentLen], fragmentLen, lpPacketId, uint64(fragmentNum),
 			uint64(fragmentSeq))
 		startIdx += fragmentLen
 		fragmentSeq++
 	}
-	l.lpPacketId++
+	//lpPacketId++
+	atomic.AddUint64(&lpPacketId, 1)
 }
 
 // SendInterest
