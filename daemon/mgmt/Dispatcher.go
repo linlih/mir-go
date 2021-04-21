@@ -71,7 +71,7 @@ func (d *Dispatcher) Start() {
 
 		// 开始循环处理管理命令兴趣包
 		for {
-			minPacket, err := d.FaceClient.ReceivePacket()
+			minPacket, err := d.FaceClient.ReceivePacket(-1)
 			if err != nil {
 				_ = d.FaceClient.Shutdown()
 				common.LogFatal("receive packet fail!the err is:", err)
