@@ -58,7 +58,8 @@ func CreateFibManager() *FibManager {
 func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	f.logicFaceTable = logicFaceTable
 	// /fib-mgmt/add => 添加一个转发表项
-	identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionAdd)
+	identifier, _ := component.CreateIdentifierByStringArray(mgmt.ManagementModuleFibMgmt, mgmt.FibManagementActionAdd)
+	//identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionAdd)
 	// 绑定控制函数，加入参数验证
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
@@ -72,7 +73,8 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 		common.LogError("add add-command fail,the err is:", err)
 	}
 	// /fib-mgmt/del => 删除一个转发表项
-	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionDel)
+	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFibMgmt, mgmt.FibManagementActionDel)
+	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionDel)
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterPrefix.IsInitial() &&
 			parameters.ControlParameterLogicFaceId.IsInitial() {
@@ -84,7 +86,8 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 		common.LogError("add delete-command fail,the err is:", err)
 	}
 	// /fib-mgmt/list => 展示所有转发表条目
-	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionList)
+	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFibMgmt, mgmt.FibManagementActionList)
+	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionList)
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.ListEntries)
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
@@ -202,7 +205,7 @@ func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *pack
 			nextHopInfo = append(nextHopInfo, NextHopInfo{LogicFaceId: nextHop.LogicFace.LogicFaceId, Cost: nextHop.Cost})
 		}
 		fibInfo := FibInfo{
-			Identifier:   fibEntry.GetIdentifier().ToString(),
+			Identifier:   fibEntry.GetIdentifier().ToUri(),
 			NextHopsInfo: nextHopInfo,
 		}
 		context.Append(fibInfo)

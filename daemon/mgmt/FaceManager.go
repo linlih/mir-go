@@ -53,7 +53,8 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	f.logicFaceTable = logicFaceTable
 
 	// /face-mgmt/add => 添加一个逻辑接口
-	identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionAdd)
+	//identifier, _ := component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionAdd)
+	identifier, _ := component.CreateIdentifierByStringArray(mgmt.ManagementModuleFaceMgmt, mgmt.LogicFaceManagementActionAdd)
 	err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 		func(parameters *component.ControlParameters) bool {
 			if parameters.ControlParameterUri.IsInitial() &&
@@ -68,7 +69,8 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	}
 
 	// /face-mgmt/del => 删除一个逻辑接口
-	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionDel)
+	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionDel)
+	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFaceMgmt, mgmt.LogicFaceManagementActionDel)
 	err = dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
 		if parameters.ControlParameterLogicFaceId.IsInitial() {
 			return true
@@ -80,7 +82,8 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	}
 
 	// /face-mgmt/list => 获取所有逻辑接口
-	identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionList)
+	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionList)
+	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFaceMgmt, mgmt.LogicFaceManagementActionList)
 	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listLogicFace)
 	if err != nil {
 		common.LogError("Face add list-command fail,the err is:", err)

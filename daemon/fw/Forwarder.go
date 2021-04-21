@@ -47,7 +47,7 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
 	f.packetQueue = packetQueue
-	identifier, err := component.CreateIdentifierByString("/min-mir")
+	identifier, err := component.CreateIdentifierByString("/")
 	if err != nil {
 		return err
 	}

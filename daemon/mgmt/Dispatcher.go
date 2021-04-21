@@ -99,7 +99,7 @@ func (d *Dispatcher) Start() {
 			}
 
 			// 获取顶级前缀，eg: /min-mir/mgmt/localhost
-			topPrefix, err := prefix.GetSubIdentifier(0, 3)
+			topPrefix, err := prefix.GetSubIdentifier(0, 4)
 			if err != nil {
 				common.LogWarnWithFields(logrus.Fields{
 					"prefix": prefix.ToUri(),
@@ -110,7 +110,7 @@ func (d *Dispatcher) Start() {
 			}
 
 			// 获取相对前缀，eg: /face-mgmt/list
-			relPrefix, err := prefix.GetSubIdentifier(3, 2)
+			relPrefix, err := prefix.GetSubIdentifier(4, 2)
 			if err != nil {
 				common.LogWarnWithFields(logrus.Fields{
 					"prefix": prefix.ToUri(),

@@ -69,8 +69,8 @@ func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName st
 		// not ok 那么val == nil 存入标识
 		if _, ok := (val).(*StrategyTableEntry); !ok {
 			// 存入的表项 不是 *StrategyTableEntry类型 或者 为nil
-			csEntry := CreateStrategyTableEntry()
-			val = csEntry
+			strategyTableEntry := CreateStrategyTableEntry()
+			val = strategyTableEntry
 		}
 		entry := (val).(*StrategyTableEntry)
 		entry.StrategyName = strategyName
