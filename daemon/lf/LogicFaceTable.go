@@ -53,6 +53,9 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 	l.lastId++
 	l.version++
 	l.tableLock.Unlock()
+	logicFacePtr.SetOnShutdownCallback(func(logicFaceId uint64) {
+		l.OnEvicted(logicFaceId)
+	})
 	return lfid
 }
 
@@ -89,7 +92,6 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 	delete(l.mLogicFaceTable, logicFaceId)
 	l.mSize--
 	l.version++
-	l.OnEvicted(logicFaceId)
 	l.tableLock.Unlock()
 
 }
