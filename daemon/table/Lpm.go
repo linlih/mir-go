@@ -123,7 +123,9 @@ func (n *node) FindLongestPrefixMatch(key []string) (interface{}, bool) {
 	//child.lock.RLock()
 	val, found := child.FindLongestPrefixMatch(key[1:])
 	//child.lock.RUnlock()
-
+	if !found {
+		return deref(n.val)
+	}
 	return val, found
 }
 

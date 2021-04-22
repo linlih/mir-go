@@ -115,6 +115,7 @@ func (brs *BestRouteStrategy) AfterReceiveCPacket(ingress *lf.LogicFace, cPacket
 	miniHop := brs.findLowestCostNextHop(ingress, fibEntry)
 	if miniHop == nil {
 		// 没有路由无法转发
+		common2.LogDebug("No Route")
 		return
 	}
 	brs.sendCPacket(miniHop.LogicFace, cPacket)
