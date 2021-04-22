@@ -286,5 +286,5 @@ func (s *StrategyBase) lookupFibForInterest(interest *packet.Interest) *table.FI
 // @param cPacket
 //
 func (s *StrategyBase) lookupFibForCPacket(cPacket *packet.CPacket) *table.FIBEntry {
-	return s.forwarder.FIB.FindExactMatch(cPacket.DstIdentifier())
+	return s.forwarder.FIB.FindLongestPrefixMatch(cPacket.DstIdentifier())
 }
