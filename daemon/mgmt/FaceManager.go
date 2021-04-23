@@ -115,7 +115,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 	// 根据不同的 Uri scheme，创建不同的逻辑接口
 	switch uriScheme {
 	case component.ControlParameterUriSchemeEther:
-		remoteMacAddr, err := net.ParseMAC(uri)
+		remoteMacAddr, err := net.ParseMAC(uriItems[1])
 		if err != nil {
 			return MakeControlResponse(400, "parse remote address fail,the err is:"+err.Error(), "")
 		}
