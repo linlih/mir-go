@@ -50,9 +50,9 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	l.logicFaceTable = &logicFaceTable
 	l.packetValidator = packetValidator
 	l.config = config
-	l.ethernetListener.Init()
+	l.ethernetListener.Init(config.EtherRoutineNumber)
 	l.tcpListener.Init(config.TCPPort)
-	l.udpListener.Init(config.UDPPort)
+	l.udpListener.Init(config.UDPPort, config.UDPReceiveRoutineNumber)
 	l.unixListener.Init(config.UnixPath)
 
 	l.cleanLogicFaceTimeVal = config.CleanLogicFaceTableTimeVal
