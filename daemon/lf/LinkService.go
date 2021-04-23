@@ -143,6 +143,7 @@ func (l *LinkService) sendFragment(buf []byte, bufLen int, fragmentId, fragmentN
 // @param bufLen	数据长度
 //
 func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
+	common2.LogDebug("send to face : ", l.logicFace.LogicFaceId, " ", l.logicFace.GetRemoteUri())
 	fragmentLen := l.mtu - l.lpPacketHeadSize - 10
 	startIdx := 0
 	fragmentSeq := 0

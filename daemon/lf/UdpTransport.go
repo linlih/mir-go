@@ -19,7 +19,7 @@ import (
 type UdpTransport struct {
 	Transport
 	conn          *net.UDPConn // UDP句柄
-	remoteUdpAddr net.UDPAddr  // 对端UDP地址，用于发送UDP包
+	remoteUdpAddr *net.UDPAddr // 对端UDP地址，用于发送UDP包
 }
 
 // Init
@@ -38,7 +38,7 @@ func (u *UdpTransport) Init(conn *net.UDPConn, remoteUdpAddr *net.UDPAddr) {
 	} else {
 		u.remoteAddr = remoteUdpAddr.String()
 		u.remoteUri = "udp://" + u.remoteAddr
-		u.remoteUdpAddr = *remoteUdpAddr
+		u.remoteUdpAddr = remoteUdpAddr
 	}
 }
 
@@ -63,7 +63,9 @@ func (u *UdpTransport) Send(lpPacket *packet.LpPacket) {
 	if encodeBufLen <= 0 {
 		return
 	}
-	_, err := u.conn.Write(encodeBuf)
+	common2.LogTrace("udp send : ", u.remoteUdpAddr.String())
+	//_, err := u.conn.Write(encodeBuf)
+	_, err := u.conn.WriteToUDP(encodeBuf, u.remoteUdpAddr)
 	if err != nil {
 		common2.LogWarn(err)
 	}

@@ -74,6 +74,12 @@ func (u *UdpListener) Start() {
 	go u.doReceive()
 }
 
+//
+// @Description: 	收到LpPacket的处理函数
+// @receiver u
+// @param lpPacket
+// @param remoteUdpAddr
+//
 func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UDPAddr) {
 	logicFace, ok := u.udpAddrFaceMap[remoteUdpAddr.String()]
 	if ok {
@@ -89,11 +95,21 @@ func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UD
 		common2.LogInfo("user identity check no pass")
 		return
 	}
-	logicFace, _ = createUdpLogicFace(u.conn, remoteUdpAddr)
+	//logicFace, _ = createUdpLogicFace(u.conn, remoteUdpAddr)
+	logicFace, err := CreateUdpLogicFace(remoteUdpAddr.String())
+	if err != nil || logicFace == nil {
+		common2.LogInfo("can not connect peer udp : ", remoteUdpAddr.String(), err)
+		return
+	}
 	u.AddLogicFace(remoteUdpAddr.String(), logicFace)
 	logicFace.linkService.ReceivePacket(lpPacket)
 }
 
+//
+// @Description:
+//@receiver u
+// @param readPacketChan
+//
 func (u *UdpListener) processUdpPacket(readPacketChan <-chan *UdpPacket) {
 	for true {
 		udpPacket, ok := <-readPacketChan
@@ -130,13 +146,6 @@ func (u *UdpListener) doReceive() {
 		udpPacket.remoteAddr = remoteAddr
 		udpPacket.recvLen = int64(packetLen)
 		readPacketChan <- &udpPacket
-		//common2.LogInfo("recv from : ", remoteUdpAddr)
-		//lpPacket, err := parseByteArray2LpPacket(u.recvBuf[:readLen])
-		//if err != nil {
-		//	common2.LogWarn(err)
-		//	break
-		//}
-		//u.onReceive(lpPacket, remoteUdpAddr)
 	}
 }
 

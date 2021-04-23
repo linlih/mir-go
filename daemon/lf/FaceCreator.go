@@ -84,7 +84,7 @@ func CreateUdpLogicFace(remoteUri string) (*LogicFace, error) {
 		common2.LogWarn(err)
 		return nil, err
 	}
-	udpConn, err := net.DialUDP("udp", nil, udpAddr)
+	udpConn, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		return nil, err
 	}

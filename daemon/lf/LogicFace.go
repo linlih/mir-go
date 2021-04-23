@@ -87,7 +87,7 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
-	//common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
+	common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
 	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
 		LogicFace: lf,
@@ -210,9 +210,9 @@ func (lf *LogicFace) Shutdown() {
 	if lf.state == false {
 		return
 	}
-	if lf.logicFaceType != LogicFaceTypeUDP {
-		lf.transport.Close()
-	}
+	//if lf.logicFaceType != LogicFaceTypeUDP {
+	lf.transport.Close()
+	//}
 	lf.onLogicFaceShutDown()
 }
 
