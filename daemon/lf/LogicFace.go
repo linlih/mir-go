@@ -50,7 +50,8 @@ type LogicFace struct {
 	expireTime         int64                    // 超时时间 ms
 	state              bool                     //  true 为 up , false 为 down
 	Mtu                uint64                   // 最大传输单元 MTU
-	Persistence        uint64                   // 持久性
+	Persistence        uint64                   // 持久性, 0 表示没有持久性，会被LogicFaceSystem在一定时间后清理掉
+												//	非 0 时表示有持久性，就算一直没有收发数据，也不会被清理
 	onShutdownCallback func(logicFaceId uint64) // 传输logic face 关闭时的回调
 }
 

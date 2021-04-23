@@ -79,6 +79,7 @@ func (i *InterfaceListener) Start() error {
 	remoteMacAddr, _ := net.ParseMAC("01:00:5e:00:17:aa")
 	var logicFacePtr *LogicFace
 	logicFacePtr, i.pcapHandle = createEtherLogicFace(i.name, i.macAddr, remoteMacAddr, i.mtu)
+	logicFacePtr.SetPersistence(1);		// 设置该Face是一直不会被因为没收发数据而被清理
 	if logicFacePtr == nil {
 		return errors.New("create ether logic face error")
 	}
