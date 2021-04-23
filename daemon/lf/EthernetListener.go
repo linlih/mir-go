@@ -20,15 +20,17 @@ import (
 type EthernetListener struct {
 	mInterfaceListeners map[string]*InterfaceListener // 用于保存，已经打开了的网卡的信息，以及相应的logicFace号
 	badDev              map[string]int                // 用于保存无法启动的网卡名
+	receiveRoutineNum   int
 }
 
 // Init
 // @Description: 初始化对象
 // @receiver e
 //
-func (e *EthernetListener) Init() {
+func (e *EthernetListener) Init(receiveRoutineNum int) {
 	e.mInterfaceListeners = make(map[string]*InterfaceListener)
 	e.badDev = make(map[string]int)
+	e.receiveRoutineNum = receiveRoutineNum
 }
 
 // Start
@@ -85,7 +87,7 @@ func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu 
 //
 func (e *EthernetListener) CreateInterfaceListener(ifName string, macAddr net.HardwareAddr, mtu int) {
 	var ifListener InterfaceListener
-	ifListener.Init(ifName, macAddr, mtu)
+	ifListener.Init(ifName, macAddr, mtu, e.receiveRoutineNum)
 	err := ifListener.Start() // 启动从网卡读取包的协程
 	if err != nil {
 		e.badDev[ifName] = 1

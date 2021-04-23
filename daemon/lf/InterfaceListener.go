@@ -34,13 +34,14 @@ import (
 //		（3） 在创建logicFace1时，我们会为logicFace1的etherTransport新创建一个pcap的handle用于发送网络包。
 //
 type InterfaceListener struct {
-	name         string           // 网卡名
-	macAddr      net.HardwareAddr // MAC地址
-	state        bool             // true 为开启、 false为关闭
-	mtu          int
-	logicFace    *LogicFace
-	etherFaceMap map[string]*LogicFace // 对端mac地址和face对象映射表
-	pcapHandle   *pcap.Handle          // pcap 抓包句柄
+	name              string           // 网卡名
+	macAddr           net.HardwareAddr // MAC地址
+	state             bool             // true 为开启、 false为关闭
+	mtu               int
+	logicFace         *LogicFace
+	etherFaceMap      map[string]*LogicFace // 对端mac地址和face对象映射表
+	pcapHandle        *pcap.Handle          // pcap 抓包句柄
+	receiveRoutineNum int
 }
 
 // Init
@@ -50,12 +51,13 @@ type InterfaceListener struct {
 // @param macAddr	网卡mac地址
 // @param mtu	网卡MTU
 //
-func (i *InterfaceListener) Init(name string, macAddr net.HardwareAddr, mtu int) {
+func (i *InterfaceListener) Init(name string, macAddr net.HardwareAddr, mtu int, receiveRoutineNum int) {
 	i.etherFaceMap = make(map[string]*LogicFace)
 	i.name = name
 	i.macAddr = macAddr
 	i.mtu = mtu
 	i.state = true
+	i.receiveRoutineNum = receiveRoutineNum
 }
 
 // Close
@@ -158,7 +160,8 @@ func (i *InterfaceListener) processReceivedFrame(readPktChan <-chan gopacket.Pac
 //
 func (i *InterfaceListener) readPacketFromDev() {
 	readPktChan := make(chan gopacket.Packet, 10000)
-	for threadn := 0; threadn < 8; threadn++ {
+	common2.LogInfo("start interface: ", i.name, " receive routine number = ", i.receiveRoutineNum)
+	for threadn := 0; threadn < i.receiveRoutineNum; threadn++ {
 		go i.processReceivedFrame(readPktChan)
 	}
 

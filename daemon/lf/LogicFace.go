@@ -32,7 +32,7 @@ const (
 // MaxIdolTimeMs
 // @Description:  超过 600s 没有接收数据或发送数据的logicFace会被logicFaceSystem的face cleaner销毁
 //
-const MaxIdolTimeMs = 600000
+var logicFaceMaxIdolTimeMs int64 = 600000
 
 // LogicFace
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
@@ -76,7 +76,7 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.linkService = linkService
 	lf.logicFaceType = faceType
 	lf.state = true
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 	lf.Mtu = uint64(linkService.mtu)
 	lf.Persistence = 0
 }
@@ -109,7 +109,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 		lf.logicFaceCounters.InDataN++
 	}
 
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 
 }
 
@@ -141,7 +141,7 @@ func (lf *LogicFace) SendInterest(interest *packet.Interest) {
 		return
 	}
 	lf.linkService.SendInterest(interest)
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendData
@@ -154,7 +154,7 @@ func (lf *LogicFace) SendData(data *packet.Data) {
 		return
 	}
 	lf.linkService.SendData(data)
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendNack
@@ -167,7 +167,7 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 		return
 	}
 	lf.linkService.SendNack(nack)
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendCPacket
@@ -180,7 +180,7 @@ func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
 		return
 	}
 	lf.linkService.SendCPacket(cPacket)
-	lf.expireTime = getTimestampMS() + MaxIdolTimeMs
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // GetLocalUri

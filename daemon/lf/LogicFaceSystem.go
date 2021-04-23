@@ -25,13 +25,14 @@ var gkeyChain *security.KeyChain
 // @Description: 启动所有类型的Face监听
 //
 type LogicFaceSystem struct {
-	ethernetListener EthernetListener
-	tcpListener      TcpListener
-	udpListener      UdpListener
-	unixListener     UnixStreamListener
-	logicFaceTable   *LogicFaceTable
-	packetValidator  IPacketValidator
-	config           *common.MIRConfig
+	ethernetListener      EthernetListener
+	tcpListener           TcpListener
+	udpListener           UdpListener
+	unixListener          UnixStreamListener
+	logicFaceTable        *LogicFaceTable
+	packetValidator       IPacketValidator
+	config                *common.MIRConfig
+	cleanLogicFaceTimeVal int
 }
 
 func (l *LogicFaceSystem) LogicFaceTable() *LogicFaceTable {
@@ -48,14 +49,17 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 	logicFaceTable.Init()
 	l.logicFaceTable = &logicFaceTable
 	l.packetValidator = packetValidator
-
 	l.config = config
 	l.ethernetListener.Init()
 	l.tcpListener.Init(config.TCPPort)
 	l.udpListener.Init(config.UDPPort)
 	l.unixListener.Init(config.UnixPath)
 
+	l.cleanLogicFaceTimeVal = config.CleanLogicFaceTableTimeVal
+
 	gLogicFaceSystem = l
+	logicFaceMaxIdolTimeMs = int64(config.LogicFaceIdleTime)
+
 	mkeyChain, err := security.CreateKeyChain()
 	if err != nil {
 		common2.LogFatal(err)
@@ -116,7 +120,7 @@ func (l *LogicFaceSystem) doFaceClean() {
 func (l *LogicFaceSystem) faceCleaner() {
 	for true {
 		l.doFaceClean()
-		time.Sleep(time.Second * 300)
+		time.Sleep(time.Second * time.Duration(l.cleanLogicFaceTimeVal))
 		common2.LogInfo("clean logic face table ---------------------------- ")
 	}
 }

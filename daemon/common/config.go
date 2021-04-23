@@ -94,12 +94,16 @@ type LogicFaceConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// LogicFace
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	SupportTCP  bool   `ini:"SupportTCP"`  // 是否开启TCP
-	TCPPort     int    `ini:"TCPPort"`     // TCP 端口号
-	SupportUDP  bool   `ini:"SupportUDP"`  // 是否开启UDP
-	UDPPort     int    `ini:"UDPPort"`     // UDP 端口号
-	SupportUnix bool   `ini:"SupportUnix"` // 是否开启Unix
-	UnixPath    string `ini:"UnixPath"`    // Unix 套接字路径设置
+	SupportTCP                 bool   `ini:"SupportTCP"`                 // 是否开启TCP
+	TCPPort                    int    `ini:"TCPPort"`                    // TCP 端口号
+	SupportUDP                 bool   `ini:"SupportUDP"`                 // 是否开启UDP
+	UDPPort                    int    `ini:"UDPPort"`                    // UDP 端口号
+	SupportUnix                bool   `ini:"SupportUnix"`                // 是否开启Unix
+	UnixPath                   string `ini:"UnixPath"`                   // Unix 套接字路径设置
+	LogicFaceIdleTime          int    `ini:"LogicFaceIdleTime"`          // LogicFace最大闲置时间
+	CleanLogicFaceTableTimeVal int    `ini:"CleanLogicFaceTableTimeVal"` // LogicFaceSystem 清理逻辑接口的时间周期
+	EtherRoutineNumber         int    `ini:"EtherRoutineNumber"`         // 以一个网卡对应的收包协程数
+	UDPReceiveRoutineNumber    int    `ini:"UDPReceiveRoutineNumber"`    //UDP收包协程数
 }
 
 type SecurityConfig struct {

@@ -8,6 +8,7 @@
 package lf
 
 import (
+	"github.com/sirupsen/logrus"
 	common2 "minlib/common"
 	"minlib/packet"
 	"net"
@@ -34,16 +35,18 @@ type UdpPacket struct {
 //			TODO 这样做可能会有问题，现在还没考虑到，到时候改成新建一个handle也比较简单，现在先这么做
 //
 type UdpListener struct {
-	udpPort        uint16
-	conn           *net.UDPConn
-	udpAddrFaceMap map[string]*LogicFace
-	recvBuf        []byte // 接收缓冲区，大小为  9000
+	udpPort           uint16
+	conn              *net.UDPConn
+	udpAddrFaceMap    map[string]*LogicFace
+	recvBuf           []byte // 接收缓冲区，大小为  9000
+	receiveRoutineNum int
 }
 
-func (u *UdpListener) Init(port int) {
+func (u *UdpListener) Init(port int, receiveRoutineNum int) {
 	u.udpPort = uint16(port)
 	u.udpAddrFaceMap = make(map[string]*LogicFace)
 	u.recvBuf = make([]byte, 9000)
+	u.receiveRoutineNum = receiveRoutineNum
 }
 
 //
@@ -133,7 +136,8 @@ func (u *UdpListener) processUdpPacket(readPacketChan <-chan *UdpPacket) {
 //
 func (u *UdpListener) doReceive() {
 	readPacketChan := make(chan *UdpPacket, 10000)
-	for i := 0; i < 3; i++ {
+	logrus.Info("start udp receive routine number = ", u.receiveRoutineNum)
+	for i := 0; i < u.receiveRoutineNum; i++ {
 		go u.processUdpPacket(readPacketChan)
 	}
 	for true {
