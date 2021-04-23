@@ -8,10 +8,12 @@
 package main
 
 import (
+	"minlib/common"
 	"minlib/component"
 	"minlib/logicface"
 	mgmtlib "minlib/mgmt"
 	"minlib/packet"
+	"minlib/security"
 )
 
 // 全局前缀
@@ -56,6 +58,11 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 // @return *mgmtlib.MIRController
 //
 func GetController() *mgmtlib.MIRController {
+	// 创建一个KeyChain，并使用气默认身份进行签名
+	keyChain := new(security.KeyChain)
+	if err := keyChain.InitialKeyChain(); err != nil {
+		common.LogFatal(err)
+	}
 	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFace, error) {
 		face := new(logicface.LogicFace)
 		// 建立unix连接
@@ -63,7 +70,7 @@ func GetController() *mgmtlib.MIRController {
 			return nil, err
 		}
 		return face, nil
-	}, true)
+	}, true, keyChain)
 
 	return controller
 }

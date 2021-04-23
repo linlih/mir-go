@@ -30,7 +30,7 @@ func (s *StrategyTable) Init() {
 	s.lpm.Create()        //初始化锁
 }
 
-// 获得StrategyTable的大小
+// Size 获得StrategyTable的大小
 func (s *StrategyTable) Size() uint64 {
 	return s.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if _, ok := val.(*StrategyTableEntry); ok {
@@ -44,7 +44,7 @@ func (s *StrategyTable) Size() uint64 {
 	})
 }
 
-// 为所有的前缀设置一个默认的策略
+// SetDefaultStrategy 为所有的前缀设置一个默认的策略
 func (s *StrategyTable) SetDefaultStrategy(strategyName string) {
 	s.lpm.TraverseFunc(func(val interface{}) uint64 {
 		if strategyTableEntry, ok := val.(*StrategyTableEntry); ok {
@@ -59,7 +59,7 @@ func (s *StrategyTable) SetDefaultStrategy(strategyName string) {
 	})
 }
 
-// 往策略表中插入一个策略
+// Insert 往策略表中插入一个策略
 func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName string, istrategy IStrategy) *StrategyTableEntry {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
@@ -81,7 +81,7 @@ func (s *StrategyTable) Insert(identifier *component.Identifier, strategyName st
 
 }
 
-// 通过前缀删除策略表中策略
+// Erase 通过前缀删除策略表中策略
 func (s *StrategyTable) Erase(identifier *component.Identifier) error {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {
@@ -90,7 +90,7 @@ func (s *StrategyTable) Erase(identifier *component.Identifier) error {
 	return s.lpm.Delete(PrefixList)
 }
 
-// 查询和一个指定的名称前缀匹配的策略条目 最长前缀匹配
+// FindEffectiveStrategyEntry 查询和一个指定的名称前缀匹配的策略条目 最长前缀匹配
 func (s *StrategyTable) FindEffectiveStrategyEntry(identifier *component.Identifier) *StrategyTableEntry {
 	var PrefixList []string
 	for _, v := range identifier.GetComponents() {

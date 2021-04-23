@@ -47,14 +47,14 @@ type Module struct {
 //   			读写锁，对网络包进行签名和验签、签名元数据、缓存
 //
 type Dispatcher struct {
-	FaceClient    *logicface.LogicFace             // 内部face，用来和转发器进行通信
-	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
-	module        map[string]*Module               // 行为模块
-	topLock       *sync.RWMutex                    // 顶级域map读写锁
-	moduleLock    *sync.RWMutex                    // 行为模块map读写锁
-	KeyChain      *security.KeyChain               // 网络包签名和验签 发送数据包的时候使用
-	SignInfo      *component.SignatureInfo         // 表示签名的元数据
-	Cache         *Cache                           // 存储数据包分片缓存
+	FaceClient        *logicface.LogicFace             // 内部face，用来和转发器进行通信
+	topPrefixList     map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
+	module            map[string]*Module               // 行为模块
+	topLock           *sync.RWMutex                    // 顶级域map读写锁
+	moduleLock        *sync.RWMutex                    // 行为模块map读写锁
+	security.KeyChain                                  // 网络包签名和验签 发送数据包的时候使用
+	SignInfo          *component.SignatureInfo         // 表示签名的元数据
+	Cache             *Cache                           // 存储数据包分片缓存
 }
 
 // Start
@@ -210,13 +210,34 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 // @Description:创建调度器函数，对调度器进行初始化
 //
 func CreateDispatcher(config *common2.MIRConfig) *Dispatcher {
-	return &Dispatcher{
+	dispatcher := &Dispatcher{
 		topPrefixList: make(map[string]*component.Identifier),
 		module:        make(map[string]*Module),
 		topLock:       new(sync.RWMutex),
 		moduleLock:    new(sync.RWMutex),
 		Cache:         New(config.ManagementConfig.CacheSize, nil),
 	}
+	// 初始化KeyChain
+	if err := dispatcher.KeyChain.InitialKeyChain(); err != nil {
+		common.LogFatal(err)
+	}
+	if identify := dispatcher.KeyChain.GetIdentifyByName(config.GeneralConfig.DefaultId); identify == nil {
+		// 如果指定的名字不存在身份则创建一个
+		identify, err := dispatcher.KeyChain.CreateIdentityByName(config.GeneralConfig.DefaultId, "")
+		if err != nil {
+			common.LogFatal(err)
+		}
+		// 将指定名字的身份设置为当前使用的身份
+		if err := dispatcher.KeyChain.SetCurrentIdentity(identify, ""); err != nil {
+			common.LogFatal(err)
+		}
+	} else {
+		// 将指定名字的身份设置为当前使用的身份
+		if err := dispatcher.KeyChain.SetCurrentIdentity(identify, ""); err != nil {
+			common.LogFatal(err)
+		}
+	}
+	return dispatcher
 }
 
 // AddTopPrefix
@@ -342,6 +363,10 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 // @Description:发送数据包给客户端并缓存数据包
 //
 func (d *Dispatcher) saveData(data *packet.Data) {
+	// 给缓存的 Data 包签名
+	if err := d.KeyChain.SignData(data); err != nil {
+		common.LogError("Sign Data failed!")
+	}
 	d.Cache.Add(data.ToUri(), data)
 }
 
@@ -352,6 +377,10 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 func (d *Dispatcher) sendData(data *packet.Data) {
 	// 直接发出的包设置不缓存
 	data.NoCache.SetNoCache(true)
+	// 给发出的 Data 包签名
+	if err := d.KeyChain.SignData(data); err != nil {
+		common.LogError("Sign Data failed!")
+	}
 	if err := d.FaceClient.SendData(data); err != nil {
 		common.LogError("send data fail!the err is :", err)
 		return
