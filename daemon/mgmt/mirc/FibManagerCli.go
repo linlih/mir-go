@@ -169,10 +169,10 @@ func DeleteNextHop(c *cli.Context) error {
 
 	// 如果请求成功，则输出结果
 	if response.Code == mgmtlib.ControlResponseCodeSuccess {
-		common.LogInfo(fmt.Sprintf("Add next hop for %s => %d success!", prefix, logicFaceId))
+		common.LogInfo(fmt.Sprintf("Delete next hop for %s => %d success!", prefix, logicFaceId))
 	} else {
 		// 请求失败，则输出错误信息
-		common.LogError(fmt.Sprintf("Add next hop for %s => %d failed! errMsg: %s", prefix, logicFaceId, response.Msg))
+		common.LogError(fmt.Sprintf("Delete next hop for %s => %d failed! errMsg: %s", prefix, logicFaceId, response.Msg))
 	}
 	return nil
 }
