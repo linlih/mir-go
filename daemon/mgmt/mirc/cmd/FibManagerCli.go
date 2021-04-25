@@ -1,17 +1,17 @@
-// Package main
+// Package cmd
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
 // @Date: 2021/4/19 11:21 上午
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
-package main
+package cmd
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/desertbit/grumble"
 	"github.com/olekukonko/tablewriter"
-	"github.com/urfave/cli/v2"
 	"minlib/common"
 	"minlib/component"
 	mgmtlib "minlib/mgmt"
@@ -20,75 +20,55 @@ import (
 	"strconv"
 )
 
-// Fib 控制命令
-// @Description:
+// CreateFibCommands 创建一个 FibCommands
 //
-var fibCommands = cli.Command{
-	Name:        "fib",
-	Usage:       "Fib Management",
-	Subcommands: []*cli.Command{&AddFibCommand, &DeleteNextHopCommand, &ListFibCommand},
-}
+// @Description:
+// @return grumble.Command
+//
+func CreateFibCommands(controller *mgmtlib.MIRController) *grumble.Command {
+	fc := new(grumble.Command)
+	fc.Name = "fib"
+	fc.Help = "Fib Management"
 
-// AddFibCommand 添加下一跳命令
-// @Description:
-//
-var AddFibCommand = cli.Command{
-	Name:   "add",
-	Usage:  "Add next hop for specific logic face, eg.: mirc fib add ",
-	Action: AddFib,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "prefix",
-			Usage:    "Target identifier",
-			Aliases:  []string{"p"},
-			Required: true,
+	// add
+	fc.AddCommand(&grumble.Command{
+		Name: "add",
+		Help: "Add next hop for specific logic face",
+		Args: func(a *grumble.Args) {
+			a.String("prefix", "Target identifier prefix")
+			a.Uint64("id", "Next hop logic face id")
 		},
-		&cli.Uint64Flag{
-			Name:     "id",
-			Usage:    "Next hop logic face id",
-			Aliases:  []string{"i"},
-			Required: true,
+		Flags: func(f *grumble.Flags) {
+			f.Uint64("c", "cost", 0, "Link cost")
 		},
-		&cli.Uint64Flag{
-			Name:     "cost",
-			Usage:    "Link cost",
-			Aliases:  []string{"c"},
-			Required: false,
-			Value:    0,
+		Run: func(c *grumble.Context) error {
+			return AddFib(c, controller)
 		},
-	},
-}
+	})
 
-// DeleteNextHopCommand 删除指定前缀的下一跳命令
-// @Description:
-//
-var DeleteNextHopCommand = cli.Command{
-	Name:   "del",
-	Usage:  "delete next hop for specific logic face, eg.: mirc fib del ",
-	Action: DeleteNextHop,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "prefix",
-			Usage:    "Target identifier",
-			Aliases:  []string{"p"},
-			Required: true,
+	// del
+	fc.AddCommand(&grumble.Command{
+		Name: "del",
+		Help: "Delete next hop for specific logic face",
+		Args: func(a *grumble.Args) {
+			a.String("prefix", "Target identifier prefix")
+			a.Uint64("id", "Next hop logic face id")
 		},
-		&cli.Uint64Flag{
-			Name:     "id",
-			Usage:    "Next hop logic face id",
-			Aliases:  []string{"i"},
-			Required: true,
+		Run: func(c *grumble.Context) error {
+			return DeleteNextHop(c, controller)
 		},
-	},
-}
+	})
 
-// ListFibCommand 展示所有Fib表项命令
-// @Description:
-//
-var ListFibCommand = cli.Command{
-	Name:   "list",
-	Usage:  "show all fib info, eg.: mirc fib list ",
-	Action: ListFib,
+	// list
+	fc.AddCommand(&grumble.Command{
+		Name: "list",
+		Help: "Show all fib info",
+		Run: func(c *grumble.Context) error {
+			return ListFib(c, controller)
+		},
+	})
+
+	return fc
 }
 
 // AddFib 添加下一跳路由
@@ -97,11 +77,11 @@ var ListFibCommand = cli.Command{
 // @param c
 // @return error
 //
-func AddFib(c *cli.Context) error {
+func AddFib(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	// 解析命令行参数
-	prefix := c.String("prefix")
-	logicFaceId := c.Uint64("id")
-	cost := c.Uint64("cost")
+	prefix := c.Args.String("prefix")
+	logicFaceId := c.Args.Uint64("id")
+	cost := c.Flags.Uint64("cost")
 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(prefix)
@@ -113,7 +93,6 @@ func AddFib(c *cli.Context) error {
 	parameters.SetCost(cost)
 
 	// 构造一个命令执行器
-	controller := GetController()
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibAddCommand(topPrefix, parameters))
 	if err != nil {
 		return err
@@ -141,10 +120,10 @@ func AddFib(c *cli.Context) error {
 // @param c
 // @return error
 //
-func DeleteNextHop(c *cli.Context) error {
+func DeleteNextHop(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	// 解析命令行参数
-	prefix := c.String("prefix")
-	logicFaceId := c.Uint64("id")
+	prefix := c.Args.String("prefix")
+	logicFaceId := c.Args.Uint64("id")
 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(prefix)
@@ -155,7 +134,6 @@ func DeleteNextHop(c *cli.Context) error {
 	parameters.SetLogicFaceId(logicFaceId)
 
 	// 构造一个命令执行器
-	controller := GetController()
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibDeleteCommand(topPrefix, parameters))
 	if err != nil {
 		return err
@@ -183,9 +161,8 @@ func DeleteNextHop(c *cli.Context) error {
 // @param c
 // @return error
 //
-func ListFib(c *cli.Context) error {
+func ListFib(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	// 构造一个命令执行器
-	controller := GetController()
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibListCommand(topPrefix))
 	if err != nil {
 		return err

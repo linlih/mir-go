@@ -9,21 +9,41 @@
 package main
 
 import (
-	"github.com/urfave/cli/v2"
-	"log"
-	"os"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/desertbit/grumble"
+	"mir-go/daemon/mgmt/mirc/cmd"
 )
 
-func main() {
-	oApp := cli.NewApp()
-	oApp.Name = "mirc"
-	oApp.Usage = " MIR Management Cli Tools "
-	oApp.Commands = []*cli.Command{
-		&faceCommands,
-		&fibCommands,
+// AskPassword 要求用户输入一个密码
+//
+// @Description:
+// @return string
+//
+func AskPassword() string {
+	passwd := ""
+	prompt := &survey.Password{
+		Message: "Please type your password",
 	}
+	_ = survey.AskOne(prompt, &passwd)
+	return passwd
+}
 
-	if err := oApp.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
+func main() {
+	// 首先要求用户输入密码
+	passwd := AskPassword()
+
+	controller := cmd.GetController(passwd)
+
+	// 创建并启动一个交互式命令行工具
+	app := grumble.New(&grumble.Config{
+		Name:        "mirc",
+		Description: "MIR Management Cli Tools",
+	})
+
+	// 添加 LogicFace 管理命令
+	app.AddCommand(cmd.CreateLogicFaceCommands(controller))
+	// 添加 Fib 管理命令
+	app.AddCommand(cmd.CreateFibCommands(controller))
+
+	grumble.Main(app)
 }

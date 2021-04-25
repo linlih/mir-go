@@ -1,4 +1,4 @@
-// Package main
+// Package cmd
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -6,13 +6,13 @@
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
 
-package main
+package cmd
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/desertbit/grumble"
 	"github.com/olekukonko/tablewriter"
-	"github.com/urfave/cli/v2"
 	"minlib/common"
 	"minlib/component"
 	mgmtlib "minlib/mgmt"
@@ -23,69 +23,55 @@ import (
 	"strings"
 )
 
-// LogicFace 命令
-// @Description:
+// CreateLogicFaceCommands 创建一个 LogicFaceCommands 命令
 //
-var faceCommands = cli.Command{
-	Name:        "lf",
-	Usage:       "Logic Face Management",
-	Subcommands: []*cli.Command{&ListLogicFaceCommand, &AddLogicFaceCommand, &DelLogicFaceCommand},
-}
+// @Description:
+// @param controller
+// @return *LogicFaceCommands
+//
+func CreateLogicFaceCommands(controller *mgmtlib.MIRController) *grumble.Command {
+	lfc := new(grumble.Command)
+	lfc.Name = "lf"
+	lfc.Help = "Logic Face Management"
 
-// ListLogicFaceCommand 输出LogicFace列表
-// @Description:
-//
-var ListLogicFaceCommand = cli.Command{
-	Name:   "list",
-	Usage:  "Show all face info",
-	Action: ListLogicFace,
-}
+	// List
+	lfc.AddCommand(&grumble.Command{
+		Name: "list",
+		Help: "Show all LogicFace",
+		Run: func(c *grumble.Context) error {
+			return ListLogicFace(c, controller)
+		},
+	})
 
-// AddLogicFaceCommand 添加一个 LogicFace
-// @Description:
-//
-var AddLogicFaceCommand = cli.Command{
-	Name:   "add",
-	Usage:  "Create new face",
-	Action: AddLogicFace,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "remote",
-			Usage:    "remote address for connect",
-			Aliases:  []string{"r"},
-			Required: true,
+	// add
+	lfc.AddCommand(&grumble.Command{
+		Name: "add",
+		Help: "Create new LogicFace",
+		Args: func(a *grumble.Args) {
+			a.String("remote", "Remote Uri to connect")
+			a.String("local", "Local Uri", grumble.Default(""))
 		},
-		&cli.StringFlag{
-			Name:    "local",
-			Usage:   "local address for accept",
-			Aliases: []string{"l"},
-			Value:   "",
+		Flags: func(f *grumble.Flags) {
+			f.String("p", "persistence", "persist", "Persistence of LogicFace, persist/on-demand")
 		},
-		&cli.StringFlag{
-			Name:    "persistency",
-			Usage:   "Persistency of LogicFace, persist/on-demand",
-			Aliases: []string{"p"},
-			Value:   "persist",
+		Run: func(c *grumble.Context) error {
+			return AddLogicFace(c, controller)
 		},
-	},
-}
+	})
 
-// DelLogicFaceCommand 删除一个 LogicFace
-// @Description:
-//
-var DelLogicFaceCommand = cli.Command{
-	Name:   "del",
-	Usage:  "Delete face",
-	Action: DelLogicFace,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			//远端地址
-			Name:     "id",
-			Usage:    "The LogicFaceId you need to delete",
-			Aliases:  []string{"i"},
-			Required: true,
+	// del
+	lfc.AddCommand(&grumble.Command{
+		Name: "del",
+		Help: "Delete LogicFace",
+		Args: func(a *grumble.Args) {
+			a.Uint64("id", "The LogicFaceId you need to delete")
 		},
-	},
+		Run: func(c *grumble.Context) error {
+			return DelLogicFace(c, controller)
+		},
+	})
+
+	return lfc
 }
 
 // ListLogicFace 获取所有Face信息并展示
@@ -94,8 +80,7 @@ var DelLogicFaceCommand = cli.Command{
 // @param c
 // @return error
 //
-func ListLogicFace(c *cli.Context) error {
-	controller := GetController()
+func ListLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceListCommand(topPrefix))
 	if err != nil {
 		return err
@@ -140,11 +125,11 @@ func ListLogicFace(c *cli.Context) error {
 // @param c
 // @return error
 //
-func AddLogicFace(c *cli.Context) error {
+func AddLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	// 从命令行解析参数
-	remoteUri := c.String("remote")
-	localUri := c.String("local")
-	persistency := c.String("persistency")
+	remoteUri := c.Args.String("remote")
+	localUri := c.Args.String("local")
+	persistency := c.Flags.String("persistence")
 
 	remoteUriItems := strings.Split(remoteUri, "://")
 	if len(remoteUriItems) != 2 {
@@ -159,7 +144,6 @@ func AddLogicFace(c *cli.Context) error {
 	parameters.SetPersistency(uint64(component.GetPersistencyByString(persistency)))
 
 	// 发起一个请求命令得到结果
-	controller := GetController()
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceAddCommand(topPrefix, parameters))
 	if err != nil {
 		return err
@@ -185,11 +169,10 @@ func AddLogicFace(c *cli.Context) error {
 // @param c
 // @return error
 //
-func DelLogicFace(c *cli.Context) error {
-	logicFaceId := c.Uint64("id")
+func DelLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
+	logicFaceId := c.Args.Uint64("id")
 
 	// 发起一个请求命令得到结果
-	controller := GetController()
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceDelCommand(topPrefix, logicFaceId))
 	if err != nil {
 		return err

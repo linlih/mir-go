@@ -5,7 +5,7 @@
 // @Date: 2021/4/16 7:35 下午
 // @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
 //
-package main
+package cmd
 
 import (
 	"minlib/common"
@@ -57,7 +57,7 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 // @Description:
 // @return *mgmtlib.MIRController
 //
-func GetController() *mgmtlib.MIRController {
+func GetController(passwd string) *mgmtlib.MIRController {
 	// 创建一个KeyChain，并使用气默认身份进行签名
 	keyChain := new(security.KeyChain)
 	if err := keyChain.InitialKeyChain(); err != nil {
