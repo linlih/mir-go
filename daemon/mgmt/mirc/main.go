@@ -88,19 +88,11 @@ func mirc(mirConfig *common2.MIRConfig) {
 		common.LogFatal(err)
 	}
 
-	var identityName = ""
-
-	// 输入网络身份
-	identityName = AskIdentityName()
-	if !keyChain.ExistIdentity(identityName) {
-		common.LogFatal("Identity => "+identityName, "not exists, please try again!")
-	}
-
 	// 要求用户输入密码
 	passwd := AskPassword()
 
-	if identity := keyChain.GetIdentifyByName(identityName); identity == nil {
-		common.LogFatal("Identity => "+identityName, "not exists")
+	if identity := keyChain.GetIdentifyByName(mirConfig.GeneralConfig.DefaultId); identity == nil {
+		common.LogFatal("Identity => "+mirConfig.GeneralConfig.DefaultId, "not exists")
 	} else {
 		if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
 			common.LogFatal(err)
