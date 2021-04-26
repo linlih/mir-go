@@ -48,22 +48,22 @@ func main() {
 	fmt.Printf("ret4>>> %v, %T \n", ret4, ret4) //2020-08-21 10:59:53 +0800 CST, string
 }
 
-// 时间字符串转时间
+// Timestr2Time 时间字符串转时间
 func Timestr2Time(str string) (time.Time, error) {
 	return Timestr2TimeBasic(str, "", nil)
 }
 
-// 时间字符串转时间戳
+// Timestr2Timestamp 时间字符串转时间戳
 func Timestr2Timestamp(str string) (int64, error) {
 	return Timestr2TimestampBasic(str, "", nil)
 }
 
-// 时间戳转时间 秒
+// Timestamp2TimeSec 时间戳转时间 秒
 func Timestamp2TimeSec(stamp int64) time.Time {
 	return Timestamp2Time(stamp, 0)
 }
 
-// base...
+// Timestr2TimeBasic base...
 func Timestr2TimeBasic(value string, resultFormat string, resultLoc *time.Location) (time.Time, error) {
 	/**
 	  - params
@@ -134,7 +134,7 @@ func Min(x, y encoding.SizeT) (min encoding.SizeT) {
 	return y
 }
 
-//
+// RandomBytes
 // @Description:  生成随机用的Byte数组，因为go中没有默认参数的设置方法，所以这里使用可变长参数的方式来实现
 //                使用默认的种子0  -> RandomBytes(1000)
 //                使用时间作为种子 -> RandomBytes(1000, time.Now().Unix())
@@ -158,7 +158,7 @@ func RandomBytes(n int, seed ...int64) []byte {
 	return r
 }
 
-//
+// RandomString
 // @Description:  生成随机用的字符串，字符串组成由letterBytes组成
 //                使用默认的种子0  -> RandomString(1000)
 //                使用时间作为种子 -> RandomString(1000, time.Now().Unix())

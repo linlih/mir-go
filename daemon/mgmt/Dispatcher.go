@@ -217,26 +217,6 @@ func CreateDispatcher(config *common2.MIRConfig) *Dispatcher {
 		moduleLock:    new(sync.RWMutex),
 		Cache:         New(config.ManagementConfig.CacheSize, nil),
 	}
-	// 初始化KeyChain
-	if err := dispatcher.KeyChain.InitialKeyChain(); err != nil {
-		common.LogFatal(err)
-	}
-	if identify := dispatcher.KeyChain.GetIdentifyByName(config.GeneralConfig.DefaultId); identify == nil {
-		// 如果指定的名字不存在身份则创建一个
-		identify, err := dispatcher.KeyChain.CreateIdentityByName(config.GeneralConfig.DefaultId, "")
-		if err != nil {
-			common.LogFatal(err)
-		}
-		// 将指定名字的身份设置为当前使用的身份
-		if err := dispatcher.KeyChain.SetCurrentIdentity(identify, ""); err != nil {
-			common.LogFatal(err)
-		}
-	} else {
-		// 将指定名字的身份设置为当前使用的身份
-		if err := dispatcher.KeyChain.SetCurrentIdentity(identify, ""); err != nil {
-			common.LogFatal(err)
-		}
-	}
 	return dispatcher
 }
 

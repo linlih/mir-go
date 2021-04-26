@@ -7,7 +7,10 @@
 //
 package common
 
-import "gopkg.in/ini.v1"
+import (
+	"gopkg.in/ini.v1"
+	"minlib/security"
+)
 
 // MIRConfig
 // 表示 MIR 配置文件的配置，与 mirconf.ini 中的配置一一对应
@@ -22,6 +25,8 @@ type MIRConfig struct {
 	SecurityConfig   `ini:"Security"`
 	ForwarderConfig  `ini:"Forwarder"`
 	ManagementConfig `ini:"Management"`
+
+	configPath string // 存储配置文件路径
 }
 
 // Init
@@ -59,9 +64,24 @@ func (mirConfig *MIRConfig) Init() {
 	mirConfig.SecurityConfig.MiddleRouterSignature = false
 	mirConfig.MaxRouterSignatureNum = 4
 	mirConfig.SecurityConfig.ParallelVerifyNum = 10
+	mirConfig.SecurityConfig.IdentityDBPath = security.DefaultIdentifyDBPath
 
 	// Forwarder
 	mirConfig.ForwarderConfig.PacketQueueSize = 100
+}
+
+// Save 保存当前配置状态到配置文件当中
+//
+// @Description:
+// @receiver mirConfig
+// @return error
+//
+func (mirConfig *MIRConfig) Save() error {
+	cfg := ini.Empty()
+	if err := ini.ReflectFrom(cfg, mirConfig); err != nil {
+		return err
+	}
+	return cfg.SaveTo(mirConfig.configPath)
 }
 
 type GeneralConfig struct {
@@ -110,11 +130,12 @@ type SecurityConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// Security
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	VerifyPacket          bool `ini:"VerifyPacket"`          // 是否开启包签名验证
-	Log2BlockChain        bool `ini:"Log2BlockChain"`        // 是否发送日志到区块链
-	MiddleRouterSignature bool `ini:"MiddleRouterSignature"` //是否开启中间路由器签名
-	MaxRouterSignatureNum int  `ini:"MaxRouterSignatureNum"` // 最大中间路由器签名数量
-	ParallelVerifyNum     int  `ini:"ParallelVerifyNum"`     // 并行包验证协程数量
+	VerifyPacket          bool   `ini:"VerifyPacket"`          // 是否开启包签名验证
+	Log2BlockChain        bool   `ini:"Log2BlockChain"`        // 是否发送日志到区块链
+	MiddleRouterSignature bool   `ini:"MiddleRouterSignature"` //是否开启中间路由器签名
+	MaxRouterSignatureNum int    `ini:"MaxRouterSignatureNum"` // 最大中间路由器签名数量
+	ParallelVerifyNum     int    `ini:"ParallelVerifyNum"`     // 并行包验证协程数量
+	IdentityDBPath        string `ini:"IdentityDBPath"`        // 身份持久化sqlite数据库存储位置
 }
 
 type ForwarderConfig struct {
@@ -145,6 +166,7 @@ func ParseConfig(configPath string) (*MIRConfig, error) {
 		return nil, err
 	}
 	mirConfig := new(MIRConfig)
+	mirConfig.configPath = configPath
 	// 初始化配置，给所有的配置项设置默认值
 	mirConfig.Init()
 	// 加载配置文件中的配置
