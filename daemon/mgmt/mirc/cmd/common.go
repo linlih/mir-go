@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"minlib/common"
 	"minlib/component"
 	"minlib/logicface"
 	mgmtlib "minlib/mgmt"
@@ -57,12 +56,7 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 // @Description:
 // @return *mgmtlib.MIRController
 //
-func GetController(passwd string) *mgmtlib.MIRController {
-	// 创建一个KeyChain，并使用气默认身份进行签名
-	keyChain := new(security.KeyChain)
-	if err := keyChain.InitialKeyChain(); err != nil {
-		common.LogFatal(err)
-	}
+func GetController(keyChain *security.KeyChain) *mgmtlib.MIRController {
 	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFace, error) {
 		face := new(logicface.LogicFace)
 		// 建立unix连接
