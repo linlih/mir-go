@@ -1,2 +1,4 @@
 .idea/
 /go.sum
+daemon/.DS_Store
+daemon/mir/.DS_Store
