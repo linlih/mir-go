@@ -12,9 +12,11 @@ import (
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/minsecurity"
+	cert2 "minlib/minsecurity/crypto/cert"
 	"minlib/packet"
 	"minlib/security"
 	"strconv"
+	"time"
 )
 
 // IdentityManager 表示一个身份管理器
@@ -174,15 +176,16 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		}
 	}
 
-	// /identity-mgmt/issue
+	// /identity-mgmt/selfIssue
 	if identifier, err := component.CreateIdentifierByStringArray(mgmt.ManagementModuleIdentityMgmt,
 		mgmt.IdentityManagementActionSelfIssue); err != nil {
 		common.LogFatal(err)
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 			func(parameters *component.ControlParameters) bool {
-				return true
-			}, im.Issue); err != nil {
+				return parameters.ControlParameterPrefix.IsInitial() &&
+					parameters.ControlParameterPasswd.IsInitial()
+			}, im.SelfIssue); err != nil {
 			common.LogFatal(err)
 		}
 	}
@@ -293,6 +296,7 @@ func (im *IdentityManager) ListIdentity(topPrefix *component.Identifier, interes
 func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
+	common.LogDebug(">>>")
 	identityName := parameters.Prefix().ToUri()
 
 	// 首先判断指定的网络身份是否存在
@@ -325,7 +329,6 @@ func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *p
 		context.Append(str)
 	}
 	_ = context.Done(0)
-	//	context.Append()
 }
 
 // ImportCert 导入证书
@@ -398,7 +401,7 @@ func (im *IdentityManager) GetId(topPrefix *component.Identifier, interest *pack
 	context *StatusDatasetContext) {
 }
 
-// Issue 给当前网络身份
+// SelfIssue 给当前网络身份
 //
 // @Description:
 // @receiver im
@@ -407,7 +410,51 @@ func (im *IdentityManager) GetId(topPrefix *component.Identifier, interest *pack
 // @param parameters
 // @return *mgmt.ControlResponse
 //
-func (im *IdentityManager) Issue(topPrefix *component.Identifier, interest *packet.Interest,
+func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
-	return nil
+	identityName := parameters.Prefix().ToUri()
+	passwd := parameters.Passwd()
+
+	id := im.keyChain.GetIdentityByName(identityName)
+
+	// 判断身份是否存在
+	if id == nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", "")
+	}
+
+	// 解锁身份
+	if id.IsLocked() {
+		if _, err := id.UnLock(passwd, minsecurity.SM4ECB); err != nil {
+			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+		}
+	}
+
+	// 填充证书内容
+	cert := cert2.Certificate{}
+	cert.Version = 0
+	cert.SerialNumber = 1
+	cert.PublicKey = id.Pubkey
+	cert.SignatureAlgorithm = id.KeyParam.SignatureAlgorithm
+	cert.PublicKeyAlgorithm = id.KeyParam.PublicKeyAlgorithm
+	cert.IssueTo = id.Name
+	cert.Issuer = id.Name
+	cert.NotBefore = time.Now().Unix()
+	cert.NotAfter = time.Now().AddDate(1, 0, 0).Unix()
+	cert.KeyUsage = minsecurity.CertSign
+	cert.IsCA = true
+	cert.Timestamp = time.Now().Unix()
+
+	// 签发证书
+	if err := cert.SignCert(id.Prikey); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	id.Cert = cert
+
+	// 持久化保存
+	if err := im.keyChain.SaveIdentity(id, true); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }

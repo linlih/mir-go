@@ -13,7 +13,6 @@ import (
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/packet"
-	"time"
 )
 
 // DataSender
@@ -45,7 +44,7 @@ type ResponseSender func(response *mgmt.ControlResponse, interest *packet.Intere
 //
 type StatusDatasetContext struct {
 	interest       *packet.Interest // 兴趣包指针
-	FreshTime      time.Duration    // 生成的 Data 的新鲜期，默认为 1 s
+	FreshTime      uint64           // 生成的 Data 的新鲜期，默认为 1 s
 	items          []interface{}    // 数据
 	SliceSize      int              // 每个分片的大小
 	dataSender     DataSender       // 发送数据包回调
@@ -61,7 +60,7 @@ type StatusDatasetContext struct {
 func CreateSDC(interest *packet.Interest, dataSender DataSender, nackSender ResponseSender, dataSaver DataSaver) *StatusDatasetContext {
 	return &StatusDatasetContext{
 		interest:       interest,
-		FreshTime:      1000 * 1000 * time.Millisecond,
+		FreshTime:      1000 * 1000,
 		SliceSize:      7000,
 		dataSender:     dataSender,
 		responseSender: nackSender,

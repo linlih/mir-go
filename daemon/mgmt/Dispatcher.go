@@ -349,6 +349,7 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 	if err := d.KeyChain.SignData(data); err != nil {
 		common.LogError("Sign Data failed!")
 	}
+	common.LogDebug("SaveData: ", data.ToUri())
 	d.Cache.Add(data.ToUri(), data)
 }
 

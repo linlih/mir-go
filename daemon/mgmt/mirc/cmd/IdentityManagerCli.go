@@ -76,6 +76,17 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 	})
 
+	// selfIssue
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionSelfIssue,
+		Help: "Issue cert for self",
+		Args: func(a *grumble.Args) {
+			a.String("name", "Identity name")
+		},
+		Run: func(c *grumble.Context) error {
+			return SelfIssueIdentity(c, controller)
+		},
+	})
 	return ic
 }
 
@@ -226,20 +237,20 @@ func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(name)
 	if err != nil {
-		common.LogFatal(err)
+		return err
 	}
 	parameters.SetPrefix(identifier)
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDumpCertCommand(topPrefix, parameters))
 	if err != nil {
-		common.LogFatal(err)
+		return err
 	}
 
 	// 执行命令
 	response, err := commandExecutor.Start()
 	if err != nil {
-		common.LogFatal(err)
+		return err
 	}
 	if response.Code != mgmt.ControlResponseCodeSuccess {
 		common.LogError("Dump cert error =>", response.Msg)
@@ -250,10 +261,53 @@ func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error 
 	var identityInfos []string
 	err = json.Unmarshal(response.GetBytes(), &identityInfos)
 	if err != nil {
-		common.LogFatal(err)
+		return err
 	}
 
 	// 输出
 	common.LogInfo(identityInfos[0])
+	return nil
+}
+
+// SelfIssueIdentity 某个网络身份给自己签发证书
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func SelfIssueIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	// 解析命令行参数
+	name := c.Args.String("name")
+
+	// 要求用户输入一个密码
+	passwd := AskPassword()
+
+	parameters := &component.ControlParameters{}
+	identifier, err := component.CreateIdentifierByString(name)
+	if err != nil {
+		return err
+	}
+	parameters.SetPrefix(identifier)
+	parameters.SetPasswd(passwd)
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentitySelfIssueCommand(topPrefix, parameters))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmt.ControlResponseCodeSuccess {
+		common.LogInfo(fmt.Sprintf("IssueSelf %s success!", name))
+	} else {
+		common.LogError(fmt.Sprintf("IssueSelf failed => %s", response.Msg))
+	}
 	return nil
 }
