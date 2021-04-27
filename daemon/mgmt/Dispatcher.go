@@ -169,7 +169,7 @@ func (d *Dispatcher) Start() {
 					if module.sdHandler != nil {
 						common.LogDebug("SDHandler")
 						var context = CreateSDC(interest, d.sendData, d.sendControlResponse, d.saveData)
-						module.sdHandler(topPrefix, interest, context)
+						module.sdHandler(topPrefix, interest, parameters, context)
 					}
 				})
 			}, func(errorType int) {
@@ -281,7 +281,9 @@ func (d *Dispatcher) AddControlCommand(relPrefix *component.Identifier, authoriz
 // @Description:注册数据集命令函数,如:list 等数据集命令
 // @Return:error
 //
-func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler) error {
+func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authorization Authorization,
+	validateParameters ValidateParameters,
+	handler StatusDatasetHandler) error {
 	// 顶级域空 返回错误
 	if len(d.topPrefixList) == 0 {
 		return createDispatcherErrorByType(TopPrefixesEmpty)
@@ -298,7 +300,7 @@ func (d *Dispatcher) AddStatusDataset(relPrefix *component.Identifier, authoriza
 	d.module[relPrefix.ToUri()] = &Module{
 		relPrefix:          relPrefix,
 		authorization:      authorization,
-		validateParameters: nil,
+		validateParameters: validateParameters,
 		ccHandler:          nil,
 		sdHandler:          handler}
 	return nil

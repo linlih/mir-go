@@ -33,7 +33,7 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 
 	// add
 	ic.AddCommand(&grumble.Command{
-		Name: "add",
+		Name: mgmt.IdentityManagementActionAdd,
 		Help: "Create new Identity",
 		Args: func(a *grumble.Args) {
 			a.String("name", "Identity name")
@@ -45,7 +45,7 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 
 	// del
 	ic.AddCommand(&grumble.Command{
-		Name: "del",
+		Name: mgmt.IdentityManagementActionDel,
 		Help: "Delete specific Identity",
 		Args: func(a *grumble.Args) {
 			a.String("name", "Identity name")
@@ -57,10 +57,22 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 
 	// list
 	ic.AddCommand(&grumble.Command{
-		Name: "list",
+		Name: mgmt.IdentityManagementActionList,
 		Help: "List all identities",
 		Run: func(c *grumble.Context) error {
 			return ListIdentity(c, controller)
+		},
+	})
+
+	// dumpCert
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionDumpCert,
+		Help: "Dump specific identity's cert",
+		Args: func(a *grumble.Args) {
+			a.String("name", "Identity name")
+		},
+		Run: func(c *grumble.Context) error {
+			return DumpCertIdentity(c, controller)
 		},
 	})
 
@@ -197,5 +209,51 @@ func ListIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	table.SetCaption(true, "Identity Table Info")
 	table.SetAlignment(tablewriter.ALIGN_CENTER)
 	table.Render()
+	return nil
+}
+
+// DumpCertIdentity 导出指定网络身份的证书
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	// 解析命令行参数
+	name := c.Args.String("name")
+
+	parameters := &component.ControlParameters{}
+	identifier, err := component.CreateIdentifierByString(name)
+	if err != nil {
+		common.LogFatal(err)
+	}
+	parameters.SetPrefix(identifier)
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDumpCertCommand(topPrefix, parameters))
+	if err != nil {
+		common.LogFatal(err)
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		common.LogFatal(err)
+	}
+	if response.Code != mgmt.ControlResponseCodeSuccess {
+		common.LogError("Dump cert error =>", response.Msg)
+		return nil
+	}
+
+	// 反序列化，输出结果
+	var identityInfos []string
+	err = json.Unmarshal(response.GetBytes(), &identityInfos)
+	if err != nil {
+		common.LogFatal(err)
+	}
+
+	// 输出
+	common.LogInfo(identityInfos[0])
 	return nil
 }

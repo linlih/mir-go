@@ -50,7 +50,8 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		common.LogFatal(err)
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
-			return true
+			return parameters.ControlParameterPrefix.IsInitial() &&
+				parameters.ControlParameterPasswd.IsInitial()
 		}, im.AddIdentity); err != nil {
 			common.LogFatal(err)
 		}
@@ -62,7 +63,8 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		common.LogFatal(err)
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
-			return true
+			return parameters.ControlParameterPrefix.IsInitial() &&
+				parameters.ControlParameterPasswd.IsInitial()
 		}, im.DelIdentity); err != nil {
 			common.LogFatal(err)
 		}
@@ -73,7 +75,14 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		mgmt.IdentityManagementActionList); err != nil {
 		common.LogFatal(err)
 	} else {
-		if err := dispatcher.AddStatusDataset(identifier, dispatcher.authorization, im.ListIdentity); err != nil {
+		if err := dispatcher.AddStatusDataset(
+			identifier,
+			dispatcher.authorization,
+			func(parameters *component.ControlParameters) bool {
+				return true
+			},
+			im.ListIdentity,
+		); err != nil {
 			common.LogFatal(err)
 		}
 	}
@@ -83,7 +92,11 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		mgmt.IdentityManagementActionDumpCert); err != nil {
 		common.LogFatal(err)
 	} else {
-		if err := dispatcher.AddStatusDataset(identifier, dispatcher.authorization, im.DumpCert); err != nil {
+		if err := dispatcher.AddStatusDataset(identifier, dispatcher.authorization,
+			func(parameters *component.ControlParameters) bool {
+				return parameters.ControlParameterPrefix.IsInitial()
+			},
+			im.DumpCert); err != nil {
 			common.LogFatal(err)
 		}
 	}
@@ -119,7 +132,14 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		mgmt.IdentityManagementActionDumpId); err != nil {
 		common.LogFatal(err)
 	} else {
-		if err := dispatcher.AddStatusDataset(identifier, dispatcher.authorization, im.DumpId); err != nil {
+		if err := dispatcher.AddStatusDataset(
+			identifier,
+			dispatcher.authorization,
+			func(parameters *component.ControlParameters) bool {
+				return parameters.ControlParameterPrefix.IsInitial()
+			},
+			im.DumpId,
+		); err != nil {
 			common.LogFatal(err)
 		}
 	}
@@ -142,14 +162,21 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 		mgmt.IdentityManagementActionGetId); err != nil {
 		common.LogFatal(err)
 	} else {
-		if err := dispatcher.AddStatusDataset(identifier, dispatcher.authorization, im.GetId); err != nil {
+		if err := dispatcher.AddStatusDataset(
+			identifier,
+			dispatcher.authorization,
+			func(parameters *component.ControlParameters) bool {
+				return parameters.ControlParameterPrefix.IsInitial()
+			},
+			im.GetId,
+		); err != nil {
 			common.LogFatal(err)
 		}
 	}
 
 	// /identity-mgmt/issue
 	if identifier, err := component.CreateIdentifierByStringArray(mgmt.ManagementModuleIdentityMgmt,
-		mgmt.IdentityManagementActionIssue); err != nil {
+		mgmt.IdentityManagementActionSelfIssue); err != nil {
 		common.LogFatal(err)
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
@@ -235,6 +262,7 @@ type ListIdentityInfo struct {
 // @param context
 //
 func (im *IdentityManager) ListIdentity(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
 	defaultName := ""
 	if defaultIdentity := im.keyChain.GetDefaultIdentity(); defaultIdentity != nil {
@@ -263,8 +291,41 @@ func (im *IdentityManager) ListIdentity(topPrefix *component.Identifier, interes
 // @param context
 //
 func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
+	identityName := parameters.Prefix().ToUri()
 
+	// 首先判断指定的网络身份是否存在
+	targetIdentity := im.keyChain.GetIdentityByName(identityName)
+	if targetIdentity == nil {
+		context.responseSender(
+			MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", ""),
+			interest,
+		)
+		return
+	}
+
+	// 判断证书是否存在
+	if targetIdentity.Cert.Issuer == "" && targetIdentity.Cert.Signature == nil {
+		context.responseSender(
+			MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity's cert not exists!", ""),
+			interest,
+		)
+		return
+	}
+
+	// 导出证书
+	if str, err := (&targetIdentity.Cert).ToPem([]byte(""), minsecurity.SM4ECB); err != nil {
+		context.responseSender(
+			MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), ""),
+			interest,
+		)
+		return
+	} else {
+		context.Append(str)
+	}
+	_ = context.Done(0)
+	//	context.Append()
 }
 
 // ImportCert 导入证书
@@ -304,6 +365,7 @@ func (im *IdentityManager) SetDef(topPrefix *component.Identifier, interest *pac
 // @param context
 //
 func (im *IdentityManager) DumpId(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
 
 }
@@ -332,6 +394,7 @@ func (im *IdentityManager) LoadId(topPrefix *component.Identifier, interest *pac
 // @return *mgmt.ControlResponse
 //
 func (im *IdentityManager) GetId(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
 }
 

@@ -84,7 +84,9 @@ func (f *FaceManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceT
 	// /face-mgmt/list => 获取所有逻辑接口
 	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFaceMgmt + "/" + mgmt.LogicFaceManagementActionList)
 	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFaceMgmt, mgmt.LogicFaceManagementActionList)
-	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.listLogicFace)
+	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
+		return true
+	}, f.listLogicFace)
 	if err != nil {
 		common.LogError("Face add list-command fail,the err is:", err)
 	}
@@ -193,7 +195,9 @@ func (f *FaceManager) delLogicFace(topPrefix *component.Identifier, interest *pa
 // @Description:获取所有的逻辑face并分片发送给客户端
 // @receiver f
 //
-func (f *FaceManager) listLogicFace(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
+func (f *FaceManager) listLogicFace(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
+	context *StatusDatasetContext) {
 	// 获取逻辑接口表的信息
 	faceList := f.logicFaceTable.GetAllFaceList()
 	for _, face := range faceList {

@@ -88,7 +88,9 @@ func (f *FibManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTa
 	// /fib-mgmt/list => 展示所有转发表条目
 	identifier, _ = component.CreateIdentifierByStringArray(mgmt.ManagementModuleFibMgmt, mgmt.FibManagementActionList)
 	//identifier, _ = component.CreateIdentifierByString("/" + mgmt.ManagementModuleFibMgmt + "/" + mgmt.FibManagementActionList)
-	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, f.ListEntries)
+	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, func(parameters *component.ControlParameters) bool {
+		return true
+	}, f.ListEntries)
 	if err != nil {
 		common.LogError("add list-command fail,the err is:", err)
 	}
@@ -206,7 +208,9 @@ func (f *FibManager) RemoveNextHop(topPrefix *component.Identifier, interest *pa
 // @Description:获取fib表中所有信息，并分片发送给客户端
 // @receiver f
 //
-func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
+func (f *FibManager) ListEntries(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
+	context *StatusDatasetContext) {
 	fibEntryList := f.fib.GetAllEntry()
 	for _, fibEntry := range fibEntryList {
 		var nextHopInfo []NextHopInfo

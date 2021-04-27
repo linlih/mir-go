@@ -56,7 +56,14 @@ func (c *CsManager) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTab
 		common.LogError("cs add delete-command fail,the err is:", err)
 	}
 	identifier, _ = component.CreateIdentifierByString("/cs-mgmt/list")
-	err = dispatcher.AddStatusDataset(identifier, dispatcher.authorization, c.serveInfo)
+	err = dispatcher.AddStatusDataset(
+		identifier,
+		dispatcher.authorization,
+		func(parameters *component.ControlParameters) bool {
+			return true
+		},
+		c.serveInfo,
+	)
 	if err != nil {
 		common.LogError("cs add list-command fail,the err is:", err)
 	}
@@ -81,7 +88,9 @@ func (c *CsManager) changeConfig(topPrefix *component.Identifier, interest *pack
 // @Description:获取CS管理模块的服务信息，分片发送给客户端，信息包括配置信息、条目数量、命中缓存次数等
 // @receiver c
 //
-func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext) {
+func (c *CsManager) serveInfo(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
+	context *StatusDatasetContext) {
 	//var response *mgmt.ControlResponse
 	//if c.enableServe {
 	//	var CSInfo = struct {

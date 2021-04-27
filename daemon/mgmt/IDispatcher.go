@@ -82,7 +82,9 @@ type ControlCommandHandler func(topPrefix *component.Identifier, interest *packe
 // @param interest
 // @param context
 //
-type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet.Interest, context *StatusDatasetContext)
+type StatusDatasetHandler func(topPrefix *component.Identifier, interest *packet.Interest,
+	parameters *component.ControlParameters,
+	context *StatusDatasetContext)
 
 // InterestHandler
 // 兴趣包处理回调
@@ -143,7 +145,9 @@ type IDispatcher interface {
 	// @param authorization			授权验证回调
 	// @param handler				数据集处理回调
 	//
-	AddStatusDataset(relPrefix *component.Identifier, authorization Authorization, handler StatusDatasetHandler)
+	AddStatusDataset(relPrefix *component.Identifier, authorization Authorization,
+		validateParameters ValidateParameters,
+		handler StatusDatasetHandler)
 
 	//
 	// 发送一个控制命令应答
