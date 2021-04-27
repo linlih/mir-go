@@ -136,6 +136,7 @@ func createInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
 
 	var clientLogicFace logicface.LogicFace
 	_ = clientLogicFace.InitWithInnerChan(chan2, chan1)
+	newLogicFace.SetPersistence(1)
 
 	return &newLogicFace, &clientLogicFace
 }
