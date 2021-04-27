@@ -17,7 +17,9 @@ import (
 	"minlib/mgmt"
 	mgmt2 "mir-go/daemon/mgmt"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 )
 
 // CreateIdentityCommands 创建一个 IdentityCommands
@@ -266,6 +268,21 @@ func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error 
 
 	// 输出
 	common.LogInfo(identityInfos[0])
+
+	// 保存文件
+	if f, err := os.Create(strings.ReplaceAll(name, "/", "-")[1:] + ".cert"); err != nil {
+		common.LogError(err)
+	} else {
+		defer f.Close()
+		if _, err := f.Write([]byte(identityInfos[0])); err != nil {
+			common.LogError(err)
+		}
+		absPath, err := filepath.Abs(f.Name())
+		if err != nil {
+			common.LogError(err)
+		}
+		common.LogInfo("Cert file save to:", absPath)
+	}
 	return nil
 }
 
