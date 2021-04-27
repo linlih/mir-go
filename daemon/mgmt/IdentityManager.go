@@ -13,6 +13,7 @@ import (
 	"minlib/mgmt"
 	"minlib/minsecurity"
 	cert2 "minlib/minsecurity/crypto/cert"
+	"minlib/minsecurity/identity/persist"
 	"minlib/packet"
 	"minlib/security"
 	"strconv"
@@ -296,7 +297,6 @@ func (im *IdentityManager) ListIdentity(topPrefix *component.Identifier, interes
 func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
-	common.LogDebug(">>>")
 	identityName := parameters.Prefix().ToUri()
 
 	// 首先判断指定的网络身份是否存在
@@ -422,6 +422,12 @@ func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", "")
 	}
 
+	id, err := persist.GetIdentityByNameFromStorage(identityName)
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	isLock := id.IsLocked()
 	// 解锁身份
 	if id.IsLocked() {
 		if _, err := id.UnLock(passwd, minsecurity.SM4ECB); err != nil {
@@ -451,10 +457,20 @@ func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *
 
 	id.Cert = cert
 
+	// 如果之前是锁定状态，锁定回去
+	if isLock {
+		if _, err := id.Lock(passwd, minsecurity.SM4ECB); err != nil {
+			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+		}
+	}
+
 	// 持久化保存
 	if err := im.keyChain.SaveIdentity(id, true); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
+
+	// 内存中对应的对象也保存证书
+	im.keyChain.GetIdentityByName(identityName).Cert = cert
 
 	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }
