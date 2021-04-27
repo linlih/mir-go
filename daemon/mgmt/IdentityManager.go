@@ -11,6 +11,7 @@ import (
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
+	"minlib/minsecurity"
 	"minlib/packet"
 	"minlib/security"
 	"strconv"
@@ -189,7 +190,29 @@ func (im *IdentityManager) AddIdentity(topPrefix *component.Identifier, interest
 //
 func (im *IdentityManager) DelIdentity(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
-	if ok, err := im.keyChain.DeleteIdentityByName(parameters.Prefix().ToUri(), parameters.Passwd()); err != nil {
+	targetName := parameters.Prefix().ToUri()
+	// 不允许删除当前正在使用的网络身份
+	if currentIdentity := im.keyChain.GetCurrentIdentity(); currentIdentity != nil && currentIdentity.Name == targetName {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Not allow delete current use identity!", "")
+	}
+
+	// 判断要删除的网络身份是否存在
+	targetIdentity := im.keyChain.GetIdentityByName(targetName)
+	if targetIdentity == nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Identity not exists!", "")
+	}
+
+	// 判断密码是否正确
+	if _, err := targetIdentity.UnLock(parameters.Passwd(), minsecurity.SM4ECB); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 验证完成之后，再加锁回去
+	if _, err := targetIdentity.Lock(parameters.Passwd(), minsecurity.SM4ECB); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	if ok, err := im.keyChain.DeleteIdentityByName(targetName, parameters.Passwd()); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	} else {
 		return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "Delete identity => "+strconv.FormatBool(ok), "")

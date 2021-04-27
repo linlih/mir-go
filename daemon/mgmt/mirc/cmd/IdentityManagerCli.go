@@ -145,7 +145,7 @@ func DelIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 如果请求成功，则输出结果
 	if response.Code == mgmt.ControlResponseCodeSuccess {
-		common.LogInfo(fmt.Sprintf("Delete identity %s success!", name))
+		common.LogInfo(fmt.Sprintf("Delete identity %s success! => %s", name, response.Msg))
 	} else {
 		common.LogError(fmt.Sprintf("Delete identity failed => %s", response.Msg))
 	}
