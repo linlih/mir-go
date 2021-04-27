@@ -17,6 +17,7 @@ import (
 	"minlib/mgmt"
 	mgmt2 "mir-go/daemon/mgmt"
 	"os"
+	"sort"
 )
 
 // CreateIdentityCommands 创建一个 IdentityCommands
@@ -182,9 +183,15 @@ func ListIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	// 使用表格美化输出
 	table := tablewriter.NewWriter(os.Stdout)
 
+	// 排序
+	sort.Slice(identityInfos, func(i, j int) bool {
+		return identityInfos[i].Name < identityInfos[j].Name
+	})
+
 	for _, identityInfo := range identityInfos {
 		table.Append([]string{identityInfo.Name})
 	}
+
 	table.SetHeader([]string{"Name"})
 	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiRedColor, tablewriter.Bold})
 	table.SetCaption(true, "Identity Table Info")
