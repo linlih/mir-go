@@ -328,7 +328,7 @@ func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *p
 	} else {
 		context.Append(str)
 	}
-	_ = context.Done(0)
+	_ = context.Done(im.keyChain.GetIdentityVersion(identityName))
 }
 
 // ImportCert 导入证书
