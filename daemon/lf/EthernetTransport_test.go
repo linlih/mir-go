@@ -173,7 +173,7 @@ func EtherTransportSendAndSign(faceSystem *lf.LogicFaceSystem, payloadSize int, 
 		return
 	}
 	// 测试前需要保证两条机器有相同的秘钥，需要用程序在一台主机上生成下，再拷贝到另外一台机器上
-	i := keyChain.IdentifyManager.GetIdentifyByName("/pkusz")
+	i := keyChain.IdentityManager.GetIdentityByName("/pkusz")
 	keyChain.SetCurrentIdentity(i, "pkusz123pkusz123")
 	keyChain.SignInterest(&interest)
 

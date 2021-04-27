@@ -64,7 +64,7 @@ func (mirConfig *MIRConfig) Init() {
 	mirConfig.SecurityConfig.MiddleRouterSignature = false
 	mirConfig.MaxRouterSignatureNum = 4
 	mirConfig.SecurityConfig.ParallelVerifyNum = 10
-	mirConfig.SecurityConfig.IdentityDBPath = security.DefaultIdentifyDBPath
+	mirConfig.SecurityConfig.IdentityDBPath = security.DefaultIdentityDBPath
 
 	// Forwarder
 	mirConfig.ForwarderConfig.PacketQueueSize = 100

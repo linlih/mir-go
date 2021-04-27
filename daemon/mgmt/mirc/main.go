@@ -19,20 +19,6 @@ import (
 	"os"
 )
 
-// AskPassword 要求用户输入一个密码
-//
-// @Description:
-// @return string
-//
-func AskPassword() string {
-	passwd := ""
-	prompt := &survey.Password{
-		Message: "Please type your password",
-	}
-	_ = survey.AskOne(prompt, &passwd)
-	return passwd
-}
-
 // AskIdentityName 要求用户输入一个使用的网络身份
 //
 // @Description:
@@ -89,9 +75,9 @@ func mirc(mirConfig *common2.MIRConfig) {
 	}
 
 	// 要求用户输入密码
-	passwd := AskPassword()
+	passwd := cmd.AskPassword()
 
-	if identity := keyChain.GetIdentifyByName(mirConfig.GeneralConfig.DefaultId); identity == nil {
+	if identity := keyChain.GetIdentityByName(mirConfig.GeneralConfig.DefaultId); identity == nil {
 		common.LogFatal("Identity => "+mirConfig.GeneralConfig.DefaultId, "not exists")
 	} else {
 		if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
@@ -111,6 +97,8 @@ func mirc(mirConfig *common2.MIRConfig) {
 	app.AddCommand(cmd.CreateLogicFaceCommands(controller))
 	// 添加 Fib 管理命令
 	app.AddCommand(cmd.CreateFibCommands(controller))
+	// 添加 Identity 管理命令
+	app.AddCommand(cmd.CreateIdentityCommands(controller))
 
 	grumble.Main(app)
 }

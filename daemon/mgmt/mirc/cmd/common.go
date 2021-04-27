@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"github.com/AlecAivazis/survey/v2"
 	"minlib/component"
 	"minlib/logicface"
 	mgmtlib "minlib/mgmt"
@@ -67,4 +68,18 @@ func GetController(keyChain *security.KeyChain) *mgmtlib.MIRController {
 	}, true, keyChain)
 
 	return controller
+}
+
+// AskPassword 要求用户输入一个密码
+//
+// @Description:
+// @return string
+//
+func AskPassword() string {
+	passwd := ""
+	prompt := &survey.Password{
+		Message: "Please type your password",
+	}
+	_ = survey.AskOne(prompt, &passwd)
+	return passwd
 }

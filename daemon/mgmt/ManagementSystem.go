@@ -6,15 +6,18 @@ import (
 )
 
 type ManagementSystem struct {
-	csManager   *CsManager
-	fibManager  *FibManager
-	faceManager *FaceManager
+	csManager       *CsManager
+	fibManager      *FibManager
+	faceManager     *FaceManager
+	identityManager *IdentityManager
 }
 
 func (m *ManagementSystem) Init(dispatcher *Dispatcher, logicFaceTable *lf.LogicFaceTable) {
 	m.fibManager.Init(dispatcher, logicFaceTable)
 	m.faceManager.Init(dispatcher, logicFaceTable)
 	m.csManager.Init(dispatcher, logicFaceTable)
+	m.identityManager = CreateIdentityManager(&dispatcher.KeyChain)
+	m.identityManager.Init(dispatcher)
 }
 
 func (m *ManagementSystem) SetFIB(fib *table.FIB) {

@@ -139,7 +139,7 @@ func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
 	if keyChain.ExistIdentity(config.GeneralConfig.DefaultId) {
 		// 存在则要求用户输入密码解锁网络身份
 		passwd := askInputPassword()
-		if identity := keyChain.GetIdentifyByName(config.GeneralConfig.DefaultId); identity != nil {
+		if identity := keyChain.GetIdentityByName(config.GeneralConfig.DefaultId); identity != nil {
 			common2.LogDebug(1, identity.IsLocked(), identity.Prikey, identity.PrikeyRawByte)
 			if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
 				common2.LogFatal(err)
