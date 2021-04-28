@@ -383,7 +383,18 @@ func (im *IdentityManager) ImportCert(topPrefix *component.Identifier, interest 
 //
 func (im *IdentityManager) SetDef(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
-	return nil
+	// 解析参数
+	identityName := parameters.Prefix().ToUri()
+	if targetIdentity := im.keyChain.GetIdentityByName(identityName); targetIdentity == nil {
+		// 身份不存在则返回错误
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Identity not exists!", "")
+	} else {
+		// 将目标身份设置为默认的网络身份
+		if _, err := im.keyChain.SetDefaultIdentity(targetIdentity); err != nil {
+			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+		}
+	}
+	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }
 
 // DumpId 导出用户的身份

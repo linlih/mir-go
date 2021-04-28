@@ -93,6 +93,18 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 	})
 
+	// setDef
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionSetDef,
+		Help: "Set default identity",
+		Args: func(a *grumble.Args) {
+			a.String("name", "Identity name")
+		},
+		Run: func(c *grumble.Context) error {
+			return SetDefIdentity(c, controller)
+		},
+	})
+
 	// selfIssue
 	ic.AddCommand(&grumble.Command{
 		Name: mgmt.IdentityManagementActionSelfIssue,
@@ -345,6 +357,45 @@ func ImportCertIdentity(c *grumble.Context, controller *mgmt.MIRController) erro
 		common.LogInfo(fmt.Sprintf("Load cert success => %s", cert.IssueTo))
 	} else {
 		common.LogError(fmt.Sprintf("IssueSelf failed => %s", response.Msg))
+	}
+	return nil
+}
+
+// SetDefIdentity 设置默认的网络身份
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func SetDefIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	// 解析命令行参数
+	name := c.Args.String("name")
+
+	parameters := &component.ControlParameters{}
+	identifier, err := component.CreateIdentifierByString(name)
+	if err != nil {
+		return err
+	}
+	parameters.SetPrefix(identifier)
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentitySetDefCommand(topPrefix, parameters))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmt.ControlResponseCodeSuccess {
+		common.LogInfo(fmt.Sprintf("Set default identity as %s success!", name))
+	} else {
+		common.LogError(fmt.Sprintf("Set default identity failed => %s", response.Msg))
 	}
 	return nil
 }
