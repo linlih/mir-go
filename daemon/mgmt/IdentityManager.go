@@ -8,6 +8,7 @@
 package mgmt
 
 import (
+	"io/ioutil"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
@@ -16,6 +17,7 @@ import (
 	"minlib/minsecurity/identity/persist"
 	"minlib/packet"
 	"minlib/security"
+	"os"
 	"strconv"
 	"time"
 )
@@ -111,7 +113,7 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 			func(parameters *component.ControlParameters) bool {
-				return true
+				return parameters.ControlParameterCommonString.IsInitial()
 			}, im.ImportCert); err != nil {
 			common.LogFatal(err)
 		}
@@ -342,7 +344,32 @@ func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *p
 //
 func (im *IdentityManager) ImportCert(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
-	return nil
+	// 解析参数
+	filePath := parameters.ControlParameterCommonString.Value()
+
+	// 判断文件是否存在
+	f, err := os.Open(filePath)
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 读取文件内容
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 解析证书
+	cert := cert2.Certificate{}
+	if err := cert.FromPem(string(data), nil, minsecurity.SM4ECB); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 加载证书
+	if err := im.keyChain.IdentityManager.LoadCert(cert.IssueTo, &cert); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }
 
 // SetDef 设置默认的网络身份
@@ -415,20 +442,18 @@ func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *
 	identityName := parameters.Prefix().ToUri()
 	passwd := parameters.Passwd()
 
-	id := im.keyChain.GetIdentityByName(identityName)
-
 	// 判断身份是否存在
-	if id == nil {
+	if !im.keyChain.ExistIdentity(identityName) {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", "")
 	}
 
+	// 从存储中获取对象，不影响内存中的身份
 	id, err := persist.GetIdentityByNameFromStorage(identityName)
 	if err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
-	isLock := id.IsLocked()
-	// 解锁身份
+	// 如果需要，则解锁身份
 	if id.IsLocked() {
 		if _, err := id.UnLock(passwd, minsecurity.SM4ECB); err != nil {
 			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
@@ -455,22 +480,10 @@ func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
-	id.Cert = cert
-
-	// 如果之前是锁定状态，锁定回去
-	if isLock {
-		if _, err := id.Lock(passwd, minsecurity.SM4ECB); err != nil {
-			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-		}
-	}
-
-	// 持久化保存
-	if err := im.keyChain.SaveIdentity(id, true); err != nil {
+	// 保存证书
+	if err := im.keyChain.IdentityManager.LoadCert(id.Name, &cert); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
-
-	// 内存中对应的对象也保存证书
-	im.keyChain.GetIdentityByName(identityName).Cert = cert
 
 	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }

@@ -12,9 +12,12 @@ import (
 	"fmt"
 	"github.com/desertbit/grumble"
 	"github.com/olekukonko/tablewriter"
+	"io/ioutil"
 	"minlib/common"
 	"minlib/component"
 	"minlib/mgmt"
+	"minlib/minsecurity"
+	cert2 "minlib/minsecurity/crypto/cert"
 	mgmt2 "mir-go/daemon/mgmt"
 	"os"
 	"path/filepath"
@@ -75,6 +78,18 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 		Run: func(c *grumble.Context) error {
 			return DumpCertIdentity(c, controller)
+		},
+	})
+
+	// importCert
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionImportCert,
+		Help: "Import cert, contain Name and Public key, can use to verify packet",
+		Args: func(a *grumble.Args) {
+			a.String("file", "Cert file path")
+		},
+		Run: func(c *grumble.Context) error {
+			return ImportCertIdentity(c, controller)
 		},
 	})
 
@@ -282,6 +297,54 @@ func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error 
 			common.LogError(err)
 		}
 		common.LogInfo("Cert file save to:", absPath)
+	}
+	return nil
+}
+
+// ImportCertIdentity 导入网络身份
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func ImportCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	filePath := c.Args.String("file")
+	// 判断文件是否存在
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	// 读取文件内容
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	// 尝试本地解析证书，如果本地解析证书失败，就不需要和路由器进行通信了
+	cert := cert2.Certificate{}
+	if err := cert.FromPem(string(data), nil, minsecurity.SM4ECB); err != nil {
+		return err
+	}
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityImportCertCommand(topPrefix, filePath))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmt.ControlResponseCodeSuccess {
+		common.LogInfo(fmt.Sprintf("Load cert success => %s", cert.IssueTo))
+	} else {
+		common.LogError(fmt.Sprintf("IssueSelf failed => %s", response.Msg))
 	}
 	return nil
 }
