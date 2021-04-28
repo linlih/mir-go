@@ -105,6 +105,18 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 	})
 
+	// dumpId
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionDumpId,
+		Help: "Dump identity to file",
+		Args: func(a *grumble.Args) {
+			a.String("name", "Identity name")
+		},
+		Run: func(c *grumble.Context) error {
+			return DumpIdentity(c, controller)
+		},
+	})
+
 	// selfIssue
 	ic.AddCommand(&grumble.Command{
 		Name: mgmt.IdentityManagementActionSelfIssue,
@@ -393,9 +405,69 @@ func SetDefIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 如果请求成功，则输出结果
 	if response.Code == mgmt.ControlResponseCodeSuccess {
-		common.LogInfo(fmt.Sprintf("Set default identity as %s success!", name))
+		common.LogInfo(fmt.Sprintf("IssueSelf %s success!", name))
 	} else {
-		common.LogError(fmt.Sprintf("Set default identity failed => %s", response.Msg))
+		common.LogError(fmt.Sprintf("IssueSelf failed => %s", response.Msg))
+	}
+	return nil
+}
+
+// DumpIdentity 导出某个网络身份
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func DumpIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	// 解析命令行参数
+	name := c.Args.String("name")
+
+	// 要求用户输入一个密码
+	passwd := AskPasswordWithCustomMsg("Please input password to encrypt result（not for unlock identity）:")
+	parameters := &component.ControlParameters{}
+	identifier, err := component.CreateIdentifierByString(name)
+	if err != nil {
+		return err
+	}
+	parameters.SetPrefix(identifier)
+	parameters.SetPasswd(passwd)
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDumpIdCommand(topPrefix, parameters))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 反序列化，输出结果
+	var identityInfos []string
+	err = json.Unmarshal(response.GetBytes(), &identityInfos)
+	if err != nil {
+		return err
+	}
+
+	// 输出
+	common.LogInfo(identityInfos[0])
+
+	// 保存文件
+	if f, err := os.Create(strings.ReplaceAll(name, "/", "-")[1:] + ".identity"); err != nil {
+		common.LogError(err)
+	} else {
+		defer f.Close()
+		if _, err := f.Write([]byte(identityInfos[0])); err != nil {
+			common.LogError(err)
+		}
+		absPath, err := filepath.Abs(f.Name())
+		if err != nil {
+			common.LogError(err)
+		}
+		common.LogInfo("Identity file save to:", absPath)
 	}
 	return nil
 }

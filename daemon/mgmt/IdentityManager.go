@@ -8,6 +8,7 @@
 package mgmt
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 	"minlib/common"
 	"minlib/component"
@@ -126,7 +127,7 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 			func(parameters *component.ControlParameters) bool {
-				return true
+				return parameters.ControlParameterPrefix.IsInitial()
 			}, im.SetDef); err != nil {
 			common.LogFatal(err)
 		}
@@ -141,7 +142,7 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 			identifier,
 			dispatcher.authorization,
 			func(parameters *component.ControlParameters) bool {
-				return parameters.ControlParameterPrefix.IsInitial()
+				return parameters.ControlParameterPrefix.IsInitial() && parameters.ControlParameterPasswd.IsInitial()
 			},
 			im.DumpId,
 		); err != nil {
@@ -408,7 +409,41 @@ func (im *IdentityManager) SetDef(topPrefix *component.Identifier, interest *pac
 func (im *IdentityManager) DumpId(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
+	// 解析参数
+	identityName := parameters.Prefix().ToUri()
+	passwd := parameters.Passwd()
 
+	targetIdentity := im.keyChain.GetIdentityByName(identityName)
+	// 判断网络身份是否存在
+	if targetIdentity == nil {
+		context.responseSender(MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Identity not exists!", ""), interest)
+		return
+	}
+
+	// 如果要导出的不是当前使用的网络身份，可以直接从内存导出
+	if im.keyChain.GetCurrentIdentity().Name != identityName {
+		res, err := targetIdentity.Dump(passwd)
+		if err != nil {
+			context.responseSender(MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), ""), interest)
+			return
+		}
+		context.Append(base64.StdEncoding.EncodeToString(res))
+	} else {
+		// 如果要导出当前网络身份，可以从持久化存储中导出
+		id, err := persist.GetIdentityByNameFromStorage(identityName)
+		if err != nil {
+			context.responseSender(MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), ""), interest)
+			return
+		}
+		res, err := id.Dump(passwd)
+		if err != nil {
+			context.responseSender(MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), ""), interest)
+			return
+		}
+		context.Append(base64.StdEncoding.EncodeToString(res))
+	}
+
+	_ = context.Done(im.keyChain.GetIdentityVersion(identityName))
 }
 
 // LoadId 导入用户身份

@@ -76,9 +76,19 @@ func GetController(keyChain *security.KeyChain) *mgmtlib.MIRController {
 // @return string
 //
 func AskPassword() string {
+	return AskPasswordWithCustomMsg("Please type your password")
+}
+
+// AskPasswordWithCustomMsg 要求用户输入一个密码，自定义提示信息
+//
+// @Description:
+// @param msg
+// @return string
+//
+func AskPasswordWithCustomMsg(msg string) string {
 	passwd := ""
 	prompt := &survey.Password{
-		Message: "Please type your password",
+		Message: msg,
 	}
 	_ = survey.AskOne(prompt, &passwd)
 	return passwd
