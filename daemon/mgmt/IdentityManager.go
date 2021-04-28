@@ -511,6 +511,18 @@ func (im *IdentityManager) LoadId(topPrefix *component.Identifier, interest *pac
 func (im *IdentityManager) GetId(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters,
 	context *StatusDatasetContext) {
+	identityName := parameters.Prefix().ToUri()
+
+	// 判断网络身份是否存在
+	targetIdentity := im.keyChain.GetIdentityByName(identityName)
+	if targetIdentity == nil {
+		context.responseSender(
+			MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", ""), interest)
+		return
+	}
+	context.Append(targetIdentity)
+
+	_ = context.Done(im.keyChain.GetIdentityVersion(identityName))
 }
 
 // SelfIssue 给当前网络身份

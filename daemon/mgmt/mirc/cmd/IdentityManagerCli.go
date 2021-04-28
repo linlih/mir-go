@@ -131,6 +131,18 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 	})
 
+	// getId
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionGetId,
+		Help: "Get identity info and print it",
+		Args: func(a *grumble.Args) {
+			a.String("name", "Identity name")
+		},
+		Run: func(c *grumble.Context) error {
+			return GetIdentity(c, controller)
+		},
+	})
+
 	// selfIssue
 	ic.AddCommand(&grumble.Command{
 		Name: mgmt.IdentityManagementActionSelfIssue,
@@ -540,6 +552,45 @@ func LoadIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 		common.LogInfo(fmt.Sprintf("Load Identity success => %s", id.Name))
 	} else {
 		common.LogError(fmt.Sprintf("Load Identity failed => %s", response.Msg))
+	}
+	return nil
+}
+
+// GetIdentity 获取网络身份的
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func GetIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	// 解析命令行参数
+	name := c.Args.String("name")
+
+	parameters := &component.ControlParameters{}
+	identifier, err := component.CreateIdentifierByString(name)
+	if err != nil {
+		return err
+	}
+	parameters.SetPrefix(identifier)
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityGetIdCommand(topPrefix, parameters))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmt.ControlResponseCodeSuccess {
+		_, _ = c.App.Println(string(response.GetBytes()))
+	} else {
+		common.LogError(fmt.Sprintf("Get identity failed => %s", response.Msg))
 	}
 	return nil
 }
