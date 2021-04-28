@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/desertbit/grumble"
@@ -18,6 +19,7 @@ import (
 	"minlib/mgmt"
 	"minlib/minsecurity"
 	cert2 "minlib/minsecurity/crypto/cert"
+	"minlib/minsecurity/identity"
 	mgmt2 "mir-go/daemon/mgmt"
 	"os"
 	"path/filepath"
@@ -114,6 +116,18 @@ func CreateIdentityCommands(controller *mgmt.MIRController) *grumble.Command {
 		},
 		Run: func(c *grumble.Context) error {
 			return DumpIdentity(c, controller)
+		},
+	})
+
+	// loadId
+	ic.AddCommand(&grumble.Command{
+		Name: mgmt.IdentityManagementActionLoadId,
+		Help: "Load identity from file",
+		Args: func(a *grumble.Args) {
+			a.String("file", "Identity file path")
+		},
+		Run: func(c *grumble.Context) error {
+			return LoadIdentity(c, controller)
 		},
 	})
 
@@ -368,7 +382,7 @@ func ImportCertIdentity(c *grumble.Context, controller *mgmt.MIRController) erro
 	if response.Code == mgmt.ControlResponseCodeSuccess {
 		common.LogInfo(fmt.Sprintf("Load cert success => %s", cert.IssueTo))
 	} else {
-		common.LogError(fmt.Sprintf("IssueSelf failed => %s", response.Msg))
+		common.LogError(fmt.Sprintf("Load cert failed => %s", response.Msg))
 	}
 	return nil
 }
@@ -468,6 +482,64 @@ func DumpIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 			common.LogError(err)
 		}
 		common.LogInfo("Identity file save to:", absPath)
+	}
+	return nil
+}
+
+// LoadIdentity 从文件中导入网络身份
+//
+// @Description:
+// @param c
+// @param controller
+// @return error
+//
+func LoadIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
+	filePath := c.Args.String("file")
+	// 判断文件是否存在
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	// 读取文件内容
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	// 要求用户输入一个密码
+	passwd := AskPasswordWithCustomMsg("Please input password to decrypt identity file（not for unlock identity）:")
+
+	// base64解码
+	res, err := base64.StdEncoding.DecodeString(string(data))
+
+	if err != nil {
+		return err
+	}
+
+	// 尝试本地解析身份，如果本地解析身份失败，就不需要和路由器进行通信了
+	id := identity.Identity{}
+	if err := id.Load(res, passwd); err != nil {
+		return err
+	}
+
+	// 构造一个命令执行器
+	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityLoadIdCommand(topPrefix, filePath, passwd))
+	if err != nil {
+		return err
+	}
+
+	// 执行命令
+	response, err := commandExecutor.Start()
+	if err != nil {
+		return err
+	}
+
+	// 如果请求成功，则输出结果
+	if response.Code == mgmt.ControlResponseCodeSuccess {
+		common.LogInfo(fmt.Sprintf("Load Identity success => %s", id.Name))
+	} else {
+		common.LogError(fmt.Sprintf("Load Identity failed => %s", response.Msg))
 	}
 	return nil
 }

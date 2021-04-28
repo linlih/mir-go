@@ -15,6 +15,7 @@ import (
 	"minlib/mgmt"
 	"minlib/minsecurity"
 	cert2 "minlib/minsecurity/crypto/cert"
+	"minlib/minsecurity/identity"
 	"minlib/minsecurity/identity/persist"
 	"minlib/packet"
 	"minlib/security"
@@ -157,7 +158,7 @@ func (im *IdentityManager) Init(dispatcher *Dispatcher) {
 	} else {
 		if err := dispatcher.AddControlCommand(identifier, dispatcher.authorization,
 			func(parameters *component.ControlParameters) bool {
-				return true
+				return parameters.ControlParameterPasswd.IsInitial() && parameters.ControlParameterCommonString.IsInitial()
 			}, im.LoadId); err != nil {
 			common.LogFatal(err)
 		}
@@ -457,7 +458,45 @@ func (im *IdentityManager) DumpId(topPrefix *component.Identifier, interest *pac
 //
 func (im *IdentityManager) LoadId(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
-	return nil
+	// 解析参数
+	filePath := parameters.ControlParameterCommonString.Value()
+	passwd := parameters.Passwd()
+
+	// 判断文件是否存在
+	f, err := os.Open(filePath)
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 读取文件内容
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// base64解码
+	res, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	// 加载身份
+	id := identity.Identity{}
+	if err := id.Load(res, passwd); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+
+	targetIdentity := im.keyChain.GetIdentityByName(id.Name)
+	// 判断网络身份是否存在
+	if targetIdentity != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Identity already exists!", "")
+	}
+
+	// 保存网络身份
+	if err := im.keyChain.SaveIdentity(&id, true); err != nil {
+		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
+	}
+	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }
 
 // GetId 获得一个指定网络身份的JSON序列化表示
