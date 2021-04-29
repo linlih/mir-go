@@ -42,16 +42,16 @@ var logicFaceMaxIdolTimeMs int64 = 600000
 //		在一个发送包的流程中，由logicFace调用linkService的发包函数，再由linkService调用transport的发包函数
 //
 type LogicFace struct {
-	LogicFaceId        uint64 // logicFaceID
-	logicFaceType      LogicFaceType
-	transport          ITransport               // 与logicFace绑定的transport
-	linkService        *LinkService             // 与logicFace绑定的linkService
-	logicFaceCounters  LogicFaceCounters        // logicFace 流量统计对象
-	expireTime         int64                    // 超时时间 ms
-	state              bool                     //  true 为 up , false 为 down
-	Mtu                uint64                   // 最大传输单元 MTU
-	Persistence        uint64                   // 持久性, 0 表示没有持久性，会被LogicFaceSystem在一定时间后清理掉
-												//	非 0 时表示有持久性，就算一直没有收发数据，也不会被清理
+	LogicFaceId       uint64 // logicFaceID
+	logicFaceType     LogicFaceType
+	transport         ITransport        // 与logicFace绑定的transport
+	linkService       *LinkService      // 与logicFace绑定的linkService
+	logicFaceCounters LogicFaceCounters // logicFace 流量统计对象
+	expireTime        int64             // 超时时间 ms
+	state             bool              //  true 为 up , false 为 down
+	Mtu               uint64            // 最大传输单元 MTU
+	Persistence       uint64            // 持久性, 0 表示没有持久性，会被LogicFaceSystem在一定时间后清理掉
+	//	非 0 时表示有持久性，就算一直没有收发数据，也不会被清理
 	onShutdownCallback func(logicFaceId uint64) // 传输logic face 关闭时的回调
 }
 
@@ -88,7 +88,7 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
-	common2.LogInfo("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
+	common2.LogDebug("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
 	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
 		LogicFace: lf,
