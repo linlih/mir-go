@@ -275,10 +275,4 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 func checkIdentity(lpPacket *packet.LpPacket) bool {
 	// TODO 先验证用户身份再创建face,待 完善 代码逻辑
 	return true
-	minPacket, err := getMINPacketFromLpPacket(lpPacket)
-	if err != nil {
-		return false
-	}
-	err = gkeyChain.Verify(minPacket)
-	return err == nil
 }

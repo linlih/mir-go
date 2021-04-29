@@ -9,7 +9,6 @@ package lf
 
 import (
 	common2 "minlib/common"
-	"minlib/security"
 	"mir-go/daemon/common"
 	"time"
 )
@@ -18,8 +17,6 @@ import (
 // @Description: 全局logicFace系统
 //
 var gLogicFaceSystem *LogicFaceSystem
-
-var gkeyChain *security.KeyChain
 
 // LogicFaceSystem
 // @Description: 启动所有类型的Face监听
@@ -59,12 +56,6 @@ func (l *LogicFaceSystem) Init(packetValidator IPacketValidator, config *common.
 
 	gLogicFaceSystem = l
 	logicFaceMaxIdolTimeMs = int64(config.LogicFaceIdleTime)
-
-	mkeyChain, err := security.CreateKeyChain()
-	if err != nil {
-		common2.LogFatal(err)
-	}
-	gkeyChain = mkeyChain
 }
 
 // Start
@@ -106,7 +97,7 @@ func (l *LogicFaceSystem) doFaceClean() {
 		if v.state == false {
 			common2.LogInfo("remove logicface id = ", v.LogicFaceId)
 			l.destroyFace(k, v)
-		} else if v.expireTime < curTime && v.Persistence == 0{ // logicFace已经超时
+		} else if v.expireTime < curTime && v.Persistence == 0 { // logicFace已经超时
 			v.Shutdown()        // 调用shutdown关闭logicFace
 			l.destroyFace(k, v) // 将logicFace从全局logicFaceTable中删除
 		}
