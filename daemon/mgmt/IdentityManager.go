@@ -14,14 +14,12 @@ import (
 	"minlib/component"
 	"minlib/mgmt"
 	"minlib/minsecurity"
-	cert2 "minlib/minsecurity/crypto/cert"
 	"minlib/minsecurity/identity"
 	"minlib/minsecurity/identity/persist"
 	"minlib/packet"
 	"minlib/security"
 	"os"
 	"strconv"
-	"time"
 )
 
 // IdentityManager 表示一个身份管理器
@@ -303,27 +301,8 @@ func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *p
 	context *StatusDatasetContext) {
 	identityName := parameters.Prefix().ToUri()
 
-	// 首先判断指定的网络身份是否存在
-	targetIdentity := im.keyChain.GetIdentityByName(identityName)
-	if targetIdentity == nil {
-		context.responseSender(
-			MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", ""),
-			interest,
-		)
-		return
-	}
-
-	// 判断证书是否存在
-	if targetIdentity.Cert.Issuer == "" && targetIdentity.Cert.Signature == nil {
-		context.responseSender(
-			MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity's cert not exists!", ""),
-			interest,
-		)
-		return
-	}
-
 	// 导出证书
-	if str, err := (&targetIdentity.Cert).ToPem([]byte(""), minsecurity.SM4ECB); err != nil {
+	if str, err := im.keyChain.IdentityManager.DumpCert(identityName); err != nil {
 		context.responseSender(
 			MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), ""),
 			interest,
@@ -332,6 +311,7 @@ func (im *IdentityManager) DumpCert(topPrefix *component.Identifier, interest *p
 	} else {
 		context.Append(str)
 	}
+
 	_ = context.Done(im.keyChain.GetIdentityVersion(identityName))
 }
 
@@ -361,16 +341,11 @@ func (im *IdentityManager) ImportCert(topPrefix *component.Identifier, interest 
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
-	// 解析证书
-	cert := cert2.Certificate{}
-	if err := cert.FromPem(string(data), nil, minsecurity.SM4ECB); err != nil {
+	// 尝试加载证书
+	if err := im.keyChain.IdentityManager.ImportCert(data); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
-	// 加载证书
-	if err := im.keyChain.IdentityManager.LoadCert(cert.IssueTo, &cert); err != nil {
-		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-	}
 	return MakeControlResponse(mgmt.ControlResponseCodeSuccess, "", "")
 }
 
@@ -525,7 +500,7 @@ func (im *IdentityManager) GetId(topPrefix *component.Identifier, interest *pack
 	_ = context.Done(im.keyChain.GetIdentityVersion(identityName))
 }
 
-// SelfIssue 给当前网络身份
+// SelfIssue 给当前网络身份签发一个自签证书
 //
 // @Description:
 // @receiver im
@@ -539,46 +514,8 @@ func (im *IdentityManager) SelfIssue(topPrefix *component.Identifier, interest *
 	identityName := parameters.Prefix().ToUri()
 	passwd := parameters.Passwd()
 
-	// 判断身份是否存在
-	if !im.keyChain.ExistIdentity(identityName) {
-		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, "Target identity not exists!", "")
-	}
-
-	// 从存储中获取对象，不影响内存中的身份
-	id, err := persist.GetIdentityByNameFromStorage(identityName)
-	if err != nil {
-		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-	}
-
-	// 如果需要，则解锁身份
-	if id.IsLocked() {
-		if _, err := id.UnLock(passwd, minsecurity.SM4ECB); err != nil {
-			return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-		}
-	}
-
-	// 填充证书内容
-	cert := cert2.Certificate{}
-	cert.Version = 0
-	cert.SerialNumber = 1
-	cert.PublicKey = id.Pubkey
-	cert.SignatureAlgorithm = id.KeyParam.SignatureAlgorithm
-	cert.PublicKeyAlgorithm = id.KeyParam.PublicKeyAlgorithm
-	cert.IssueTo = id.Name
-	cert.Issuer = id.Name
-	cert.NotBefore = time.Now().Unix()
-	cert.NotAfter = time.Now().AddDate(1, 0, 0).Unix()
-	cert.KeyUsage = minsecurity.CertSign
-	cert.IsCA = true
-	cert.Timestamp = time.Now().Unix()
-
-	// 签发证书
-	if err := cert.SignCert(id.Prikey); err != nil {
-		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-	}
-
-	// 保存证书
-	if err := im.keyChain.IdentityManager.LoadCert(id.Name, &cert); err != nil {
+	// 执行自签
+	if err := im.keyChain.IdentityManager.SelfIssue(identityName, passwd); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
