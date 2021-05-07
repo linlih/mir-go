@@ -75,7 +75,10 @@ func mirc(mirConfig *common2.MIRConfig) {
 	}
 
 	// 要求用户输入密码
-	passwd := cmd.AskPassword()
+	passwd, err := cmd.AskPassword()
+	if err != nil {
+		common.LogFatal(err)
+	}
 
 	if identity := keyChain.GetIdentityByName(mirConfig.GeneralConfig.DefaultId); identity == nil {
 		common.LogFatal("Identity => "+mirConfig.GeneralConfig.DefaultId, "not exists")

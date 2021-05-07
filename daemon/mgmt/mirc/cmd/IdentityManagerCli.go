@@ -169,7 +169,10 @@ func AddIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	name := c.Args.String("name")
 
 	// 要求用户输入一个密码
-	passwd := AskPassword()
+	passwd, err := AskPassword()
+	if err != nil {
+		return err
+	}
 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(name)
@@ -212,7 +215,10 @@ func DelIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	name := c.Args.String("name")
 
 	// 要求用户输入一个密码
-	passwd := AskPassword()
+	passwd, err := AskPassword()
+	if err != nil {
+		return err
+	}
 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(name)
@@ -450,7 +456,10 @@ func DumpIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	name := c.Args.String("name")
 
 	// 要求用户输入一个密码
-	passwd := AskPasswordWithCustomMsg("Please input password to encrypt result（not for unlock identity）:")
+	passwd, err := AskPasswordWithCustomMsg("Please input password to encrypt result（not for unlock identity）:")
+	if err != nil {
+		return err
+	}
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(name)
 	if err != nil {
@@ -520,7 +529,10 @@ func LoadIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	}
 
 	// 要求用户输入一个密码
-	passwd := AskPasswordWithCustomMsg("Please input password to decrypt identity file（not for unlock identity）:")
+	passwd, err := AskPasswordWithCustomMsg("Please input password to decrypt identity file（not for unlock identity）:")
+	if err != nil {
+		return err
+	}
 
 	// base64解码
 	res, err := base64.StdEncoding.DecodeString(string(data))
@@ -607,7 +619,10 @@ func SelfIssueIdentity(c *grumble.Context, controller *mgmt.MIRController) error
 	name := c.Args.String("name")
 
 	// 要求用户输入一个密码
-	passwd := AskPassword()
+	passwd, err := AskPassword()
+	if err != nil {
+		return err
+	}
 
 	parameters := &component.ControlParameters{}
 	identifier, err := component.CreateIdentifierByString(name)

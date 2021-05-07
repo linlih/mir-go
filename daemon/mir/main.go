@@ -97,7 +97,10 @@ func askInputPassword() string {
 	prompt := &survey.Password{
 		Message: "Please type your password",
 	}
-	_ = survey.AskOne(prompt, &passwd)
+	if err := survey.AskOne(prompt, &passwd); err != nil {
+		common2.LogFatal(err)
+	}
+
 	return passwd
 }
 
@@ -107,12 +110,16 @@ func askSetPasswd(name string) string {
 		prompt := &survey.Password{
 			Message: "Please set passwd for " + name,
 		}
-		_ = survey.AskOne(prompt, &passwd)
+		if err := survey.AskOne(prompt, &passwd); err != nil {
+			common2.LogFatal(err)
+		}
 		rePasswd := ""
 		prompt = &survey.Password{
 			Message: "Please confirm your passwd",
 		}
-		_ = survey.AskOne(prompt, &rePasswd)
+		if err := survey.AskOne(prompt, &rePasswd); err != nil {
+			common2.LogFatal(err)
+		}
 
 		if passwd == rePasswd {
 			return passwd
