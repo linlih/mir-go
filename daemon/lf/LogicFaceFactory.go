@@ -50,19 +50,19 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 func createTcpLogicFace(conn net.Conn) (*LogicFace, uint64) {
 	var tcpTransport TcpTransport
 	var linkService LinkService
-	var logicFace LogicFace
+	var logicFace0 LogicFace
 
 	tcpTransport.Init(conn)
 	linkService.Init(9000)
 
 	linkService.transport = &tcpTransport
-	linkService.logicFace = &logicFace
+	linkService.logicFace = &logicFace0
 
 	tcpTransport.linkService = &linkService
 
-	logicFace.Init(&tcpTransport, &linkService, LogicFaceTypeTCP)
-	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
-	return &logicFace, logicFaceId
+	logicFace0.Init(&tcpTransport, &linkService, LogicFaceTypeTCP)
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	return &logicFace0, logicFaceId
 }
 
 //
@@ -74,19 +74,21 @@ func createTcpLogicFace(conn net.Conn) (*LogicFace, uint64) {
 func createUnixLogicFace(conn net.Conn) (*LogicFace, uint64) {
 	var unixTransport UnixStreamTransport
 	var linkService LinkService
-	var logicFace LogicFace
+	var logicFace0 LogicFace
 
 	unixTransport.Init(conn)
 	linkService.Init(9000)
 
 	linkService.transport = &unixTransport
-	linkService.logicFace = &logicFace
+	linkService.logicFace = &logicFace0
 
 	unixTransport.linkService = &linkService
 
-	logicFace.Init(&unixTransport, &linkService, LogicFaceTypeUnix)
-	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
-	return &logicFace, logicFaceId
+	logicFace0.Init(&unixTransport, &linkService, LogicFaceTypeUnix)
+	logicFace0.SetPersistence(1)
+
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	return &logicFace0, logicFaceId
 }
 
 //
@@ -99,19 +101,19 @@ func createUnixLogicFace(conn net.Conn) (*LogicFace, uint64) {
 func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace, uint64) {
 	var udpTransport UdpTransport
 	var linkService LinkService
-	var logicFace LogicFace
+	var logicFace0 LogicFace
 
 	udpTransport.Init(conn, remoteAddr)
 	linkService.Init(9000)
 
 	linkService.transport = &udpTransport
-	linkService.logicFace = &logicFace
+	linkService.logicFace = &logicFace0
 
 	udpTransport.linkService = &linkService
 
-	logicFace.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
-	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
-	return &logicFace, logicFaceId
+	logicFace0.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
+	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	return &logicFace0, logicFaceId
 }
 
 //
