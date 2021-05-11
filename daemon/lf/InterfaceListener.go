@@ -82,7 +82,6 @@ func (i *InterfaceListener) Start() error {
 	if logicFacePtr == nil {
 		return errors.New("create ether logic face error")
 	}
-	logicFacePtr.SetPersistence(1);		// 设置该Face是一直不会被因为没收发数据而被清理
 	i.logicFace = logicFacePtr
 	go i.readPacketFromDev()
 	return nil

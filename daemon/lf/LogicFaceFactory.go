@@ -16,6 +16,7 @@ import (
 
 //
 // @Description: 创建一个以太网类型的LogicFace，并将创建的logicFace加入logicFace表中
+//				以太网类型的LogicFace 默认都是带有 Persistence 属性的
 // @param ifName	网卡名
 // @param localMacAddr		网卡Mac地址
 // @param remoteMacAddr		对端Mac地址
@@ -25,7 +26,7 @@ import (
 //
 func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr, mtu int) (*LogicFace, *pcap.Handle) {
 	var etherTransport EthernetTransport
-	var logicFace LogicFace
+	var logicFace0 LogicFace
 	var linkService LinkService
 	etherTransport.Init(ifName, localMacAddr, remoteMacAddr)
 	if etherTransport.status == false {
@@ -33,12 +34,13 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 	}
 	linkService.Init(mtu)
 	linkService.transport = &etherTransport
-	linkService.logicFace = &logicFace
+	linkService.logicFace = &logicFace0
 	etherTransport.linkService = &linkService
-	logicFace.Init(&etherTransport, &linkService, LogicFaceTypeEther)
-	gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace)
+	logicFace0.Init(&etherTransport, &linkService, LogicFaceTypeEther)
+	logicFace0.SetPersistence(1);		// 设置该Face是一直不会被因为没收发数据而被清理
+	gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
 
-	return &logicFace, etherTransport.handle
+	return &logicFace0, etherTransport.handle
 }
 
 //
@@ -67,6 +69,7 @@ func createTcpLogicFace(conn net.Conn) (*LogicFace, uint64) {
 
 //
 // @Description: 创建一个unix socket类型的LogicFace
+//				UnixSocket类型 的LogicFace 默认都是带有 Persistence 属性的
 // @param conn	unix socket 连接句柄
 // @return *LogicFace	LogicFace指针
 // @return uint64		    LogicFace ID号
@@ -118,6 +121,7 @@ func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace,
 
 //
 // @Description: 创建一对相互收发包的内部logicFace，　需要调用者自己把要收包的logicface start 起来
+//				InnerLogicFace 必须带有 Persistence 属性的
 // @return *LogicFace	 转发器使用的logicFace
 // @return *logicface.LogicFace	其它模使用的logicFace
 // @return *
