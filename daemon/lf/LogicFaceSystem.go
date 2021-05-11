@@ -88,7 +88,7 @@ func (l *LogicFaceSystem) destroyFace(logicFaceId uint64, logicFace *LogicFace) 
 }
 
 //
-// @Description: 	篇历faceTable，清除过期或失效的logicFace
+// @Description: 	遍历faceTable，清除过期或失效的logicFace
 // @receiver l
 //
 func (l *LogicFaceSystem) doFaceClean() {

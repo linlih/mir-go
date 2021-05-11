@@ -73,7 +73,7 @@ func (u *UdpListener) Start() {
 		common2.LogFatal(err)
 	}
 	u.conn = conn
-	u.createUdpLogicFace(conn)
+	//u.createUdpLogicFace(conn)
 	go u.doReceive()
 }
 
