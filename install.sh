@@ -2,6 +2,7 @@
 
 # 首先下载依赖
 echo "======================== download ==========================="
+sudo apt install gcc libpcap-dev -y
 go mod download
 echo ""
 
