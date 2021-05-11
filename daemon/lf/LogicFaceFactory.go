@@ -37,7 +37,7 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 	linkService.logicFace = &logicFace0
 	etherTransport.linkService = &linkService
 	logicFace0.Init(&etherTransport, &linkService, LogicFaceTypeEther)
-	logicFace0.SetPersistence(1);		// 设置该Face是一直不会被因为没收发数据而被清理
+	logicFace0.SetPersistence(1) // 设置该Face是一直不会被因为没收发数据而被清理
 	gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
 
 	return &logicFace0, etherTransport.handle
