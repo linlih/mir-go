@@ -143,7 +143,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUDP:
-		logicFace, err := lf.CreateUdpLogicFace(uri)
+		logicFace, err := lf.CreateUdpLogicFace(uriItems[1])
 		if err != nil || logicFace == nil {
 			msg := ""
 			if err != nil {
@@ -154,7 +154,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeUnix:
-		logicFace, err := lf.CreateUnixLogicFace(uri)
+		logicFace, err := lf.CreateUnixLogicFace(uriItems[1])
 		if err != nil || logicFace == nil {
 			msg := ""
 			if err != nil {
