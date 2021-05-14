@@ -214,6 +214,7 @@ func (lf *LogicFace) Shutdown() {
 	//if lf.logicFaceType != LogicFaceTypeUDP {
 	lf.transport.Close()
 	//}
+	common2.LogInfo("logic face : ", lf.LogicFaceId, " is shutdown")
 	lf.onLogicFaceShutDown()
 }
 

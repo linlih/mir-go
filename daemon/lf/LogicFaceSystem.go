@@ -20,6 +20,7 @@ var gLogicFaceSystem *LogicFaceSystem
 
 // LogicFaceSystem
 // @Description: 启动所有类型的Face监听
+// 整个 LogicFaceSystem 的工作原理，
 //
 type LogicFaceSystem struct {
 	ethernetListener      EthernetListener
