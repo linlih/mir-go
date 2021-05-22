@@ -58,6 +58,9 @@ func (mirConfig *MIRConfig) Init() {
 	mirConfig.LogicFaceConfig.SupportUnix = true
 	mirConfig.LogicFaceConfig.UnixPath = "/tmp/mir.sock"
 
+	mirConfig.LFRecvQueSize = 10000
+	mirConfig.LFSendQueSize = 10000
+
 	// Security
 	mirConfig.SecurityConfig.VerifyPacket = false
 	mirConfig.SecurityConfig.Log2BlockChain = false
@@ -124,6 +127,8 @@ type LogicFaceConfig struct {
 	CleanLogicFaceTableTimeVal int    `ini:"CleanLogicFaceTableTimeVal"` // LogicFaceSystem 清理逻辑接口的时间周期
 	EtherRoutineNumber         int    `ini:"EtherRoutineNumber"`         // 以一个网卡对应的收包协程数
 	UDPReceiveRoutineNumber    int    `ini:"UDPReceiveRoutineNumber"`    //UDP收包协程数
+	LFRecvQueSize              int    `ini:"LFRecvQueSize"`              //	接收队列大小
+	LFSendQueSize              int    `ini:"LFSendQueSize"`              // 发送队列大小
 }
 
 type SecurityConfig struct {

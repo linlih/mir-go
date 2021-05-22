@@ -55,6 +55,9 @@ type LogicFace struct {
 	Persistence       uint64            // 持久性, 0 表示没有持久性，会被LogicFaceSystem在一定时间后清理掉
 	//	非 0 时表示有持久性，就算一直没有收发数据，也不会被清理
 	onShutdownCallback func(logicFaceId uint64) // 传输logic face 关闭时的回调
+
+	sendQue chan encoding.IEncodingAble
+	recvQue chan *packet.MINPacket
 }
 
 // GetState 获取接口状态
@@ -82,14 +85,30 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 	lf.Mtu = uint64(linkService.mtu)
 	lf.Persistence = 0
+
+	lf.recvQue = make(chan *packet.MINPacket, gLogicFaceSystem.config.LFRecvQueSize)
+	lf.sendQue = make(chan encoding.IEncodingAble, gLogicFaceSystem.config.LFSendQueSize)
 }
 
 // ReceivePacket
-// @Description: 接收到包的处理函数，将包放入待处理缓冲区，更新统计数据
+// @Description: 接收到包的处理函数，将包放入接收队列，如果队列满了，则丢包
 // @receiver lf
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
+	if len(lf.recvQue) < cap(lf.recvQue) {
+		lf.recvQue <- minPacket
+	} else {
+		common2.LogDebug("receive que full, ", lf.GetLocalUri(), lf.GetRemoteUri())
+	}
+}
+
+//
+// @Description:
+// @receiver lf
+// @param minPacket
+//
+func (lf *LogicFace) onReceivePacket(minPacket *packet.MINPacket) {
 	common2.LogDebug("receive packet from logicFace : ", lf.LogicFaceId, " ", lf.GetRemoteUri())
 	//把包入到待处理缓冲区
 	gLogicFaceSystem.packetValidator.ReceiveMINPacket(&IncomingPacketData{
@@ -113,7 +132,6 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	}
 
 	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
-
 }
 
 // Start
@@ -123,6 +141,29 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 func (lf *LogicFace) Start() {
 	// 启动收包协程
 	go lf.transport.Receive()
+	go func() {
+		for true {
+			minPacket, ok := <-lf.recvQue
+			if !ok {
+				common2.LogError("read packet from recv que error")
+				lf.Shutdown()
+				break
+			}
+			lf.onReceivePacket(minPacket)
+		}
+	}()
+
+	go func() {
+		for true {
+			minPacket, ok := <-lf.sendQue
+			if !ok {
+				common2.LogError("read packet from send que error")
+				lf.Shutdown()
+				break
+			}
+			lf.linkService.SendEncodingAble(minPacket)
+		}
+	}()
 }
 
 // SendMINPacket
@@ -131,7 +172,14 @@ func (lf *LogicFace) Start() {
 // @param packet
 //
 func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
-	//TODO 待完善
+	if !lf.state {
+		return
+	}
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- packet
+	}
+	//lf.linkService.SendMINPacket(packet)
+	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendInterest
@@ -143,8 +191,11 @@ func (lf *LogicFace) SendInterest(interest *packet.Interest) {
 	if !lf.state {
 		return
 	}
-	lf.linkService.SendInterest(interest)
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- interest
+	}
+	//lf.linkService.SendInterest(interest)
+	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendData
@@ -156,8 +207,12 @@ func (lf *LogicFace) SendData(data *packet.Data) {
 	if !lf.state {
 		return
 	}
-	lf.linkService.SendData(data)
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- data
+	}
+	//
+	//lf.linkService.SendData(data)
+	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendNack
@@ -169,8 +224,11 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 	if !lf.state {
 		return
 	}
-	lf.linkService.SendNack(nack)
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- nack
+	}
+	//lf.linkService.SendNack(nack)
+	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // SendCPacket
@@ -182,8 +240,11 @@ func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
 	if !lf.state {
 		return
 	}
-	lf.linkService.SendCPacket(cPacket)
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- cPacket
+	}
+	//lf.linkService.SendCPacket(cPacket)
+	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 // GetLocalUri
@@ -213,9 +274,10 @@ func (lf *LogicFace) Shutdown() {
 	if lf.state == false {
 		return
 	}
-	//if lf.logicFaceType != LogicFaceTypeUDP {
+	close(lf.sendQue)
+	close(lf.recvQue)
 	lf.transport.Close()
-	//}
+
 	common2.LogInfo("logic face : ", lf.LogicFaceId, " is shutdown")
 	lf.onLogicFaceShutDown()
 }
@@ -224,6 +286,11 @@ func (lf *LogicFace) GetCounter() uint64 {
 	return lf.logicFaceCounters.InInterestN
 }
 
+//
+// @Description: 	设置LogicFace的Persistence 属性，当persistence 不为0是， 该logicFace不会因为长时间不用被删除
+// @receiver lf
+// @param persistence
+//
 func (lf *LogicFace) SetPersistence(persistence uint64) {
 	lf.Persistence = persistence
 }

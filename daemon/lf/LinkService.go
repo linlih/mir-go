@@ -267,6 +267,56 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 	l.sendByteBuffer(buf, bufLen)
 }
 
+// SendCPacket
+// @Description: 	发送一个MIN网络包
+// @receiver l
+// @param minPacket
+//
+func (l *LinkService) SendMINPacket(minPacket *packet.MINPacket) {
+	var encoder encoding.Encoder
+	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	bufLen, err := minPacket.WireEncode(&encoder)
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	buf, err := encoder.GetBuffer()
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	l.sendByteBuffer(buf, bufLen)
+}
+
+// SendCPacket
+// @Description: 	发送一个IEncodingAble对象
+// @receiver l
+// @param packet
+//
+func (l *LinkService) SendEncodingAble(packet encoding.IEncodingAble) {
+	var encoder encoding.Encoder
+	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	bufLen, err := packet.WireEncode(&encoder)
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	buf, err := encoder.GetBuffer()
+	if err != nil {
+		common2.LogWarn(err)
+		return
+	}
+	l.sendByteBuffer(buf, bufLen)
+}
+
 //
 // @Description:  通过LpPacket验证用户身份
 // @param lpPacket
