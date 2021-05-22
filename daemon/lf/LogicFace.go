@@ -34,6 +34,8 @@ const (
 //
 var logicFaceMaxIdolTimeMs int64 = 600000
 
+//var logicFaceMaxIdolTimeMs int64 = 5000
+
 // LogicFace
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
 //		LogicFace-LinkService-Transport是一个 一一对应的关系，他们相互绑定
@@ -129,7 +131,7 @@ func (lf *LogicFace) Start() {
 // @param packet
 //
 func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
-
+	//TODO 待完善
 }
 
 // SendInterest
