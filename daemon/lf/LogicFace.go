@@ -104,7 +104,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 }
 
 //
-// @Description:
+// @Description:	由接收协程调用，把接收队列中的包往forwarder的缓冲区中送
 // @receiver lf
 // @param minPacket
 //
@@ -141,6 +141,7 @@ func (lf *LogicFace) onReceivePacket(minPacket *packet.MINPacket) {
 func (lf *LogicFace) Start() {
 	// 启动收包协程
 	go lf.transport.Receive()
+	// 启动收包协程，负责把logic face 收到的包往forwarder的队列送
 	go func() {
 		for true {
 			minPacket, ok := <-lf.recvQue
@@ -152,7 +153,7 @@ func (lf *LogicFace) Start() {
 			lf.onReceivePacket(minPacket)
 		}
 	}()
-
+	// 启动收包协程，负责把forwarder 发往该 logic face 的包转发出去
 	go func() {
 		for true {
 			minPacket, ok := <-lf.sendQue
