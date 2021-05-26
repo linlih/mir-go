@@ -274,6 +274,7 @@ func (lf *LogicFace) Shutdown() {
 	if lf.state == false {
 		return
 	}
+	lf.state = false
 	close(lf.sendQue)
 	close(lf.recvQue)
 	lf.transport.Close()
