@@ -90,12 +90,27 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.sendQue = make(chan encoding.IEncodingAble, gLogicFaceSystem.config.LFSendQueSize)
 }
 
+//
+// @Description: 用于处理给已关闭的chan发数据异常
+// @param oldErr
+// @return {
+//
+var send2ChanException = func() {
+	if r := recover(); r != nil && r.(error).Error() == "send on closed channel" {
+		common2.LogError("write to chan error: send on closed channel")
+	}
+}
+
 // ReceivePacket
 // @Description: 接收到包的处理函数，将包放入接收队列，如果队列满了，则丢包
 // @receiver lf
 // @param minPacket
 //
 func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
+	defer send2ChanException()
+	if !lf.state {
+		return
+	}
 	if len(lf.recvQue) < cap(lf.recvQue) {
 		lf.recvQue <- minPacket
 	} else {
@@ -143,7 +158,7 @@ func (lf *LogicFace) Start() {
 	go lf.transport.Receive()
 	// 启动收包协程，负责把logic face 收到的包往forwarder的队列送
 	go func() {
-		for true {
+		for lf.state {
 			minPacket, ok := <-lf.recvQue
 			if !ok {
 				common2.LogError("read packet from recv que error")
@@ -155,7 +170,7 @@ func (lf *LogicFace) Start() {
 	}()
 	// 启动收包协程，负责把forwarder 发往该 logic face 的包转发出去
 	go func() {
-		for true {
+		for lf.state {
 			minPacket, ok := <-lf.sendQue
 			if !ok {
 				common2.LogError("read packet from send que error")
@@ -167,20 +182,23 @@ func (lf *LogicFace) Start() {
 	}()
 }
 
+func (lf *LogicFace) addPkt2SendQue(pkt encoding.IEncodingAble) {
+	defer send2ChanException()
+	if !lf.state {
+		return
+	}
+	if len(lf.sendQue) < cap(lf.sendQue) {
+		lf.sendQue <- pkt
+	}
+}
+
 // SendMINPacket
 // @Description:  发送一个MIN包
 // @receiver lf
 // @param packet
 //
 func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
-	if !lf.state {
-		return
-	}
-	if len(lf.sendQue) < cap(lf.sendQue) {
-		lf.sendQue <- packet
-	}
-	//lf.linkService.SendMINPacket(packet)
-	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.addPkt2SendQue(packet)
 }
 
 // SendInterest
@@ -189,14 +207,7 @@ func (lf *LogicFace) SendMINPacket(packet *packet.MINPacket) {
 // @param interest
 //
 func (lf *LogicFace) SendInterest(interest *packet.Interest) {
-	if !lf.state {
-		return
-	}
-	if len(lf.sendQue) < cap(lf.sendQue) {
-		lf.sendQue <- interest
-	}
-	//lf.linkService.SendInterest(interest)
-	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.addPkt2SendQue(interest)
 }
 
 // SendData
@@ -205,15 +216,7 @@ func (lf *LogicFace) SendInterest(interest *packet.Interest) {
 // @param data
 //
 func (lf *LogicFace) SendData(data *packet.Data) {
-	if !lf.state {
-		return
-	}
-	if len(lf.sendQue) < cap(lf.sendQue) {
-		lf.sendQue <- data
-	}
-	//
-	//lf.linkService.SendData(data)
-	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.addPkt2SendQue(data)
 }
 
 // SendNack
@@ -222,14 +225,7 @@ func (lf *LogicFace) SendData(data *packet.Data) {
 // @param nack
 //
 func (lf *LogicFace) SendNack(nack *packet.Nack) {
-	if !lf.state {
-		return
-	}
-	if len(lf.sendQue) < cap(lf.sendQue) {
-		lf.sendQue <- nack
-	}
-	//lf.linkService.SendNack(nack)
-	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.addPkt2SendQue(nack)
 }
 
 // SendCPacket
@@ -238,14 +234,7 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 // @param cPacket
 //
 func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
-	if !lf.state {
-		return
-	}
-	if len(lf.sendQue) < cap(lf.sendQue) {
-		lf.sendQue <- cPacket
-	}
-	//lf.linkService.SendCPacket(cPacket)
-	//lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.addPkt2SendQue(cPacket)
 }
 
 // GetLocalUri
