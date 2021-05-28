@@ -29,8 +29,7 @@ func (u *UnixStreamListener) Init(path string) {
 // @param conn	新unix scoket连接句柄
 //
 func (u *UnixStreamListener) createTcpLogicFace(conn net.Conn) {
-	logicFace, _ := createUnixLogicFace(conn)
-	logicFace.Start()
+	createUnixLogicFace(conn)
 }
 
 //

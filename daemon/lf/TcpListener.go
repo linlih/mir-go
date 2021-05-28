@@ -37,8 +37,7 @@ func (t *TcpListener) Init(port int) {
 // @param conn	新TCP连接句柄
 //
 func (t *TcpListener) tryCreateTcpLogicFace(conn net.Conn) {
-	logicFace, _ := createTcpLogicFace(conn)
-	logicFace.Start()
+	createTcpLogicFace(conn)
 }
 
 //
