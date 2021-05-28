@@ -168,7 +168,7 @@ func (lf *LogicFace) Start() {
 			lf.onReceivePacket(minPacket)
 		}
 	}()
-	// 启动收包协程，负责把forwarder 发往该 logic face 的包转发出去
+	// 启动发包协程，负责把forwarder 发往该 logic face 的包转发出去
 	go func() {
 		for lf.state {
 			minPacket, ok := <-lf.sendQue
