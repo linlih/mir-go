@@ -39,6 +39,7 @@ func createEtherLogicFace(ifName string, localMacAddr, remoteMacAddr net.Hardwar
 	logicFace0.Init(&etherTransport, &linkService, LogicFaceTypeEther)
 	logicFace0.SetPersistence(1) // 设置该Face是一直不会被因为没收发数据而被清理
 	gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	logicFace0.Start()		// 启动处理收包和发包的协程
 
 	return &logicFace0, etherTransport.handle
 }
@@ -64,6 +65,7 @@ func createTcpLogicFace(conn net.Conn) (*LogicFace, uint64) {
 
 	logicFace0.Init(&tcpTransport, &linkService, LogicFaceTypeTCP)
 	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	logicFace0.Start()		// 启动处理收包和发包的协程
 	return &logicFace0, logicFaceId
 }
 
@@ -89,8 +91,8 @@ func createUnixLogicFace(conn net.Conn) (*LogicFace, uint64) {
 
 	logicFace0.Init(&unixTransport, &linkService, LogicFaceTypeUnix)
 	logicFace0.SetPersistence(1)
-
 	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	logicFace0.Start()		// 启动处理收包和发包的协程
 	return &logicFace0, logicFaceId
 }
 
@@ -116,6 +118,7 @@ func createUdpLogicFace(conn *net.UDPConn, remoteAddr *net.UDPAddr) (*LogicFace,
 
 	logicFace0.Init(&udpTransport, &linkService, LogicFaceTypeUDP)
 	logicFaceId := gLogicFaceSystem.logicFaceTable.AddLogicFace(&logicFace0)
+	logicFace0.Start()		// 启动处理收包和发包的协程
 	return &logicFace0, logicFaceId
 }
 
@@ -143,6 +146,7 @@ func createInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
 	var clientLogicFace logicface.LogicFace
 	_ = clientLogicFace.InitWithInnerChan(chan2, chan1)
 	newLogicFace.SetPersistence(1)
+	newLogicFace.Start()		// 启动处理收包和发包的协程
 
 	return &newLogicFace, &clientLogicFace
 }

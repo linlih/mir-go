@@ -64,7 +64,6 @@ func CreateTcpLogicFace(remoteUri string) (*LogicFace, error) {
 		return nil, err
 	}
 	logicFace, _ := createTcpLogicFace(conn)
-	logicFace.Start()
 	return logicFace, nil
 }
 
@@ -115,7 +114,6 @@ func CreateUnixLogicFace(remoteUri string) (*LogicFace, error) {
 		panic("DialUnix failed.")
 	}
 	logicFace, _ := createUnixLogicFace(conn)
-	logicFace.Start()
 	return logicFace, nil
 }
 
@@ -127,6 +125,5 @@ func CreateUnixLogicFace(remoteUri string) (*LogicFace, error) {
 //
 func CreateInnerLogicFacePair() (*LogicFace, *logicface.LogicFace) {
 	lfServer, lfClient := createInnerLogicFacePair()
-	lfServer.Start()
 	return lfServer, lfClient
 }
