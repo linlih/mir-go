@@ -8,11 +8,13 @@
 package lf
 
 import (
-	"github.com/sirupsen/logrus"
 	common2 "minlib/common"
 	"minlib/packet"
 	"net"
 	"strconv"
+	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 //
@@ -38,6 +40,7 @@ type UdpListener struct {
 	udpPort           uint16
 	conn              *net.UDPConn
 	udpAddrFaceMap    map[string]*LogicFace
+	udpAddrFaceMapLock	sync.Mutex		// udpAddrFaceMap 的互斥锁
 	recvBuf           []byte // 接收缓冲区，大小为  9000
 	receiveRoutineNum int
 }
@@ -84,10 +87,14 @@ func (u *UdpListener) Start() {
 // @param remoteUdpAddr
 //
 func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UDPAddr) {
+	u.udpAddrFaceMapLock.Lock();
 	logicFace, ok := u.udpAddrFaceMap[remoteUdpAddr.String()]
+	u.udpAddrFaceMapLock.Unlock();
 	if ok {
 		if logicFace.state == false {
+			u.udpAddrFaceMapLock.Lock()
 			delete(u.udpAddrFaceMap, remoteUdpAddr.String())
+			u.udpAddrFaceMapLock.Unlock();
 			return
 		}
 		logicFace.linkService.ReceivePacket(lpPacket)
@@ -154,9 +161,13 @@ func (u *UdpListener) doReceive() {
 }
 
 func (u *UdpListener) DeleteLogicFace(remoteAddr string) {
+	u.udpAddrFaceMapLock.Lock()
 	delete(u.udpAddrFaceMap, remoteAddr)
+	u.udpAddrFaceMapLock.Unlock()
 }
 
 func (u *UdpListener) AddLogicFace(remoteAddr string, logicFace *LogicFace) {
+	u.udpAddrFaceMapLock.Lock()
 	u.udpAddrFaceMap[remoteAddr] = logicFace
+	u.udpAddrFaceMapLock.Unlock()
 }
