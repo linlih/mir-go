@@ -37,7 +37,7 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (*
 	}
 	logicFace := ifListener.GetLogicFaceByMacAddr(remoteMacAddr.String())
 	if logicFace != nil {
-		return nil, nil
+		return logicFace, nil
 	}
 	logicFace, _ = createEtherLogicFace(localIfName, ifListener.macAddr, remoteMacAddr, ifListener.mtu)
 	if logicFace == nil {
