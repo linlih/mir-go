@@ -78,6 +78,10 @@ func CreateTcpLogicFace(remoteUri string) (*LogicFace, error) {
 // @return error
 //
 func CreateUdpLogicFace(remoteUri string) (*LogicFace, error) {
+	logicFace := gLogicFaceSystem.udpListener.GetLogicFaceByRemoteUri(remoteUri)
+	if logicFace != nil {
+		return logicFace, nil
+	}
 	udpAddr, err := net.ResolveUDPAddr("udp4", remoteUri)
 	if err != nil {
 		common2.LogWarn(err)
@@ -87,7 +91,7 @@ func CreateUdpLogicFace(remoteUri string) (*LogicFace, error) {
 	if err != nil {
 		return nil, err
 	}
-	logicFace, _ := createUdpLogicFace(udpConn, udpAddr)
+	logicFace, _ = createUdpLogicFace(udpConn, udpAddr)
 	gLogicFaceSystem.udpListener.AddLogicFace(remoteUri, logicFace)
 	return logicFace, nil
 }
