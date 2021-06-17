@@ -11,8 +11,11 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
+	"mir-go/daemon/table"
 	"mir-go/daemon/utils"
+	"net"
 	"os"
+	"time"
 )
 
 const defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini"
@@ -86,10 +89,15 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 
 	// 启动 LogicFaceSystem
 	logicFaceSystem.Start()
+
+	// 加载静态路由配置
+	go SetUpDefaultRoute(mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
+
 	// 启动命令分发程序
 	dispatcher.Start()
 	// 启动转发处理流程（死循环阻塞）
 	forwarder.Start()
+
 }
 
 func askInputPassword() string {
@@ -162,6 +170,55 @@ func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
 			common2.LogFatal(err)
 		} else if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
 			common2.LogFatal(err)
+		}
+	}
+}
+
+//
+// @Description: 加载静态路由配置文件
+// @param defaultRouteConfigPath	静态路由配置文件的文件路径
+// @param fib	FIB表指针
+//
+func SetUpDefaultRoute(defaultRouteConfigPath string, fib *table.FIB) {
+	time.Sleep(time.Second * 2)
+	defaultRouteConfig, err := common.ParseDefaultConfig(defaultRouteConfigPath)
+	if err != nil {
+		common2.LogError("load default route error: ", err, ", ", defaultRouteConfigPath)
+		return
+	}
+	for i := 0; i < len(defaultRouteConfig.Link); i++ {
+		remoteUri := defaultRouteConfig.Link[i].RemoteUri
+		var logicFace *lf.LogicFace
+		if len(remoteUri) <= 0 {
+			common2.LogError("remote uri error: ", remoteUri)
+			continue
+		}
+		if remoteUri[:3] == "udp" {
+			logicFace, err = lf.CreateUdpLogicFace(remoteUri[6:])
+		} else if remoteUri[:3] == "tcp" {
+			logicFace, err = lf.CreateTcpLogicFace(remoteUri[6:])
+		} else if remoteUri[:3] == "eth" {
+			remoteAddr, err := net.ParseMAC(remoteUri[8:])
+			if err != nil {
+				common2.LogError("parse mac addr error: ", err)
+				continue
+			}
+			logicFace, err = lf.CreateEtherLogicFace(defaultRouteConfig.Link[i].LocalUri, remoteAddr)
+		}
+		if logicFace == nil || err != nil {
+			common2.LogError("create static logic face error: ", err)
+			continue
+		}
+		common2.LogInfo("create default face: ", logicFace.GetLocalUri(), "->", logicFace.GetRemoteUri(), ", face id = ", logicFace.LogicFaceId)
+		logicFace.SetPersistence(uint64(defaultRouteConfig.Link[i].Persistence))
+		for j := 0; j < len(defaultRouteConfig.Link[i].Routes.Route); j++ {
+			identifier, err := component.CreateIdentifierByString(defaultRouteConfig.Link[i].Routes.Route[j].Identifier)
+			if err != nil {
+				common2.LogError("create identifier from string error: ", err)
+				continue
+			}
+			fib.AddOrUpdate(identifier, logicFace, uint64(defaultRouteConfig.Link[i].Routes.Route[j].Cost))
+			common2.LogInfo("add route prefix=", identifier.ToUri(), " -> logic face id = ", logicFace.LogicFaceId)
 		}
 	}
 }

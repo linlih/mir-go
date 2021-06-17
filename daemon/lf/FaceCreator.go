@@ -26,7 +26,7 @@ import (
 //					（3） 如果不存在，调用内部接口， 创建一个只用于发送数据的LogicFace。
 //					注意 ： 本函数不会判断传输的对端MAC地址是否真实存在。
 // @param localIfName	本地网卡名
-// @param remoteMacAddr		对端MAC地址
+// @param remoteMacAddr		对端MAC地址，如 34:cf:f6:f8:6a:d8
 // @return uint64		logicFaceId
 // @return error		错误信息
 //

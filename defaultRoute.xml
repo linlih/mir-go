@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Links>
+    <Link>
+        <RemoteUri>udp://192.168.3.7:13899</RemoteUri>
+<!--        <LocalUri>wlp1s0</LocalUri>-->
+        <Persistence>1</Persistence>
+        <Routes>
+            <Route>
+                <Identifier>/min/1</Identifier>
+                <Cost>25</Cost>
+                <Persistence>1</Persistence>
+            </Route>
+            <Route>
+                <Identifier>/min/2</Identifier>
+                <Cost>25</Cost>
+                <Persistence>0</Persistence>
+            </Route>
+        </Routes>
+    </Link>
+    <Link>
+        <RemoteUri>ether://34:cf:f6:f8:6a:d8</RemoteUri>
+        <LocalUri>wlp1s0</LocalUri>
+        <Persistence>1</Persistence>
+        <Routes>
+            <Route>
+                <Identifier>/min/3</Identifier>
+                <Cost>25</Cost>
+                <Persistence>1</Persistence>
+            </Route>
+            <Route>
+                <Identifier>/min/4</Identifier>
+                <Cost>25</Cost>
+                <Persistence>0</Persistence>
+            </Route>
+        </Routes>
+    </Link>
+</Links>

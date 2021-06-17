@@ -26,3 +26,13 @@ else
     echo "config file already exists~"
 fi
 echo ""
+echo "======================== copy defaultRoute config file ==========================="
+# 如果配置文件不存在，则将配置文件拷贝到指定目录下
+if [ ! -f /usr/local/etc/mir/defaultRoute.xml ]; then
+    sudo mkdir -p /usr/local/etc/mir
+    sudo cp defaultRoute.xml /usr/local/etc/mir/defaultRoute.xml
+    echo "file defaultRoute.xml already copy to /usr/local/etc/mir/defaultRoute.xml"
+else
+    echo "file defaultRoute.xml already exists~"
+fi
+echo ""
