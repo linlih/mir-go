@@ -1,4 +1,4 @@
-// Package main
+// Package cmd Package main
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0
@@ -58,7 +58,7 @@ func newCommandInterest(moduleName string, action string) *packet.Interest {
 // @return *mgmtlib.MIRController
 //
 func GetController(keyChain *security.KeyChain) *mgmtlib.MIRController {
-	controller := mgmtlib.CreateMIRController(func() (*logicface.LogicFace, error) {
+	controller := mgmtlib.CreateMIRController(func() (mgmtlib.IMgmtLogicFace, error) {
 		face := new(logicface.LogicFace)
 		// 建立unix连接
 		if err := face.InitWithUnixSocket(unixPath); err != nil {
