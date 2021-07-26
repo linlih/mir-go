@@ -100,7 +100,7 @@ func (e *EthernetTransport) Close() {
 	e.handle.Close()
 }
 
-// Send //
+// Send
 // @Description: 发送以太网包
 // @receiver e
 // @param lpPacket	以太网包对象

@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -13,7 +13,7 @@ import (
 	"minlib/packet"
 )
 
-//
+// Transport
 // @Description:  Tranport共用类
 //
 type Transport struct {
@@ -73,7 +73,7 @@ func encodeLpPacket2ByteArray(lpPacket *packet.LpPacket) (int, []byte) {
 	return encodeBufLen, encodeBuf
 }
 
-//
+// GetRemoteUri
 // @Description:
 // @receiver t
 // @return string
@@ -82,7 +82,7 @@ func (t *Transport) GetRemoteUri() string {
 	return t.remoteUri
 }
 
-//
+// GetLocalUri
 // @Description:
 // @receiver t
 // @return string
@@ -91,7 +91,7 @@ func (t *Transport) GetLocalUri() string {
 	return t.localUri
 }
 
-//
+// GetRemoteAddr
 // @Description:
 // @receiver t
 // @return string
@@ -100,7 +100,7 @@ func (t *Transport) GetRemoteAddr() string {
 	return t.remoteAddr
 }
 
-//
+// GetLocalAddr
 // @Description:
 // @receiver t
 // @return string
