@@ -345,6 +345,8 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 // @Description:发送数据包给客户端并缓存数据包
 //
 func (d *Dispatcher) saveData(data *packet.Data) {
+	// TODO: 配置化
+	data.SetTtl(64)
 	// 给缓存的 Data 包签名
 	if err := d.KeyChain.SignData(data); err != nil {
 		common.LogError("Sign Data failed!")
@@ -358,6 +360,8 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 // @Description:发送数据包给客户端
 //
 func (d *Dispatcher) sendData(data *packet.Data) {
+	// TODO: 配置化
+	data.SetTtl(64)
 	// 直接发出的包设置不缓存
 	data.NoCache.SetNoCache(true)
 	// 给发出的 Data 包签名

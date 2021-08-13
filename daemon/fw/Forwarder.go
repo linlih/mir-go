@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	common2 "minlib/common"
 	"minlib/component"
@@ -430,6 +431,14 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	if f.pluginManager.OnIncomingData(ingress, data) != 0 {
 		return
 	}
+
+	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环兴趣包
+	if data.TTL.Ttl() == 0 {
+		//f.OnInterestLoop(ingress, interest)
+		common2.LogDebug(fmt.Sprintf("%s TTL = 0 DROP", data.GetName().ToUri()))
+		return
+	}
+	data.TTL.Minus()
 
 	// 找到对应的PIT条目
 	pitEntry := f.PIT.FindDataMatches(data)

@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -14,7 +14,7 @@ import (
 
 const MaxFragmentNum = 1000
 
-//
+// PartialPacket
 // @Description: 包重组哈希表的表项，主要用于保存接收到的包分片和记录超时时间
 //
 type PartialPacket struct {
@@ -24,7 +24,7 @@ type PartialPacket struct {
 	dropTime           int64              // 重组超时时间点
 }
 
-//
+// AddLpPacket
 // @Description: 往包重组表中添加一个lpPacket
 // @receiver p
 // @param lpPacket
@@ -51,7 +51,7 @@ func (p *PartialPacket) AddLpPacket(lpPacket *packet.LpPacket, curTime int64) {
 	p.nReceivedFragments++
 }
 
-//
+// DoReassemble
 // @Description: 对已收到的包分片进行重组
 // @receiver p
 // @return *packet.LpPacket
@@ -72,7 +72,7 @@ func (p *PartialPacket) DoReassemble() *packet.LpPacket {
 	return &lpPacket
 }
 
-//
+// TimeoutEvent
 // @Description: 超时事件
 //
 type TimeoutEvent struct {
@@ -80,7 +80,7 @@ type TimeoutEvent struct {
 	timeoutTime int64  // 超时时间
 }
 
-//
+// TimeoutEventHeap
 // @Description: 超时事件堆
 //
 type TimeoutEventHeap []TimeoutEvent
