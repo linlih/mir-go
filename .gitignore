@@ -3,3 +3,4 @@
 daemon/.DS_Store
 daemon/mir/.DS_Store
 .DS_Store
+*.log

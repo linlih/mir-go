@@ -9,13 +9,17 @@ package lf
 
 import (
 	"encoding/binary"
-	"github.com/google/gopacket/pcap"
 	"math"
 	common2 "minlib/common"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 	"time"
+
+	"github.com/google/gopacket/pcap"
 )
+
+const defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini"
 
 // EthernetTransport
 // @Description:  用来发送和接收以太网帧
@@ -45,6 +49,7 @@ type EthernetTransport struct {
 //			在 etherTransportMap 查找，确定用哪个logicFace来处理收到的包
 //
 func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr) {
+	config, _ := common.ParseConfig(defaultConfigFilePath)
 	e.deviceName = ifName
 	e.snapshotLen = 10240 // 抓包的大小
 	e.promiscuous = false // 混杂模式
@@ -67,12 +72,30 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 
 	e.status = true
 	var err error
-	e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
-	if err != nil {
-		e.status = false
-		common2.LogError("open default net device error, dev://", ifName, err)
-		return
+	if config.SetImmediateMode {
+		inactiveHandle, err := pcap.NewInactiveHandle(e.deviceName)
+		if err != nil {
+			common2.LogFatal(err)
+		}
+		err = inactiveHandle.SetImmediateMode(true)
+		if err != nil {
+			common2.LogFatal(err)
+		}
+		e.handle, err = inactiveHandle.Activate()
+		if err != nil {
+			e.status = false
+			common2.LogError("open default net device error, dev://", ifName, err)
+			return
+		}
+	} else {
+		e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
+		if err != nil {
+			e.status = false
+			common2.LogError("open default net device error, dev://", ifName, err)
+			return
+		}
 	}
+
 	//mPcapFilter := "ether proto 0x8600"
 	common2.LogInfo(e.localAddr, ifName)
 	err = e.handle.SetBPFFilter("ether proto 0x8888 and not ether src host " + e.localAddr)

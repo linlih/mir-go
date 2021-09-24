@@ -8,8 +8,9 @@
 package common
 
 import (
-	"gopkg.in/ini.v1"
 	"minlib/security"
+
+	"gopkg.in/ini.v1"
 )
 
 // MIRConfig
@@ -25,6 +26,7 @@ type MIRConfig struct {
 	SecurityConfig   `ini:"Security"`
 	ForwarderConfig  `ini:"Forwarder"`
 	ManagementConfig `ini:"Management"`
+	PcapModeConfig   `ini:"PcapMode"`
 
 	configPath string // 存储配置文件路径
 }
@@ -156,6 +158,13 @@ type ManagementConfig struct {
 	//// Management
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	CacheSize int64 `ini:"CacheSize"` // 缓存大小
+}
+
+type PcapModeConfig struct {
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	//// PcapMode
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	SetImmediateMode bool `ini:"SetImmediateMode"` // 是否开启立即模式
 }
 
 // ParseConfig
