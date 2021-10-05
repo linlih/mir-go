@@ -26,7 +26,7 @@ type MIRConfig struct {
 	SecurityConfig   `ini:"Security"`
 	ForwarderConfig  `ini:"Forwarder"`
 	ManagementConfig `ini:"Management"`
-	PcapModeConfig   `ini:"PcapMode"`
+	PcapConfig       `ini:"Pcap"`
 
 	configPath string // 存储配置文件路径
 }
@@ -160,11 +160,14 @@ type ManagementConfig struct {
 	CacheSize int64 `ini:"CacheSize"` // 缓存大小
 }
 
-type PcapModeConfig struct {
+type PcapConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// PcapMode
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	SetImmediateMode bool `ini:"SetImmediateMode"` // 是否开启立即模式
+	SetImmediateMode bool  `ini:"SetImmediateMode"` // 是否开启立即模式
+	Promiscuous      bool  `ini:"Promiscuous"`      // 是否开启混杂模式
+	PcapReadTimeout  int64 `ini:"PcapReadTimeout"`  // 超时时间，-1表示不超时，没有数据就卡住等待
+	PcapBufferSize   int   `ini:"PcapBufferSize"`   // libpcap 抓包时的缓冲区大小 4 * 1024 * 1024 => 4194304
 }
 
 // ParseConfig

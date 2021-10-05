@@ -51,9 +51,13 @@ type EthernetTransport struct {
 func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.HardwareAddr) {
 	config, _ := common.ParseConfig(defaultConfigFilePath)
 	e.deviceName = ifName
-	e.snapshotLen = 10240 // 抓包的大小
-	e.promiscuous = false // 混杂模式
-	e.timeout = -1        // 超时时间
+	e.snapshotLen = 10240                         // 抓包的大小
+	e.promiscuous = config.PcapConfig.Promiscuous // 混杂模式
+	if config.PcapConfig.PcapReadTimeout < 0 {
+		e.timeout = -1
+	} else {
+		e.timeout = time.Millisecond * time.Duration(config.PcapConfig.PcapReadTimeout) // 超时时间
+	}
 
 	e.localMacAddr = localMacAddr
 	e.remoteMacAddr = remoteMacAddr
@@ -71,29 +75,40 @@ func (e *EthernetTransport) Init(ifName string, localMacAddr, remoteMacAddr net.
 	e.sendPacket[13] = 0x88
 
 	e.status = true
-	var err error
+	inactiveHandle, err := pcap.NewInactiveHandle(e.deviceName)
+	if err != nil {
+		common2.LogFatal(err)
+	}
+
+	// 是否启动立即模式
 	if config.SetImmediateMode {
-		inactiveHandle, err := pcap.NewInactiveHandle(e.deviceName)
-		if err != nil {
+		if err := inactiveHandle.SetImmediateMode(true); err != nil {
 			common2.LogFatal(err)
 		}
-		err = inactiveHandle.SetImmediateMode(true)
-		if err != nil {
-			common2.LogFatal(err)
-		}
-		e.handle, err = inactiveHandle.Activate()
-		if err != nil {
-			e.status = false
-			common2.LogError("open default net device error, dev://", ifName, err)
-			return
-		}
-	} else {
-		e.handle, err = pcap.OpenLive(e.deviceName, e.snapshotLen, e.promiscuous, e.timeout)
-		if err != nil {
-			e.status = false
-			common2.LogError("open default net device error, dev://", ifName, err)
-			return
-		}
+	}
+
+	// 设置抓包的最大长度
+	if err := inactiveHandle.SetSnapLen(int(e.snapshotLen)); err != nil {
+		common2.LogFatal(err)
+	}
+
+	// 设置是否开启混在模式
+	if err := inactiveHandle.SetPromisc(e.promiscuous); err != nil {
+		common2.LogFatal(err)
+	}
+	// 设置缓冲区大小
+	if err := inactiveHandle.SetBufferSize(config.PcapConfig.PcapBufferSize); err != nil {
+		common2.LogFatal(err)
+	}
+	// 设置超时时间
+	if err := inactiveHandle.SetTimeout(e.timeout); err != nil {
+		common2.LogFatal(err)
+	}
+	e.handle, err = inactiveHandle.Activate()
+	if err != nil {
+		e.status = false
+		common2.LogError("open default net device error, dev://", ifName, err)
+		return
 	}
 
 	//mPcapFilter := "ether proto 0x8600"
