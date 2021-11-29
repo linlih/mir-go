@@ -14,12 +14,12 @@ import (
 	"minlib/component"
 	"minlib/encoding"
 	"minlib/packet"
+	utils2 "minlib/utils"
 	"mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
 	"mir-go/daemon/utils"
-	"time"
 )
 
 // Forwarder MIR 转发器实例
@@ -33,6 +33,7 @@ type Forwarder struct {
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 	packetQueue         *utils.BlockQueue           // 包队列
+	heapTimer           *utils2.HeapTimer           // 堆定时器，用来处理PIT的超时事件
 }
 
 // Init 初始化转发器
@@ -48,6 +49,8 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
 	f.packetQueue = packetQueue
+	// 初始化一个堆定时器
+	f.heapTimer = utils2.NewHeapTimer()
 	identifier, err := component.CreateIdentifierByString("/")
 	if err != nil {
 		return err
@@ -64,12 +67,20 @@ func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue 
 //
 func (f *Forwarder) Start() {
 	for true {
-		data := f.packetQueue.Read()
-		ipd, ok := data.(*lf.IncomingPacketData)
-		if !ok {
-			continue
+		// 在处理包之前
+		f.heapTimer.DealEvent()
+
+		// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
+		if data, err := f.packetQueue.ReadUntil(10); err != nil {
+			// 读取超时了
+		} else {
+			ipd, ok := data.(*lf.IncomingPacketData)
+			if !ok {
+				continue
+			}
+			f.OnReceiveMINPacket(ipd)
 		}
-		f.OnReceiveMINPacket(ipd)
+
 	}
 }
 
@@ -298,7 +309,7 @@ func (f *Forwarder) OnContentStoreMiss(ingress *lf.LogicFace, pitEntry *table.PI
 	if duration < 0 {
 		duration = 0
 	}
-	f.SetExpiryTime(pitEntry, time.Duration(duration))
+	f.SetExpiryTime(pitEntry, int64(duration))
 
 	// 查询当前兴趣包所匹配的策略，执行 AfterReceiveInterest 钩子
 	if ste := f.StrategyTable.FindEffectiveStrategyEntry(interest.GetName()); ste != nil {
@@ -447,6 +458,9 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 		f.OnDataUnsolicited(ingress, data)
 		return
 	}
+
+	// 收到数据包之后，将对应的PIT条目的超时时间设置为当前时间，以触发 PITEntry 的清除流程
+	f.SetExpiryTime(pitEntry, 0)
 
 	// 判断是否需要缓存
 	if !data.NoCache.GetNoCache() {
@@ -712,15 +726,17 @@ func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPac
 // @param pitEntry
 // @param duration			单位 ms
 //
-func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration time.Duration) {
+func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration int64) {
 	// TODO: 这边要check一下，是不是调用 SetExpiryTime 的时候之前的定时任务还没有触发，如果已经触发过了，是不是会有问题
 
+	key := pitEntry.Identifier.ToUri()
+
 	// 首先取消之前的定时任务
-	pitEntry.CancelTimer()
+	f.heapTimer.CancelEvent(key)
 
 	// 接着设置新的定时任务
-	pitEntry.SetExpiryTimer(duration*time.Millisecond, func(entry *table.PITEntry) {
-		f.OnInterestFinalize(entry)
+	f.heapTimer.AddTimeoutEvent(duration, key, func() {
+		f.OnInterestFinalize(pitEntry)
 	})
 }
 

@@ -10,13 +10,9 @@ package table
 
 import (
 	"fmt"
-	common2 "minlib/common"
 	"minlib/component"
 	"minlib/packet"
 	"mir-go/daemon/lf"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // InRecord
@@ -49,16 +45,16 @@ type OutRecord struct {
 // @Description:PITEntry结构体 PIT表项 存储在PIT前缀树的节点中
 //
 type PITEntry struct {
-	Identifier *component.Identifier //标识对象指针
+	Identifier    *component.Identifier //标识对象指针
+	InRecordList  map[uint64]*InRecord  //流入记录表
+	OutRecordList map[uint64]*OutRecord //流出记录表
+	isSatisfied   bool                  // 是否已被满足
+	isDeleted     bool                  // 是否已经从 PIT 表中移除
 	//ExpireTime    time.Duration         //超时时间 底层设置 过期删除
-	InRecordList           map[uint64]*InRecord  //流入记录表
-	OutRecordList          map[uint64]*OutRecord //流出记录表
-	InRWlock               *sync.RWMutex         //流入读写锁
-	OutRWlock              *sync.RWMutex         //流出读写锁
-	Ticker                 *time.Ticker          //定时器
-	ch                     chan int              //取消定时器信号
-	isSatisfiedAtomicValue atomic.Value          // 是否已被满足
-	isDeletedAtomicValue   atomic.Value          // 是否已经从 PIT 表中移除
+	//InRWlock               *sync.RWMutex         //流入读写锁
+	//OutRWlock              *sync.RWMutex         //流出读写锁
+	//Ticker                 *time.Ticker          //定时器
+	//ch                     chan int              //取消定时器信号
 }
 
 // CreatePITEntry
@@ -71,11 +67,11 @@ func CreatePITEntry() *PITEntry {
 	var p = &PITEntry{}
 	p.InRecordList = make(map[uint64]*InRecord)
 	p.OutRecordList = make(map[uint64]*OutRecord)
-	p.InRWlock = new(sync.RWMutex)
-	p.OutRWlock = new(sync.RWMutex)
-	p.ch = make(chan int)
-	p.isSatisfiedAtomicValue.Store(false)
-	p.isDeletedAtomicValue.Store(false)
+	//p.InRWlock = new(sync.RWMutex)
+	//p.OutRWlock = new(sync.RWMutex)
+	//p.ch = make(chan int)
+	p.isSatisfied = false
+	p.isDeleted = false
 	return p
 }
 
@@ -87,7 +83,7 @@ func CreatePITEntry() *PITEntry {
 // @return bool
 //
 func (p *PITEntry) IsSatisfied() bool {
-	return p.isSatisfiedAtomicValue.Load().(bool)
+	return p.isSatisfied
 }
 
 // SetSatisfied
@@ -98,7 +94,7 @@ func (p *PITEntry) IsSatisfied() bool {
 // @param isSatisfied
 //
 func (p *PITEntry) SetSatisfied(isSatisfied bool) {
-	p.isSatisfiedAtomicValue.Store(isSatisfied)
+	p.isSatisfied = isSatisfied
 }
 
 // IsDeleted
@@ -109,7 +105,7 @@ func (p *PITEntry) SetSatisfied(isSatisfied bool) {
 // @return bool
 //
 func (p *PITEntry) IsDeleted() bool {
-	return p.isDeletedAtomicValue.Load().(bool)
+	return p.isDeleted
 }
 
 // SetDeleted
@@ -120,55 +116,55 @@ func (p *PITEntry) IsDeleted() bool {
 // @param isDeleted
 //
 func (p *PITEntry) SetDeleted(isDeleted bool) {
-	p.isDeletedAtomicValue.Store(isDeleted)
+	p.isDeleted = isDeleted
 }
 
-// SetExpiryTimer
-// 设置超时定时器 经过duration时间段 自动调用函数f 并且可以在中途调用CancelTimer取消
-//
-// @Description:
-//		p.CancelTimer()
-//		time.Sleep(1*time.Millisecond)
-//		p.SetExpiryTimer(1*time.Second)
-//		加上sleep 不然 上一个函数还没有给Ticker == nil 下一个函数直接执行进入reset函数
-// @param time.Duration,func(*PITEntry) 超时时间 和 执行函数
-//
-func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
-	if p.Ticker == nil {
-		if duration == 0 {
-			f(p)
-			return
-		}
-		p.Ticker = time.NewTicker(duration)
-		go func() {
-			select {
-			case <-p.Ticker.C:
-				common2.LogDebug("执行回调函数")
-				f(p)
-			case p.ch <- 1:
-				common2.LogDebug("取消定时器 直接退出")
-				p.ch = make(chan int)
-			}
-			p.Ticker.Stop()
-			p.Ticker = nil
-		}()
-	} else {
-		p.Ticker.Reset(duration)
-	}
-}
+//// SetExpiryTimer
+//// 设置超时定时器 经过duration时间段 自动调用函数f 并且可以在中途调用CancelTimer取消
+////
+//// @Description:
+////		p.CancelTimer()
+////		time.Sleep(1*time.Millisecond)
+////		p.SetExpiryTimer(1*time.Second)
+////		加上sleep 不然 上一个函数还没有给Ticker == nil 下一个函数直接执行进入reset函数
+//// @param time.Duration,func(*PITEntry) 超时时间 和 执行函数
+////
+//func (p *PITEntry) SetExpiryTimer(duration time.Duration, f func(*PITEntry)) {
+//	if p.Ticker == nil {
+//		if duration == 0 {
+//			f(p)
+//			return
+//		}
+//		p.Ticker = time.NewTicker(duration)
+//		go func() {
+//			select {
+//			case <-p.Ticker.C:
+//				common2.LogDebug("执行回调函数")
+//				f(p)
+//			case p.ch <- 1:
+//				common2.LogDebug("取消定时器 直接退出")
+//				p.ch = make(chan int)
+//			}
+//			p.Ticker.Stop()
+//			p.Ticker = nil
+//		}()
+//	} else {
+//		p.Ticker.Reset(duration)
+//	}
+//}
 
-// CancelTimer
-// 取消定时器
-//
-// @Description:
-//
-func (p *PITEntry) CancelTimer() {
-	//定时器设置空
-	if p.Ticker != nil {
-		<-p.ch
-		return
-	}
-}
+//// CancelTimer
+//// 取消定时器
+////
+//// @Description:
+////
+//func (p *PITEntry) CancelTimer() {
+//	//定时器设置空
+//	if p.Ticker != nil {
+//		<-p.ch
+//		return
+//	}
+//}
 
 // GetInterest
 // 获得表项中的兴趣包指针 表项中的所有兴趣包都是相同的 但是其他属性不同
@@ -177,8 +173,8 @@ func (p *PITEntry) CancelTimer() {
 // @return *packet.Interest, bool
 //
 func (p *PITEntry) GetInterest() (*packet.Interest, bool) {
-	p.InRWlock.RLock()
-	defer p.InRWlock.RUnlock()
+	//p.InRWlock.RLock()
+	//defer p.InRWlock.RUnlock()
 	for _, inRecord := range p.InRecordList {
 		return inRecord.Interest, true
 	}
@@ -202,8 +198,8 @@ func (p *PITEntry) GetIdentifier() *component.Identifier {
 // @return bool, error
 //
 func (p *PITEntry) CanMatch(interest *packet.Interest) (bool, error) {
-	p.InRWlock.RLock()
-	defer p.InRWlock.RUnlock()
+	//p.InRWlock.RLock()
+	//defer p.InRWlock.RUnlock()
 	for _, inRecord := range p.InRecordList {
 		return inRecord.Interest.MatchesInterest(interest), nil
 	}
@@ -218,11 +214,11 @@ func (p *PITEntry) CanMatch(interest *packet.Interest) (bool, error) {
 //
 func (p *PITEntry) GetInRecords() []*InRecord {
 	InRecordList := make([]*InRecord, 0)
-	p.InRWlock.RLock()
+	//p.InRWlock.RLock()
 	for _, inRecord := range p.InRecordList {
 		InRecordList = append(InRecordList, inRecord)
 	}
-	p.InRWlock.RUnlock()
+	//p.InRWlock.RUnlock()
 	return InRecordList
 }
 
@@ -233,8 +229,8 @@ func (p *PITEntry) GetInRecords() []*InRecord {
 // @return bool
 //
 func (p *PITEntry) HasInRecords() bool {
-	p.InRWlock.RLock()
-	defer p.InRWlock.RUnlock()
+	//p.InRWlock.RLock()
+	//defer p.InRWlock.RUnlock()
 	return len(p.InRecordList) != 0
 }
 
@@ -245,8 +241,8 @@ func (p *PITEntry) HasInRecords() bool {
 // @return InRecord, error
 //
 func (p *PITEntry) GetInRecord(logicFace *lf.LogicFace) (*InRecord, error) {
-	p.InRWlock.RLock()
-	defer p.InRWlock.RUnlock()
+	//p.InRWlock.RLock()
+	//defer p.InRWlock.RUnlock()
 	if inRecord, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
 		return inRecord, nil
 	}
@@ -267,11 +263,11 @@ func (p *PITEntry) InsertOrUpdateInRecord(logicFace *lf.LogicFace, interest *pac
 	//	p.RWlock.Unlock()
 	//	return &InRecord{}
 	//}
-	p.InRWlock.Lock()
+	//p.InRWlock.Lock()
 	delete(p.InRecordList, logicFace.LogicFaceId)
 	inRecord := &InRecord{LogicFace: logicFace, Interest: interest, LastNonce: interest.Nonce}
 	p.InRecordList[logicFace.LogicFaceId] = inRecord
-	p.InRWlock.Unlock()
+	//p.InRWlock.Unlock()
 	// 返回引用 对返回值修改就是对原值修改
 	return inRecord
 }
@@ -284,8 +280,8 @@ func (p *PITEntry) InsertOrUpdateInRecord(logicFace *lf.LogicFace, interest *pac
 // @return error
 //
 func (p *PITEntry) DeleteInRecord(logicFace *lf.LogicFace) error {
-	p.InRWlock.Lock()
-	defer p.InRWlock.Unlock()
+	//p.InRWlock.Lock()
+	//defer p.InRWlock.Unlock()
 	if _, ok := p.InRecordList[logicFace.LogicFaceId]; ok {
 		delete(p.InRecordList, logicFace.LogicFaceId)
 		return nil
@@ -299,8 +295,8 @@ func (p *PITEntry) DeleteInRecord(logicFace *lf.LogicFace) error {
 // @Description:
 //
 func (p *PITEntry) ClearInRecords() {
-	p.InRWlock.Lock()
-	defer p.InRWlock.Unlock()
+	//p.InRWlock.Lock()
+	//defer p.InRWlock.Unlock()
 	p.InRecordList = make(map[uint64]*InRecord)
 }
 
@@ -312,11 +308,11 @@ func (p *PITEntry) ClearInRecords() {
 //
 func (p *PITEntry) GetOutRecords() []*OutRecord {
 	OutRecordList := make([]*OutRecord, 0)
-	p.OutRWlock.RLock()
+	//p.OutRWlock.RLock()
 	for _, outRecord := range p.OutRecordList {
 		OutRecordList = append(OutRecordList, outRecord)
 	}
-	p.OutRWlock.RUnlock()
+	//p.OutRWlock.RUnlock()
 	return OutRecordList
 }
 
@@ -327,8 +323,8 @@ func (p *PITEntry) GetOutRecords() []*OutRecord {
 // @return bool
 //
 func (p *PITEntry) HasOutRecords() bool {
-	p.OutRWlock.RLock()
-	defer p.OutRWlock.RUnlock()
+	//p.OutRWlock.RLock()
+	//defer p.OutRWlock.RUnlock()
 	return len(p.OutRecordList) != 0
 }
 
@@ -340,8 +336,8 @@ func (p *PITEntry) HasOutRecords() bool {
 // @return OutRecord, error
 //
 func (p *PITEntry) GetOutRecord(logicFace *lf.LogicFace) (*OutRecord, error) {
-	p.OutRWlock.RLock()
-	defer p.OutRWlock.RUnlock()
+	//p.OutRWlock.RLock()
+	//defer p.OutRWlock.RUnlock()
 	if outRecord, ok := p.OutRecordList[logicFace.LogicFaceId]; ok {
 		return outRecord, nil
 	}
@@ -359,11 +355,11 @@ func (p *PITEntry) InsertOrUpdateOutRecord(logicFace *lf.LogicFace, interest *pa
 	//if p.OutRecordList == nil {
 	//	p.OutRecordList = make(map[uint64]OutRecord)
 	//}
-	p.OutRWlock.Lock()
+	//p.OutRWlock.Lock()
 	delete(p.OutRecordList, logicFace.LogicFaceId)
 	outRecord := &OutRecord{LogicFace: logicFace, LastNonce: interest.Nonce}
 	p.OutRecordList[logicFace.LogicFaceId] = outRecord
-	p.OutRWlock.Unlock()
+	//p.OutRWlock.Unlock()
 	return outRecord
 }
 
@@ -375,8 +371,8 @@ func (p *PITEntry) InsertOrUpdateOutRecord(logicFace *lf.LogicFace, interest *pa
 // @return error
 //
 func (p *PITEntry) DeleteOutRecord(logicFace *lf.LogicFace) error {
-	p.OutRWlock.Lock()
-	defer p.OutRWlock.Unlock()
+	//p.OutRWlock.Lock()
+	//defer p.OutRWlock.Unlock()
 	if _, ok := p.OutRecordList[logicFace.LogicFaceId]; ok {
 		delete(p.OutRecordList, logicFace.LogicFaceId)
 		return nil
@@ -390,8 +386,8 @@ func (p *PITEntry) DeleteOutRecord(logicFace *lf.LogicFace) error {
 // @Description:
 //
 func (p *PITEntry) ClearOutRecords() {
-	p.OutRWlock.Lock()
-	defer p.OutRWlock.Unlock()
+	//p.OutRWlock.Lock()
+	//defer p.OutRWlock.Unlock()
 	p.OutRecordList = make(map[uint64]*OutRecord)
 }
 

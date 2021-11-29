@@ -16,7 +16,7 @@ import (
 	"mir-go/daemon/lf"
 )
 
-//
+// PIT
 // PIT表结构体
 //
 // @Description:PIT表结构体,用前缀树存储表项
@@ -25,7 +25,7 @@ type PIT struct {
 	lpm *LpmMatcher //最长前缀匹配器
 }
 
-//
+// CreatePIT
 // 初始化PIT表 并返回
 //
 // @Description:
@@ -38,7 +38,7 @@ func CreatePIT() *PIT {
 	return p
 }
 
-//
+// Init
 // 初始化创建好的PIT表
 //
 // @Description:
@@ -48,7 +48,7 @@ func (p *PIT) Init() {
 	p.lpm.Create()          //初始化锁
 }
 
-//
+// Size
 // 返回PIT表中含有数据的表项数
 //
 // @Description:
@@ -67,7 +67,7 @@ func (p *PIT) Size() uint64 {
 	})
 }
 
-//
+// Find
 // 通过兴趣包在前缀树中精准匹配查找对应的PITEntry
 //
 // @Description:
@@ -87,7 +87,7 @@ func (p *PIT) Find(interest *packet.Interest) (*PITEntry, error) {
 	return nil, createPITErrorByType(PITEntryNotExistedError)
 }
 
-//
+// Insert
 // 在PIT表中插入PITEntry
 //
 // @Description:
@@ -113,7 +113,7 @@ func (p *PIT) Insert(interest *packet.Interest) *PITEntry {
 	return val.(*PITEntry)
 }
 
-//
+// FindDataMatches
 // 根据数据包在PIT表中获取PITEntry 匹配过程应该在PIT表中删除匹配过的表项
 //
 // @Description:
@@ -132,7 +132,7 @@ func (p *PIT) FindDataMatches(data *packet.Data) *PITEntry {
 	return nil
 }
 
-//
+// EraseByPITEntry
 // 根据PITEntry删除PIT表中的PITEntry
 //
 // @Description:
@@ -147,7 +147,7 @@ func (p *PIT) EraseByPITEntry(pitEntry *PITEntry) error {
 	return p.lpm.Delete(PrefixList)
 }
 
-//
+// EraseByLogicFace
 // 删除所有以logicFace为流入接口号或流出接口号的表项,返回删除的数量
 //
 // @Description:
