@@ -137,23 +137,23 @@ type IPlugin interface {
 	//
 	OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader) int
 
-	// OnIncomingCPacket
-	// Incoming CPacket 管道锚点
+	// OnIncomingGPPkt
+	// Incoming GPPkt 管道锚点
 	//
 	// @Description:
 	// @param ingress
-	// @param cPacket
+	// @param gPPkt
 	// @return int
 	//
-	OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) int
+	OnIncomingGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) int
 
-	// OnOutgoingCPacket
-	// Outgoing CPacket 管道锚点
+	// OnOutgoingGPPkt
+	// Outgoing GPPkt 管道锚点
 	//
 	// @Description:
 	// @param egress
-	// @param cPacket
+	// @param gPPkt
 	// @return int
 	//
-	OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) int
+	OnOutgoingGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt) int
 }

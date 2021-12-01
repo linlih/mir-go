@@ -66,10 +66,10 @@ func (b BasePlugin) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 	return 0
 }
 
-func (b BasePlugin) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) int {
+func (b BasePlugin) OnIncomingGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) int {
 	return 0
 }
 
-func (b BasePlugin) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) int {
+func (b BasePlugin) OnOutgoingGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt) int {
 	return 0
 }

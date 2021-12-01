@@ -110,15 +110,15 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 
 	// 根据标识的类型区分不同的网络包
 	switch identifyWrapper.GetIdentifierType() {
-	case encoding.TlvIdentifierCommon: // CPacket
-		if cPacket, err := packet.CreateCPacketByMINPacket(minPacket); err != nil {
+	case encoding.TlvIdentifierCommon: // GPPkt
+		if gPPkt, err := packet.CreateGPPktByMINPacket(minPacket); err != nil {
 			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
-			}, "Create CPacket by MINPacket failed")
+			}, "Create GPPkt by MINPacket failed")
 			return
 		} else {
-			f.OnIncomingCPacket(ingress, cPacket)
+			f.OnIncomingGPPkt(ingress, gPPkt)
 		}
 	case encoding.TlvIdentifierContentInterest: // Interest
 		if interest, err := packet.CreateInterestByMINPacket(minPacket); err != nil {
@@ -651,71 +651,71 @@ func (f *Forwarder) OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntr
 	egress.SendNack(&nack)
 }
 
-// OnIncomingCPacket
-// 处理一个 CPacket 到来 （Incoming CPacket Pipeline）
+// OnIncomingGPPkt
+// 处理一个 GPPkt 到来 （Incoming GPPkt Pipeline）
 //
 // @Description:
-//  1. 首先给 CPacket 的 TTL 减一，然后检查 TTL 的值是：
-//     - TTL < 0 则认为该包是一个回环的 CPacket ，直接丢弃；
+//  1. 首先给 GPPkt 的 TTL 减一，然后检查 TTL 的值是：
+//     - TTL < 0 则认为该包是一个回环的 GPPkt ，直接丢弃；
 //     - TTL >= 0 则执行下一步。
-//   > 因为 CPacket 是一种推式语义的网络包，不能向 Interest 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
+//   > 因为 GPPkt 是一种推式语义的网络包，不能向 Interest 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
 //
-//  2. 接着调用对应策略的 StrategyBase::afterReceiveCPacket 回调，在其中触发 Outgoing CPacket 管道。
+//  2. 接着调用对应策略的 StrategyBase::afterReceiveGPPkt 回调，在其中触发 Outgoing GPPkt 管道。
 // @param ingress
-// @param cPacket
+// @param gPPkt
 //
-func (f *Forwarder) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
+func (f *Forwarder) OnIncomingGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) {
 	common2.LogDebugWithFields(logrus.Fields{
-		"faceId":  ingress.LogicFaceId,
-		"cPacket": cPacket.ToUri(),
-	}, "Incoming CPacket")
+		"faceId": ingress.LogicFaceId,
+		"gPPkt":  gPPkt.ToUri(),
+	}, "Incoming GPPkt")
 
 	// 调用插件锚点
-	if f.pluginManager.OnIncomingCPacket(ingress, cPacket) != 0 {
+	if f.pluginManager.OnIncomingGPPkt(ingress, gPPkt) != 0 {
 		return
 	}
 
 	// TTL 减一，并且检查 TTL 是否小于0，小于0则判定为循环包
-	if cPacket.TTL.Ttl() == 0 {
+	if gPPkt.TTL.Ttl() == 0 {
 		common2.LogDebugWithFields(logrus.Fields{
-			"faceId":  ingress.LogicFaceId,
-			"cPacket": cPacket.ToUri(),
-		}, "CPacket TTL < 0")
+			"faceId": ingress.LogicFaceId,
+			"gPPkt":  gPPkt.ToUri(),
+		}, "GPPkt TTL < 0")
 		return
 	}
-	cPacket.TTL.Minus()
+	gPPkt.TTL.Minus()
 
-	// 调用 StrategyBase::afterReceiveCPacket
-	if ste := f.StrategyTable.FindEffectiveStrategyEntry(cPacket.DstIdentifier()); ste != nil {
-		ste.GetStrategy().AfterReceiveCPacket(ingress, cPacket)
+	// 调用 StrategyBase::afterReceiveGPPkt
+	if ste := f.StrategyTable.FindEffectiveStrategyEntry(gPPkt.DstIdentifier()); ste != nil {
+		ste.GetStrategy().AfterReceiveGPPkt(ingress, gPPkt)
 	} else {
-		// 输出错误，CPacket没有找到匹配的可用策略
+		// 输出错误，GPPkt没有找到匹配的可用策略
 		common2.LogErrorWithFields(logrus.Fields{
-			"faceId":  ingress.LogicFaceId,
-			"cPacket": cPacket.ToUri(),
-		}, "Not found matched StrategyBase for CPacket")
+			"faceId": ingress.LogicFaceId,
+			"gPPkt":  gPPkt.ToUri(),
+		}, "Not found matched StrategyBase for GPPkt")
 	}
 }
 
-// OnOutgoingCPacket
-// 处理一个 CPacket 发出 （Outgoing CPacket Pipeline）
+// OnOutgoingGPPkt
+// 处理一个 GPPkt 发出 （Outgoing GPPkt Pipeline）
 //
 // @Description:
 // @param egress
-// @param cPacket
+// @param gPPkt
 //
-func (f *Forwarder) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
+func (f *Forwarder) OnOutgoingGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt) {
 	common2.LogDebugWithFields(logrus.Fields{
-		"faceId":  egress.LogicFaceId,
-		"cPacket": cPacket.ToUri(),
-	}, "Outgoing CPacket")
+		"faceId": egress.LogicFaceId,
+		"gPPkt":  gPPkt.ToUri(),
+	}, "Outgoing GPPkt")
 
 	// 调用插件锚点
-	if f.pluginManager.OnOutgoingCPacket(egress, cPacket) != 0 {
+	if f.pluginManager.OnOutgoingGPPkt(egress, gPPkt) != 0 {
 		return
 	}
 
-	egress.SendCPacket(cPacket)
+	egress.SendGPPkt(gPPkt)
 }
 
 // SetExpiryTime

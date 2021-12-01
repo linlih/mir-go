@@ -121,14 +121,14 @@ func (gpm *GlobalPluginManager) OnOutgoingNack(egress *lf.LogicFace, pitEntry *t
 	})
 }
 
-func (gpm *GlobalPluginManager) OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) int {
+func (gpm *GlobalPluginManager) OnIncomingGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) int {
 	return gpm.doInEveryPlugins(func(plugin IPlugin) int {
-		return plugin.OnIncomingCPacket(ingress, cPacket)
+		return plugin.OnIncomingGPPkt(ingress, gPPkt)
 	})
 }
 
-func (gpm *GlobalPluginManager) OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) int {
+func (gpm *GlobalPluginManager) OnOutgoingGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt) int {
 	return gpm.doInEveryPlugins(func(plugin IPlugin) int {
-		return plugin.OnOutgoingCPacket(egress, cPacket)
+		return plugin.OnOutgoingGPPkt(egress, gPPkt)
 	})
 }

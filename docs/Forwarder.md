@@ -11,11 +11,11 @@
 
 ## 1. 转发管道
 
-管道（ *pipelines* ）处理网络层数据包（`Interest`、`Data`、`CPacket` 或 `Nack`），并且每个数据包都从一个管道传递到另一个管道（在满足某些条件的情况下，也会传递给策略决策点），直到所有处理流程完成为止。管道内的处理使用CS、PIT、FIB和策略选择表，但是管道对后两个表仅具有只读访问权限，因为这些表由相应的管理器管理，并且不直接受数据面流量的影响。
+管道（ *pipelines* ）处理网络层数据包（`Interest`、`Data`、`GPPkt` 或 `Nack`），并且每个数据包都从一个管道传递到另一个管道（在满足某些条件的情况下，也会传递给策略决策点），直到所有处理流程完成为止。管道内的处理使用CS、PIT、FIB和策略选择表，但是管道对后两个表仅具有只读访问权限，因为这些表由相应的管理器管理，并且不直接受数据面流量的影响。
 
 `LogicFaceTable`跟踪MIR中所有的活动的逻辑接口（ *LogicFace* ） 。它是网络层数据包进入转发管道进行处理的入口点，管道还可以通过 *LogicFace* 发送数据包。
 
-MIR中对`Interest`、`Data`、`CPacket` 和 `Nack`数据包的处理是完全不同的。我们将转发管道分为 **内容兴趣包处理路径** （ *Interest processing path* ）、 **内容数据包处理路径** （ *Data processing path* ）、**Nack处理路径** （ *Nack processing path* ）和 **通用推式包处理路径** （ *CPacket processing path* ），这将在以下各节中进行介绍。
+MIR中对`Interest`、`Data`、`GPPkt` 和 `Nack`数据包的处理是完全不同的。我们将转发管道分为 **内容兴趣包处理路径** （ *Interest processing path* ）、 **内容数据包处理路径** （ *Data processing path* ）、**Nack处理路径** （ *Nack processing path* ）和 **通用推式包处理路径** （ *GPPkt processing path* ），这将在以下各节中进行介绍。
 
 ## 2. 兴趣包处理路径
 
@@ -153,31 +153,31 @@ MIR中 `Nack` 的处理流程包含以下管道：
 
 ## 5. 通用推式包处理路径
 
-MIR中 `CPacket` 的处理流程包含以下管道：
+MIR中 `GPPkt` 的处理流程包含以下管道：
 
-- **Incoming CPacket** ：处理传入的 `CPacket`
-- **Outgoing CPacket** ：准备和传出 `CPacket`
+- **Incoming GPPkt** ：处理传入的 `GPPkt`
+- **Outgoing GPPkt** ：准备和传出 `GPPkt`
 
-### 5.1 Incoming CPacket Pipeline
+### 5.1 Incoming GPPkt Pipeline
 
 ![incoming-cpacket-pipeline](https://gitee.com/quejianming/pic-bed/raw/master/uPic/2021/02/20/incoming-cpacket-pipeline-1613828880.svg)
 
-如上图所示的是 **Incoming CPacket** 管道的处理流程图，包括以下步骤：
+如上图所示的是 **Incoming GPPkt** 管道的处理流程图，包括以下步骤：
 
-1. 首先给 `CPacket` 的 `TTL` 减一，然后检查 `TTL` 的值是：
+1. 首先给 `GPPkt` 的 `TTL` 减一，然后检查 `TTL` 的值是：
 
    - `TTL` < 0 则认为该兴趣包是一个回环的 `Interest` ，直接将其传递给 **Interest loop** 管道进一步处理；
    - `TTL` >= 0 则执行下一步。
 
-   > 因为 CPacket 是一种推式语义的网络包，不能向 `Interest` 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
+   > 因为 GPPkt 是一种推式语义的网络包，不能向 `Interest` 那样通过 PIT 聚合来检测回环，所以这边和 IP 一样使用 TTL 来避免网络包无限回环。
 
-2. 接着调用对应策略的 `Strategy::afterReceiveCPacket` 回调，在其中触发 **Outgoing CPacket **管道。
+2. 接着调用对应策略的 `Strategy::afterReceiveGPPkt` 回调，在其中触发 **Outgoing GPPkt **管道。
 
-### 5.2 Outgoing CPacket Pipeline
+### 5.2 Outgoing GPPkt Pipeline
 
 本管道的处理流程包含以下步骤：
 
-1. 通过对应的 *LogicFace* 将 `CPacket` 发出。
+1. 通过对应的 *LogicFace* 将 `GPPkt` 发出。
 
 
 

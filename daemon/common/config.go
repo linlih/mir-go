@@ -94,7 +94,7 @@ type GeneralConfig struct {
 	//// General
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	DefaultId              string `ini:"DefaultId"`              // 默认网络身份
-	IdentifierType         []int  `ini:"IdentifierType"`         // 当前路由器支持的标识类型，102 => CPacket | 103 => 内容兴趣标识（Interest）| 104 => 内容兴趣标识（Interest）
+	IdentifierType         []int  `ini:"IdentifierType"`         // 当前路由器支持的标识类型，102 => GPPkt | 103 => 内容兴趣标识（Interest）| 104 => 内容兴趣标识（Interest）
 	DefaultRouteConfigPath string `ini:"DefaultRouteConfigPath"` // 静态路由配置文件路径
 }
 

@@ -9,12 +9,12 @@
   - `AfterContentStoreHit`
   - `AfterReceiveData`
   - `AfterReceiveNack`
-  - `AfterReceiveCPacket`
+  - `AfterReceiveGPPkt`
 - **操作（Actions） ** ：每个操作（ *Action* ）实际上就是策略程序实际作出的转发决策。
   - `sendInterest`
   - `sendData`
   - `sendNack`
-  - `sendCPacket`
+  - `sendGPPkt`
 
 MIR中可以定义很多的策略，但是对于某个具体的网络包的转发必须由单一的转发策略决定，为此我们根据命名空间来进行策略的选择。网络管理员可以为某个前缀配置特定的策略，默认至少会为 `/` 前缀配置一个策略，保证所有的包至少是可以匹配到策略的。实际使用时，转发管道会去策略选择表进行最长前缀匹配，找到匹配的策略来进行转发决策。
 
@@ -149,24 +149,24 @@ AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *table.PITEn
 - 通过调用 *send Nack* 操作将 `Nack` 反回到下游，放弃对该 `Interest` 的重传尝试；
 - 不对这个 `Nack` 做任何处理。如果 `Nack` 对应的 `Interest` 转发给了多个上游，且某些（但不是全部）上游回复了 `Nack` ，则该策略可能要等待来自更多上游的 `Data` 或 `Nack` 。
 
-### 1.5 After Receive CPacket
+### 1.5 After Receive GPPkt
 
 ```go
 //
-// 当收到一个 CPacket 时，会触发本触发器
+// 当收到一个 GPPkt 时，会触发本触发器
 //
 // @Description:
-// @param ingress		CPacket 到来的入口 LogicFace
-// @param cPacket		收到的 CPacket
+// @param ingress		GPPkt 到来的入口 LogicFace
+// @param gPPkt		收到的 GPPkt
 //
-AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
+AfterReceiveGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt)
 ```
 
-当MIR收到一个 `CPacket`，会传递给 **Incoming CPacket** 管道处理，如果 `CPacket` 满足下述的几个条件，那么 **Incoming CPacket** 管道将会触发 **After Receive CPacket** 触发器：
+当MIR收到一个 `GPPkt`，会传递给 **Incoming GPPkt** 管道处理，如果 `GPPkt` 满足下述的几个条件，那么 **Incoming GPPkt** 管道将会触发 **After Receive GPPkt** 触发器：
 
 - 存在 `TTL` ，并且 `TTL` 大于等于1
 
-当 **After Receive CPacket** 触发器被触发后，策略程序通常的行为为查询FIB表，找到可用的路由将 `CPacket` 转发出去
+当 **After Receive GPPkt** 触发器被触发后，策略程序通常的行为为查询FIB表，找到可用的路由将 `GPPkt` 转发出去
 
 ## 2. Actions
 
@@ -272,20 +272,20 @@ sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry 
   - 然后，该 *LogicFace* 不能是收到 `Data` 的 *LogicFace*。
 - 然后往每一个有效的 *LogicFace* 通过调用 **sendNack** 操作，将 `Nack` 发往该下游。
 
-### 2.4 Send CPacket
+### 2.4 Send GPPkt
 
 ```go
 //
-// 往指定的逻辑接口发送一个 CPacket
+// 往指定的逻辑接口发送一个 GPPkt
 //
 // @Description:
-// @param egress		转发 CPacket 的出口 LogicFace
-// @param cPacket		要转发出的 CPacket
+// @param egress		转发 GPPkt 的出口 LogicFace
+// @param gPPkt		要转发出的 GPPkt
 //
-sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
+sendGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt)
 ```
 
-转发策略（ *forwarding strategy* ）可以调用 **sendCPacket** 操作转发一个 `CPacket` ，本操作将会启动 **Outgoing CPacket** 管道处理流程。
+转发策略（ *forwarding strategy* ）可以调用 **sendGPPkt** 操作转发一个 `GPPkt` ，本操作将会启动 **Outgoing GPPkt** 管道处理流程。
 
 ## 3. 其它辅助函数
 
@@ -301,15 +301,15 @@ sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
 lookupFibForInterest(interest *packet.Interest)
 ```
 
-### 3.2 lookupFibForCPacket
+### 3.2 lookupFibForGPPkt
 
 ```go
 //
-// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+// 在 FIB 表中查询可用于转发 GPPkt 的 FIB 条目
 //
 // @Description:
-// @param cPacket
+// @param gPPkt
 //
-lookupFibForCPacket(cPacket *packet.CPacket)
+lookupFibForGPPkt(gPPkt *packet.GPPkt)
 ```
 

@@ -118,21 +118,21 @@ type IForwarder interface {
 	//
 	OnOutgoingNack(egress *lf.LogicFace, pitEntry *table.PITEntry, header *component.NackHeader)
 
-	// OnIncomingCPacket
-	// 处理一个 CPacket 到来 （Incoming CPacket Pipeline）
+	// OnIncomingGPPkt
+	// 处理一个 GPPkt 到来 （Incoming GPPkt Pipeline）
 	//
 	// @Description:
 	// @param ingress
-	// @param cPacket
+	// @param gPPkt
 	//
-	OnIncomingCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
+	OnIncomingGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt)
 
-	// OnOutgoingCPacket
-	// 处理一个 CPacket 发出 （Outgoing CPacket Pipeline）
+	// OnOutgoingGPPkt
+	// 处理一个 GPPkt 发出 （Outgoing GPPkt Pipeline）
 	//
 	// @Description:
 	// @param egress
-	// @param cPacket
+	// @param gPPkt
 	//
-	OnOutgoingCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
+	OnOutgoingGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt)
 }

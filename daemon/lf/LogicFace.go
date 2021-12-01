@@ -136,7 +136,7 @@ func (lf *LogicFace) onReceivePacket(minPacket *packet.MINPacket) {
 		return
 	}
 	if identifier.GetIdentifierType() == encoding.TlvIdentifierCommon {
-		lf.logicFaceCounters.InCPacketN++
+		lf.logicFaceCounters.InGPPktN++
 	} else if identifier.GetIdentifierType() == encoding.TlvIdentifierContentInterest {
 		lock.Lock()
 		lf.logicFaceCounters.InInterestN++
@@ -228,13 +228,13 @@ func (lf *LogicFace) SendNack(nack *packet.Nack) {
 	lf.addPkt2SendQue(nack)
 }
 
-// SendCPacket
+// SendGPPkt
 // @Description:  发送一个推送式包
 // @receiver lf
-// @param cPacket
+// @param gPPkt
 //
-func (lf *LogicFace) SendCPacket(cPacket *packet.CPacket) {
-	lf.addPkt2SendQue(cPacket)
+func (lf *LogicFace) SendGPPkt(gPPkt *packet.GPPkt) {
+	lf.addPkt2SendQue(gPPkt)
 }
 
 // GetLocalUri

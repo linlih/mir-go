@@ -110,13 +110,13 @@ func (brs *BestRouteStrategy) AfterReceiveNack(ingress *lf.LogicFace, nack *pack
 	brs.sendNackToAll(ingress, &nh, pitEntry)
 }
 
-func (brs *BestRouteStrategy) AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
-	fibEntry := brs.lookupFibForCPacket(cPacket)
+func (brs *BestRouteStrategy) AfterReceiveGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) {
+	fibEntry := brs.lookupFibForGPPkt(gPPkt)
 	miniHop := brs.findLowestCostNextHop(ingress, fibEntry)
 	if miniHop == nil {
 		// 没有路由无法转发
 		common2.LogDebug("No Route")
 		return
 	}
-	brs.sendCPacket(miniHop.LogicFace, cPacket)
+	brs.sendGPPkt(miniHop.LogicFace, gPPkt)
 }

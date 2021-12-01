@@ -136,15 +136,15 @@ func (s *StrategyBase) AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack
 	}, "After receive nack")
 }
 
-// AfterReceiveCPacket
-// 当收到一个 CPacket 时，会触发本触发器（需要子类实现）
+// AfterReceiveGPPkt
+// 当收到一个 GPPkt 时，会触发本触发器（需要子类实现）
 //
 // @Description:
-//  当 After Receive CPacket 触发器被触发后，策略程序通常的行为为查询FIB表，找到可用的路由将 CPacket 转发出去
-// @param ingress		CPacket 到来的入口 LogicFace
-// @param cPacket		收到的 CPacket
+//  当 After Receive GPPkt 触发器被触发后，策略程序通常的行为为查询FIB表，找到可用的路由将 GPPkt 转发出去
+// @param ingress		GPPkt 到来的入口 LogicFace
+// @param gPPkt		收到的 GPPkt
 //
-func (s *StrategyBase) AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket) {
+func (s *StrategyBase) AfterReceiveGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt) {
 	panic("implement me")
 }
 
@@ -242,14 +242,14 @@ func (s *StrategyBase) sendNackToAll(ingress *lf.LogicFace, nackHeader *componen
 }
 
 //
-// 往指定的逻辑接口发送一个 CPacket
+// 往指定的逻辑接口发送一个 GPPkt
 //
 // @Description:
-// @param egress		转发 CPacket 的出口 LogicFace
-// @param cPacket		要转发出的 CPacket
+// @param egress		转发 GPPkt 的出口 LogicFace
+// @param gPPkt		要转发出的 GPPkt
 //
-func (s *StrategyBase) sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket) {
-	s.forwarder.OnOutgoingCPacket(egress, cPacket)
+func (s *StrategyBase) sendGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt) {
+	s.forwarder.OnOutgoingGPPkt(egress, gPPkt)
 }
 
 //
@@ -280,11 +280,11 @@ func (s *StrategyBase) lookupFibForInterest(interest *packet.Interest) *table.FI
 }
 
 //
-// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+// 在 FIB 表中查询可用于转发 GPPkt 的 FIB 条目
 //
 // @Description:
-// @param cPacket
+// @param gPPkt
 //
-func (s *StrategyBase) lookupFibForCPacket(cPacket *packet.CPacket) *table.FIBEntry {
-	return s.forwarder.FIB.FindLongestPrefixMatch(cPacket.DstIdentifier())
+func (s *StrategyBase) lookupFibForGPPkt(gPPkt *packet.GPPkt) *table.FIBEntry {
+	return s.forwarder.FIB.FindLongestPrefixMatch(gPPkt.DstIdentifier())
 }

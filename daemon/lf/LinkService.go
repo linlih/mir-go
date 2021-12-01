@@ -242,19 +242,19 @@ func (l *LinkService) SendNack(nack *packet.Nack) {
 
 }
 
-// SendCPacket
+// SendGPPkt
 // @Description: 	发送一个普通推送式网络包
 // @receiver l
-// @param cPacket
+// @param gPPkt
 //
-func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
+func (l *LinkService) SendGPPkt(gPPkt *packet.GPPkt) {
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
 		common2.LogWarn(err)
 		return
 	}
-	bufLen, err := cPacket.WireEncode(&encoder)
+	bufLen, err := gPPkt.WireEncode(&encoder)
 	if err != nil {
 		common2.LogWarn(err)
 		return
@@ -267,7 +267,7 @@ func (l *LinkService) SendCPacket(cPacket *packet.CPacket) {
 	l.sendByteBuffer(buf, bufLen)
 }
 
-// SendCPacket
+// SendGPPkt
 // @Description: 	发送一个MIN网络包
 // @receiver l
 // @param minPacket
@@ -292,7 +292,7 @@ func (l *LinkService) SendMINPacket(minPacket *packet.MINPacket) {
 	l.sendByteBuffer(buf, bufLen)
 }
 
-// SendCPacket
+// SendGPPkt
 // @Description: 	发送一个IEncodingAble对象
 // @receiver l
 // @param packet

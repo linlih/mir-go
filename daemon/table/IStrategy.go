@@ -67,14 +67,14 @@ type IStrategy interface {
 	//
 	AfterReceiveNack(ingress *lf.LogicFace, nack *packet.Nack, pitEntry *PITEntry)
 
-	// AfterReceiveCPacket
-	// 当收到一个 CPacket 时，会触发本触发器
+	// AfterReceiveGPPkt
+	// 当收到一个 GPPkt 时，会触发本触发器
 	//
 	// @Description:
-	// @param ingress		CPacket 到来的入口 LogicFace
-	// @param cPacket		收到的 CPacket
+	// @param ingress		GPPkt 到来的入口 LogicFace
+	// @param gPPkt		收到的 GPPkt
 	//
-	AfterReceiveCPacket(ingress *lf.LogicFace, cPacket *packet.CPacket)
+	AfterReceiveGPPkt(ingress *lf.LogicFace, gPPkt *packet.GPPkt)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////// Actions
@@ -131,13 +131,13 @@ type IStrategy interface {
 	//sendNackToAll(ingress *lf.LogicFace, nackHeader *component.NackHeader, pitEntry *PITEntry)
 	//
 	////
-	//// 往指定的逻辑接口发送一个 CPacket
+	//// 往指定的逻辑接口发送一个 GPPkt
 	////
 	//// @Description:
-	//// @param egress		转发 CPacket 的出口 LogicFace
-	//// @param cPacket		要转发出的 CPacket
+	//// @param egress		转发 GPPkt 的出口 LogicFace
+	//// @param gPPkt		要转发出的 GPPkt
 	////
-	//sendCPacket(egress *lf.LogicFace, cPacket *packet.CPacket)
+	//sendGPPkt(egress *lf.LogicFace, gPPkt *packet.GPPkt)
 	//
 	////
 	//// 让PIT条目触发立即过期并清除的操作
@@ -163,10 +163,10 @@ type IStrategy interface {
 	//lookupFibForInterest(interest *packet.Interest) *FIBEntry
 	//
 	////
-	//// 在 FIB 表中查询可用于转发 CPacket 的 FIB 条目
+	//// 在 FIB 表中查询可用于转发 GPPkt 的 FIB 条目
 	////
 	//// @Description:
-	//// @param cPacket
+	//// @param gPPkt
 	////
-	//lookupFibForCPacket(cPacket *packet.CPacket) *FIBEntry
+	//lookupFibForGPPkt(gPPkt *packet.GPPkt) *FIBEntry
 }
