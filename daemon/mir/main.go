@@ -6,13 +6,14 @@ import (
 	common2 "minlib/common"
 	"minlib/component"
 	"minlib/security"
+	"minlib/utils"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/mgmt"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
-	"mir-go/daemon/utils"
+	utils2 "mir-go/daemon/utils"
 	"net"
 	"os"
 	"time"
@@ -144,9 +145,9 @@ func askSetPasswd(name string) string {
 // @param keyChain
 //
 func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
-	common2.LogInfo("DB:", utils.GetRelPath(config.SecurityConfig.IdentityDBPath))
+	common2.LogInfo("DB:", utils2.GetRelPath(config.SecurityConfig.IdentityDBPath))
 	// 初始化KeyChain
-	if err := keyChain.InitialKeyChainByPath(utils.GetRelPath(config.SecurityConfig.IdentityDBPath)); err != nil {
+	if err := keyChain.InitialKeyChainByPath(utils2.GetRelPath(config.SecurityConfig.IdentityDBPath)); err != nil {
 		common2.LogFatal(err)
 	}
 

@@ -19,7 +19,6 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
-	"mir-go/daemon/utils"
 )
 
 // Forwarder MIR 转发器实例
@@ -32,7 +31,7 @@ type Forwarder struct {
 	table.CS                                        // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
-	packetQueue         *utils.BlockQueue           // 包队列
+	packetQueue         *utils2.BlockQueue          // 包队列
 	heapTimer           *utils2.HeapTimer           // 堆定时器，用来处理PIT的超时事件
 }
 
@@ -41,7 +40,7 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils.BlockQueue) error {
+func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
@@ -69,7 +68,6 @@ func (f *Forwarder) Start() {
 	for true {
 		// 在处理包之前
 		f.heapTimer.DealEvent()
-
 		// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
 		if data, err := f.packetQueue.ReadUntil(10); err != nil {
 			// 读取超时了
