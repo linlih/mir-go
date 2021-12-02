@@ -30,6 +30,7 @@ type Forwarder struct {
 	table.FIB                                       // 内嵌一个FIB表
 	table.ICS                                       // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
+	config              *common.MIRConfig           // 记录配置文件信息
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 	packetQueue         *utils2.BlockQueue          // 包队列
 	heapTimer           *utils2.HeapTimer           // 堆定时器，用来处理PIT的超时事件
@@ -41,6 +42,7 @@ type Forwarder struct {
 // @receiver f
 //
 func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
+	f.config = config
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
@@ -513,7 +515,10 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 	if f.pluginManager.OnDataUnsolicited(ingress, data) != 0 {
 		return
 	}
-	// TODO: 读取配置文件，是否缓存未经请求的 data
+	// 读取配置文件，判断是否缓存未经请求的 data
+	if f.config.TableConfig.CacheUnsolicitedData {
+		f.ICS.Insert(data)
+	}
 }
 
 // OnOutgoingData 处理将一个数据包发出 （ Outgoing data Pipeline ）
