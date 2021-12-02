@@ -67,9 +67,9 @@ func (s *StrategyBase) AfterReceiveInterest(ingress *lf.LogicFace, interest *pac
 // 当兴趣包命中缓存时，会触发本触发器
 //
 // @Description:
-//  此触发器默认使用 Strategy.sendData 操作将匹配的 Data 发送到兴趣包到来方向的下游路由器。
+//  此触发器默认使用 Strategy.sendData 操作将匹配的 data 发送到兴趣包到来方向的下游路由器。
 // @param ingress		Interest到来的入口LogicFace
-// @param data			缓存中得到的可以满足 Interest 的 Data
+// @param data			缓存中得到的可以满足 Interest 的 data
 // @param entry			兴趣包对应的PIT条目
 //
 func (s *StrategyBase) AfterContentStoreHit(ingress *lf.LogicFace, data *packet.Data, entry *table.PITEntry) {
@@ -79,30 +79,30 @@ func (s *StrategyBase) AfterContentStoreHit(ingress *lf.LogicFace, data *packet.
 		"pitEntry": entry.GetIdentifier().ToUri(),
 	}, "After content store hit")
 
-	// 命中缓存时直接往兴趣包到来的接口发送一个匹配的 Data
+	// 命中缓存时直接往兴趣包到来的接口发送一个匹配的 data
 	s.sendData(ingress, data, entry)
 }
 
 // AfterReceiveData
-// 当收到一个 Data 时，会触发本触发器
+// 当收到一个 data 时，会触发本触发器
 //
 // @Description:
-//	Data 应当满足下列条件：
-//		- Data 被验证过可以匹配对应的PIT条目
-//		- Data 位于当前策略的命名空间下
+//	data 应当满足下列条件：
+//		- data 被验证过可以匹配对应的PIT条目
+//		- data 位于当前策略的命名空间下
 //  此触发器内部应当完成以下功能：
-//   - 策略应当通过 Strategy.sendData 或者 Strategy.sendDataToAll 将 Data 发送给下游的节点；
-//   - 策略可以对 Data 进行适当的更改，只要修改之后 Data 仍然能够匹配对应的 PIT 条目即可，例如添加或者删除拥塞标记；
+//   - 策略应当通过 Strategy.sendData 或者 Strategy.sendDataToAll 将 data 发送给下游的节点；
+//   - 策略可以对 data 进行适当的更改，只要修改之后 data 仍然能够匹配对应的 PIT 条目即可，例如添加或者删除拥塞标记；
 //   - 策略应当至少调用一次 Strategy.setExpiryTimer：
 //     - 默认情况下， Strategy.setExpiryTimer 将PIT条目的超时时间设置为当前时间，以启动 PIT 条目的清理流程；
-//     - 策略也可以选择调用 Strategy.setExpiryTimer 延长 PIT 条目的存活期，从而延迟 Data 的转发，只要保证在 PIT 条目被移除之前转发
-//       Data 即可。
+//     - 策略也可以选择调用 Strategy.setExpiryTimer 延长 PIT 条目的存活期，从而延迟 data 的转发，只要保证在 PIT 条目被移除之前转发
+//       data 即可。
 //   - 策略可以在此触发器内收集有关上游的度量信息（比如可以计算RTT）；
-//   - 策略可以通过延长收到 Data 的PIT条目的生存期，从而等待其它上游节点返回 Data （可以从多个上游节点收集 Data ，并决策将哪个 Data 转发
-//     到下游），需要注意的是，对于每一个下有节点，要保证只有一个 Data 转发到下游路由器。
-// @param ingress		Data 到来的入口 LogicFace
-// @param data			收到的 Data
-// @param pitEntry		Data 对应匹配的PIT条目
+//   - 策略可以通过延长收到 data 的PIT条目的生存期，从而等待其它上游节点返回 data （可以从多个上游节点收集 data ，并决策将哪个 data 转发
+//     到下游），需要注意的是，对于每一个下有节点，要保证只有一个 data 转发到下游路由器。
+// @param ingress		data 到来的入口 LogicFace
+// @param data			收到的 data
+// @param pitEntry		data 对应匹配的PIT条目
 //
 func (s *StrategyBase) AfterReceiveData(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
 	common2.LogDebugWithFields(logrus.Fields{
@@ -122,7 +122,7 @@ func (s *StrategyBase) AfterReceiveData(ingress *lf.LogicFace, data *packet.Data
 //     上游，这可以通过调用 Strategy.lookupFib 访问器函数获得；
 //   - 通过调用 send Nack 操作将 Nack 反回到下游，放弃对该 Interest 的重传尝试；
 //   - 不对这个 Nack 做任何处理。如果 Nack 对应的 Interest 转发给了多个上游，且某些（但不是全部）上游回复了 Nack ，则该策略可能要等待来自
-//     更多上游的 Data 或 Nack 。
+//     更多上游的 data 或 Nack 。
 // @param ingress		Nack 到来的入口 LogicFace
 // @param nack			收到的 Nack
 // @param pitEntry		Nack 对应匹配的PIT条目
@@ -165,15 +165,15 @@ func (s *StrategyBase) sendInterest(egress *lf.LogicFace, interest *packet.Inter
 }
 
 //
-// 将 Data 从指定的逻辑接口转发出去
+// 将 data 从指定的逻辑接口转发出去
 //
 // @Description:
-// @param egress		转发 Data 的出口 LogicFace
-// @param data			要转发的 Data
-// @param pitEntry		Data 对应匹配的 PIT 条目
+// @param egress		转发 data 的出口 LogicFace
+// @param data			要转发的 data
+// @param pitEntry		data 对应匹配的 PIT 条目
 //
 func (s *StrategyBase) sendData(egress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
-	// Data 发出后，对应的入记录应该删除
+	// data 发出后，对应的入记录应该删除
 	if err := pitEntry.DeleteInRecord(egress); err != nil {
 		common2.LogErrorWithFields(logrus.Fields{
 			"egress":   egress.LogicFaceId,
@@ -185,18 +185,18 @@ func (s *StrategyBase) sendData(egress *lf.LogicFace, data *packet.Data, pitEntr
 }
 
 //
-// 将 Data 发送给对应 PIT 条目记录的所有符合条件的下游节点
+// 将 data 发送给对应 PIT 条目记录的所有符合条件的下游节点
 //
 // @Description:
-// @param ingress		Data 到来的入口 LogicFace => 主要是用来避免往收到 Data 包的 LogicFace 转发 Data
-// @param data			要转发的 Data
-// @param pitEntry		Data 对应匹配的 PIT 条目
+// @param ingress		data 到来的入口 LogicFace => 主要是用来避免往收到 data 包的 LogicFace 转发 data
+// @param data			要转发的 data
+// @param pitEntry		data 对应匹配的 PIT 条目
 //
 func (s *StrategyBase) sendDataToAll(ingress *lf.LogicFace, data *packet.Data, pitEntry *table.PITEntry) {
 	now := common.GetCurrentTime()
 	downStreams := make([]*lf.LogicFace, 0)
 
-	// 找到所有还没有过期，且不是 Data 到来的下游，并向所有符合条件的下游转发一个 Data 的备份
+	// 找到所有还没有过期，且不是 data 到来的下游，并向所有符合条件的下游转发一个 data 的备份
 	for _, inRecord := range pitEntry.GetInRecords() {
 		if inRecord.ExpireTime > now && inRecord.LogicFace.LogicFaceId != ingress.LogicFaceId {
 			downStreams = append(downStreams, inRecord.LogicFace)

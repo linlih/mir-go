@@ -347,9 +347,9 @@ func (d *Dispatcher) sendControlResponse(response *mgmt.ControlResponse, interes
 func (d *Dispatcher) saveData(data *packet.Data) {
 	// TODO: 配置化
 	data.SetTtl(64)
-	// 给缓存的 Data 包签名
+	// 给缓存的 data 包签名
 	if err := d.KeyChain.SignData(data); err != nil {
-		common.LogError("Sign Data failed!")
+		common.LogError("Sign data failed!")
 	}
 	common.LogDebug("SaveData: ", data.ToUri())
 	d.Cache.Add(data.ToUri(), data)
@@ -364,9 +364,9 @@ func (d *Dispatcher) sendData(data *packet.Data) {
 	data.SetTtl(64)
 	// 直接发出的包设置不缓存
 	data.NoCache.SetNoCache(true)
-	// 给发出的 Data 包签名
+	// 给发出的 data 包签名
 	if err := d.KeyChain.SignData(data); err != nil {
-		common.LogError("Sign Data failed!")
+		common.LogError("Sign data failed!")
 	}
 	if err := d.FaceClient.SendData(data); err != nil {
 		common.LogError("send data fail!the err is :", err)

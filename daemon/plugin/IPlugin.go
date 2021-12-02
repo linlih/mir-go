@@ -87,7 +87,7 @@ type IPlugin interface {
 	OnInterestFinalize(pitEntry *table.PITEntry) int
 
 	// OnIncomingData
-	// Incoming Data 管道锚点
+	// Incoming data 管道锚点
 	//
 	// @Description:
 	// @param ingress
@@ -97,7 +97,7 @@ type IPlugin interface {
 	OnIncomingData(ingress *lf.LogicFace, data *packet.Data) int
 
 	// OnDataUnsolicited
-	// Data unsolicited 管道锚点
+	// data unsolicited 管道锚点
 	//
 	// @Description:
 	// @param ingress
@@ -107,7 +107,7 @@ type IPlugin interface {
 	OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) int
 
 	// OnOutgoingData
-	// Outgoing Data 管道锚点
+	// Outgoing data 管道锚点
 	//
 	// @Description:
 	// @param egress

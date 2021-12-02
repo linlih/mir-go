@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"minlib/component"
 	"minlib/packet"
+	"minlib/utils"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
-	"mir-go/daemon/utils"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func TestForwarder_Init(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
 	queue := utils.CreateBlockQueue(20)
-	forwarder.Init(newPlugin, queue)
+	forwarder.Init(nil, newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	face := new(lf.LogicFace)
 	face.LogicFaceId = 234
@@ -27,7 +27,7 @@ func TestForwarder_Init(t *testing.T) {
 	data := new(packet.Data)
 	data.FreshnessPeriod.SetFreshnessPeriod(5)
 	data.SetName(newName)
-	forwarder.CS.Insert(data)
+	forwarder.ICS.Insert(data)
 	forwarder.OnIncomingInterest(face, interest)
 	//pitEntry,piterr:=forwarder.PIT.Find(interest)
 	//if piterr!=nil{
@@ -37,7 +37,7 @@ func TestForwarder_Init(t *testing.T) {
 	fmt.Println("PIT", forwarder.PIT.Size())
 	//time.Sleep(time.Duration(4)*time.Second)
 	//fmt.Println("PIT",forwarder.PIT.Size())
-	csEntry := forwarder.CS.Find(interest)
+	csEntry, _ := forwarder.ICS.Find(interest)
 	fmt.Println("cs entry", csEntry.Interest.ToUri(), csEntry.Interest.InterestLifeTime, csEntry.Interest.TTL, csEntry.Interest.Nonce)
 
 }
@@ -49,7 +49,7 @@ func TestForwarder_OnOutgoingInterest(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
 	queue := utils.CreateBlockQueue(20)
-	forwarder.Init(newPlugin, queue)
+	forwarder.Init(nil, newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
 
@@ -84,7 +84,7 @@ func TestForwarder_OnInterestLoop(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
 	queue := utils.CreateBlockQueue(20)
-	forwarder.Init(newPlugin, queue)
+	forwarder.Init(nil, newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
 
@@ -120,7 +120,7 @@ func TestForwarder_OnContentStoreHit(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
 	queue := utils.CreateBlockQueue(20)
-	forwarder.Init(newPlugin, queue)
+	forwarder.Init(nil, newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	brs := BestRouteStrategy{StrategyBase{forwarder: forwarder}}
 	forwarder.StrategyTable.Insert(newName1, "best", &brs)
@@ -136,7 +136,7 @@ func TestForwarder_OnContentStoreHit(t *testing.T) {
 	data := new(packet.Data)
 	data.FreshnessPeriod.SetFreshnessPeriod(5)
 	data.SetName(newName)
-	forwarder.CS.Insert(data)
+	forwarder.ICS.Insert(data)
 	forwarder.OnIncomingInterest(face, interest)
 	//pitEntry,piterr:=forwarder.PIT.Find(interest)
 	//if piterr!=nil{
@@ -146,7 +146,7 @@ func TestForwarder_OnContentStoreHit(t *testing.T) {
 	fmt.Println("PIT", forwarder.PIT.Size())
 	//time.Sleep(time.Duration(4)*time.Second)
 	//fmt.Println("PIT",forwarder.PIT.Size())
-	csEntry := forwarder.CS.Find(interest)
+	csEntry, _ := forwarder.ICS.Find(interest)
 	fmt.Println("cs entry", csEntry.Interest.ToUri(), csEntry.Interest.InterestLifeTime, csEntry.Interest.TTL, csEntry.Interest.Nonce)
 
 }

@@ -57,11 +57,10 @@ func (c *CS) Insert(data *packet.Data) *CSEntry {
 		// not ok 那么val == nil 存入标识
 		if _, ok := (val).(*CSEntry); !ok {
 			// 存入的表项 不是 *CSEntry类型 或者 为nil
-			csEntry := CreateCSEntry()
+			csEntry := NewCSEntry(data)
 			val = csEntry
 		}
 		entry := (val).(*CSEntry)
-		entry.Data = data
 		return entry
 	})
 	return val.(*CSEntry)

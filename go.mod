@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.12
+	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/desertbit/grumble v1.1.1
 	github.com/google/gopacket v1.1.19
 	github.com/olekukonko/tablewriter v0.0.5

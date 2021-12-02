@@ -51,6 +51,7 @@ func (mirConfig *MIRConfig) Init() {
 	// table
 	mirConfig.TableConfig.CSSize = 500
 	mirConfig.TableConfig.CSReplaceStrategy = "LRU"
+	mirConfig.TableConfig.CacheUnsolicitedData = false
 
 	// LogicFace
 	mirConfig.LogicFaceConfig.SupportTCP = true
@@ -112,8 +113,9 @@ type TableConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// Table
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	CSSize            int    `ini:"CSSize"`            // CS缓存大小，包为单位
-	CSReplaceStrategy string `ini:"CSReplaceStrategy"` // 缓存替换策略
+	CSSize               int    `ini:"CSSize"`               // CS缓存大小，包为单位
+	CSReplaceStrategy    string `ini:"CSReplaceStrategy"`    // 缓存替换策略
+	CacheUnsolicitedData bool   `ini:"CacheUnsolicitedData"` // 是否缓存未请求的数据（Unsolicited Data）
 }
 
 type LogicFaceConfig struct {

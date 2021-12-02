@@ -44,7 +44,7 @@ type ResponseSender func(response *mgmt.ControlResponse, interest *packet.Intere
 //
 type StatusDatasetContext struct {
 	interest       *packet.Interest // 兴趣包指针
-	FreshTime      uint64           // 生成的 Data 的新鲜期，默认为 1 s
+	FreshTime      uint64           // 生成的 data 的新鲜期，默认为 1 s
 	items          []interface{}    // 数据
 	SliceSize      int              // 每个分片的大小
 	dataSender     DataSender       // 发送数据包回调

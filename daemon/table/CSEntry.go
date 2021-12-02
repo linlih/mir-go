@@ -16,16 +16,16 @@ import (
 )
 
 type CSEntry struct {
-	Data      *packet.Data     // 数据包指针
+	data      *packet.Data     // 数据包指针
 	StaleTime int64            // 不新鲜时间
 	Interest  *packet.Interest // 兴趣包指针
 	RWlock    *sync.RWMutex    // 读写锁
 }
 
-// CreateCSEntry 获取表项中的数据包指针
-func CreateCSEntry() *CSEntry {
+// NewCSEntry 获取表项中的数据包指针
+func NewCSEntry(data *packet.Data) *CSEntry {
 	var c = &CSEntry{}
-	c.Data = &packet.Data{}
+	c.data = data
 	c.StaleTime = time.Now().Unix()
 	c.Interest = &packet.Interest{}
 	c.RWlock = new(sync.RWMutex)
@@ -33,12 +33,12 @@ func CreateCSEntry() *CSEntry {
 }
 
 func (c *CSEntry) GetData() *packet.Data {
-	return c.Data
+	return c.data
 }
 
 // GetIdentifier 获取表项中数据包的标识指针
 func (c *CSEntry) GetIdentifier() *component.Identifier {
-	return c.Data.GetName()
+	return c.data.GetName()
 }
 
 // GetStaleTime 获得表项变旧时间
@@ -64,7 +64,7 @@ func (c *CSEntry) UpdateStaleTime(newStaleTime int64) {
 
 // CanSatisfy 判断表项是否可以与某个兴趣包匹配 参考C++语言代码
 func (c *CSEntry) CanSatisfy(interest *packet.Interest) bool {
-	if !interest.MatchesData(c.Data) {
+	if !interest.MatchesData(c.data) {
 		return false
 	}
 	if interest.GetMustBeRefresh() == true && c.IsStale() {

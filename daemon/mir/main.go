@@ -64,7 +64,7 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 
 	// 初始化转发器
 	forwarder := new(fw.Forwarder)
-	if err := forwarder.Init(pluginManager, packetQueue); err != nil {
+	if err := forwarder.Init(mirConfig, pluginManager, packetQueue); err != nil {
 		common2.LogFatal(err)
 	}
 

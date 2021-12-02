@@ -28,7 +28,7 @@ import (
 type Forwarder struct {
 	table.PIT                                       // 内嵌一个PIT表
 	table.FIB                                       // 内嵌一个FIB表
-	table.CS                                        // 内嵌一个CS表
+	table.ICS                                       // 内嵌一个CS表
 	table.StrategyTable                             // 内嵌一个策略选择表
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 	packetQueue         *utils2.BlockQueue          // 包队列
@@ -40,11 +40,16 @@ type Forwarder struct {
 // @Description:
 // @receiver f
 //
-func (f *Forwarder) Init(pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
+func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
-	f.CS.Init()
+	// 初始化缓存
+	if ucs, err := table.NewUniversalCS(config); err != nil {
+		return err
+	} else {
+		f.ICS = ucs
+	}
 	f.StrategyTable.Init()
 	f.pluginManager = pluginManager
 	f.packetQueue = packetQueue
@@ -142,12 +147,12 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 				f.OnIncomingInterest(ingress, interest)
 			}
 		}
-	case encoding.TlvIdentifierContentData: // Data
+	case encoding.TlvIdentifierContentData: // data
 		if data, err := packet.CreateDataByMINPacket(minPacket); err != nil {
 			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
-			}, "Create Data by MINPacket failed")
+			}, "Create data by MINPacket failed")
 			return
 		} else {
 			f.OnIncomingData(ingress, data)
@@ -227,7 +232,7 @@ func (f *Forwarder) OnIncomingInterest(ingress *lf.LogicFace, interest *packet.I
 		f.OnContentStoreMiss(ingress, pitEntry, interest)
 	} else {
 		// CS Lookup
-		if csEntry := f.CS.Find(interest); csEntry == nil {
+		if csEntry, err := f.ICS.Find(interest); err != nil {
 			f.OnContentStoreMiss(ingress, pitEntry, interest)
 		} else {
 			f.OnContentStoreHit(ingress, pitEntry, interest, csEntry)
@@ -416,13 +421,13 @@ func (f *Forwarder) OnInterestFinalize(pitEntry *table.PITEntry) {
 	pitEntry.SetDeleted(true)
 }
 
-// OnIncomingData 处理一个数据包到来（ Incoming Data Pipeline ）
+// OnIncomingData 处理一个数据包到来（ Incoming data Pipeline ）
 //
 // @Description:
-//  1. 首先，管道使用数据匹配算法（ Data Match algorithm ，第3.4.2节）检查 Data 是否与PIT条目匹配。如果找不到匹配的PIT条目，则将 Data
-//     提供给 Data unsolicited 管道；如果找到匹配的PIT条目，则将 Data 插入到 ContentStore 中。
+//  1. 首先，管道使用数据匹配算法（ data Match algorithm ，第3.4.2节）检查 data 是否与PIT条目匹配。如果找不到匹配的PIT条目，则将 data
+//     提供给 data unsolicited 管道；如果找到匹配的PIT条目，则将 data 插入到 ContentStore 中。
 //
-//     > 请注意，即使管道将 Data 插入到 ContentStore 中，该数据是否存储以及它在 ContentStore 中的停留时间也取决于 ContentStore 的接纳
+//     > 请注意，即使管道将 data 插入到 ContentStore 中，该数据是否存储以及它在 ContentStore 中的停留时间也取决于 ContentStore 的接纳
 //       和替换策略（ admission andreplacement policy）。
 //
 //  2. 接着管道会将对应PIT条目的到期计时器设置为当前时间，调用对应策略的 StrategyBase::afterReceiveData 回调，将PIT标记为 satisfied ，并清
@@ -452,7 +457,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	// 找到对应的PIT条目
 	pitEntry := f.PIT.FindDataMatches(data)
 	if pitEntry == nil {
-		// 没有找到对应的 PIT 条目，触发 Data unsolicited 管道
+		// 没有找到对应的 PIT 条目，触发 data unsolicited 管道
 		f.OnDataUnsolicited(ingress, data)
 		return
 	}
@@ -464,7 +469,7 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	if !data.NoCache.GetNoCache() {
 		// 找到对应的 PIT 条目
 		// 插入到CS缓存当中
-		f.CS.Insert(data)
+		f.ICS.Insert(data)
 	}
 
 	// 调用对应策略的 StrategyBase::afterReceiveData 回调
@@ -488,13 +493,13 @@ func (f *Forwarder) OnIncomingData(ingress *lf.LogicFace, data *packet.Data) {
 	}
 }
 
-// OnDataUnsolicited 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
+// OnDataUnsolicited 收到一个数据包，但是这个数据包是未被请求的 （ data Unsolicited Pipeline ）
 //
 // @Description:
-//  在 Incoming data 管道处理过程中发现 Data 是未经请求的时后会触发 Data unsolicited 管道处理逻辑，它的处理过程如下：
-//   1. 根据当前配置的针对未经请求的 Data 的处理策略，决定是删除 Data 还是将其添加到 ContentStore 。默认情况下，MIR配置了 drop-all 策略，
-//      该策略会丢弃所有未经请求的 Data ，因为它们会对转发器造成安全风险。
-//   2. 在某些特殊应用场景下，如果希望MIR将未经请求的 Data 存储到 ContentStore，可以在配置文件中修改对应的策略。
+//  在 Incoming data 管道处理过程中发现 data 是未经请求的时后会触发 data unsolicited 管道处理逻辑，它的处理过程如下：
+//   1. 根据当前配置的针对未经请求的 data 的处理策略，决定是删除 data 还是将其添加到 ContentStore 。默认情况下，MIR配置了 drop-all 策略，
+//      该策略会丢弃所有未经请求的 data ，因为它们会对转发器造成安全风险。
+//   2. 在某些特殊应用场景下，如果希望MIR将未经请求的 data 存储到 ContentStore，可以在配置文件中修改对应的策略。
 // @param ingress
 // @param data
 //
@@ -502,21 +507,21 @@ func (f *Forwarder) OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data) 
 	common2.LogDebugWithFields(logrus.Fields{
 		"faceId": ingress.LogicFaceId,
 		"data":   data.ToUri(),
-	}, "Data unsolicited")
+	}, "data unsolicited")
 
 	// 调用插件锚点
 	if f.pluginManager.OnDataUnsolicited(ingress, data) != 0 {
 		return
 	}
-	// TODO: 读取配置文件，是否缓存未经请求的 Data
+	// TODO: 读取配置文件，是否缓存未经请求的 data
 }
 
-// OnOutgoingData 处理将一个数据包发出 （ Outgoing Data Pipeline ）
+// OnOutgoingData 处理将一个数据包发出 （ Outgoing data Pipeline ）
 //
 // @Description:
-//  在 Incoming Interest 管道（第4.2.1节）处理过程中在 ContentStore 中找到匹配的数据或在 Incoming Data 管道处理过程中发现传入的 Data
+//  在 Incoming Interest 管道（第4.2.1节）处理过程中在 ContentStore 中找到匹配的数据或在 Incoming data 管道处理过程中发现传入的 data
 //  匹配到 PIT 表项时，调用本管道，它的处理过程如下：
-//   1. 通过对应的 LogicFace 将 Data 发出
+//   1. 通过对应的 LogicFace 将 data 发出
 // @param egress
 // @param data
 //

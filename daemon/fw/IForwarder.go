@@ -73,7 +73,7 @@ type IForwarder interface {
 	OnInterestFinalize(pitEntry *table.PITEntry)
 
 	// OnIncomingData
-	// 处理一个数据包到来（ Incoming Data Pipeline ）
+	// 处理一个数据包到来（ Incoming data Pipeline ）
 	//
 	// @Description:
 	// @param ingress
@@ -82,7 +82,7 @@ type IForwarder interface {
 	OnIncomingData(ingress *lf.LogicFace, data *packet.Data)
 
 	// OnDataUnsolicited
-	// 收到一个数据包，但是这个数据包是未被请求的 （ Data Unsolicited Pipeline ）
+	// 收到一个数据包，但是这个数据包是未被请求的 （ data Unsolicited Pipeline ）
 	//
 	// @Description:
 	// @param ingress
@@ -91,7 +91,7 @@ type IForwarder interface {
 	OnDataUnsolicited(ingress *lf.LogicFace, data *packet.Data)
 
 	// OnOutgoingData
-	// 处理将一个数据包发出 （ Outgoing Data Pipeline ）
+	// 处理将一个数据包发出 （ Outgoing data Pipeline ）
 	//
 	// @Description:
 	// @param egress

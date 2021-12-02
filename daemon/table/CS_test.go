@@ -73,7 +73,7 @@ func TestCSSize(t *testing.T) {
 	fmt.Println(cs.Size())
 
 	//异常空值 直接报错
-	//data=&packet.Data{}
+	//data=&packet.data{}
 	//cs.Insert(data)
 	//fmt.Println(cs.Size())
 }
