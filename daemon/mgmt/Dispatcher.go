@@ -83,7 +83,7 @@ func (d *Dispatcher) Start() {
 			}
 
 			// 创建管理兴趣包
-			interest, err := packet.CreateInterestByMINPacket(minPacket)
+			interest, err := packet.NewInterestByMINPacket(minPacket)
 			if err != nil {
 				common.LogWarn("can not parse minPacket to interest!the err is:", err)
 				continue

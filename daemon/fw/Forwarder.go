@@ -116,7 +116,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 	// 根据标识的类型区分不同的网络包
 	switch identifyWrapper.GetIdentifierType() {
 	case encoding.TlvIdentifierCommon: // GPPkt
-		if gPPkt, err := packet.CreateGPPktByMINPacket(minPacket); err != nil {
+		if gPPkt, err := packet.NewGPPktByMINPacket(minPacket); err != nil {
 			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
@@ -126,7 +126,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 			f.OnIncomingGPPkt(ingress, gPPkt)
 		}
 	case encoding.TlvIdentifierContentInterest: // Interest
-		if interest, err := packet.CreateInterestByMINPacket(minPacket); err != nil {
+		if interest, err := packet.NewInterestByMINPacket(minPacket); err != nil {
 			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
@@ -134,7 +134,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 			return
 		} else {
 			if interest.NackHeader.IsInitial() {
-				if nack, err := packet.CreateNackByInterest(interest); err != nil {
+				if nack, err := packet.NewNackByInterest(interest); err != nil {
 					common2.LogWarnWithFields(logrus.Fields{
 						"faceId":     ingress.LogicFaceId,
 						"identifier": identifyWrapper.ToUri(),
@@ -150,7 +150,7 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 			}
 		}
 	case encoding.TlvIdentifierContentData: // data
-		if data, err := packet.CreateDataByMINPacket(minPacket); err != nil {
+		if data, err := packet.NewDataByMINPacket(minPacket); err != nil {
 			common2.LogWarnWithFields(logrus.Fields{
 				"faceId":     ingress.LogicFaceId,
 				"identifier": identifyWrapper.ToUri(),
