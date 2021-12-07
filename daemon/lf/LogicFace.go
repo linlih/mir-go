@@ -196,7 +196,7 @@ func (lf *LogicFace) Start() {
 
 				// 如果队列堆积较少，则发送心跳包（心跳包是一个特殊类型的 LpPacket）
 				if len(lf.sendQue) < 5 {
-					common2.LogWarn("Send heart Beat")
+					//common2.LogWarn("Send heart Beat")
 					lf.linkService.SendHeartBeat()
 				}
 			}
