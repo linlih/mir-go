@@ -57,13 +57,13 @@ func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (*
 // @return uint64		logicFaceId
 // @return error		错误信息
 //
-func CreateTcpLogicFace(remoteUri string) (*LogicFace, error) {
+func CreateTcpLogicFace(remoteUri string, persistency uint64) (*LogicFace, error) {
 	conn, err := net.Dial("tcp", remoteUri)
 	if err != nil {
 		common2.LogWarn(err)
 		return nil, err
 	}
-	logicFace, _ := createTcpLogicFace(conn)
+	logicFace, _ := createTcpLogicFace(conn, persistency)
 	return logicFace, nil
 }
 

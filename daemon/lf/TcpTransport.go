@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -15,7 +15,7 @@ type TcpTransport struct {
 	StreamTransport
 }
 
-//
+// Init
 // @Description:  初始化 TcpTransport
 // @receiver t
 // @param conn

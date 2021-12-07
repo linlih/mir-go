@@ -12,6 +12,7 @@ import (
 	"minlib/encoding"
 	"minlib/packet"
 	"sync"
+	"time"
 )
 
 type LogicFaceType uint32
@@ -180,6 +181,27 @@ func (lf *LogicFace) Start() {
 			lf.linkService.SendEncodingAble(minPacket)
 		}
 	}()
+
+	// 如果是持久性的 TCP LogicFace，通过心跳包来保活
+	if lf.Persistence > 0 && lf.logicFaceType == LogicFaceTypeTCP {
+		// 启动心跳包协程，周期性的往发送队列里面放一个心跳包
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+			for range ticker.C {
+				// 判断 LogicFace 的状态，已关闭，则直接退出，不再发心跳包
+				if !lf.state {
+					break
+				}
+
+				// 如果队列堆积较少，则发送心跳包（心跳包是一个特殊类型的 LpPacket）
+				if len(lf.sendQue) < 5 {
+					common2.LogWarn("Send heart Beat")
+					lf.linkService.SendHeartBeat()
+				}
+			}
+		}()
+	}
 }
 
 func (lf *LogicFace) addPkt2SendQue(pkt encoding.IEncodingAble) {
@@ -277,7 +299,7 @@ func (lf *LogicFace) GetCounter() uint64 {
 	return lf.logicFaceCounters.InInterestN
 }
 
-//
+// SetPersistence
 // @Description: 	设置LogicFace的Persistence 属性，当persistence 不为0是， 该logicFace不会因为长时间不用被删除
 // @receiver lf
 // @param persistence

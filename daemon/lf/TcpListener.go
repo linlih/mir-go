@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -9,26 +9,29 @@ package lf
 
 import (
 	common2 "minlib/common"
+	"mir-go/daemon/common"
 	"net"
 	"strconv"
 )
 
-//
+// TcpListener
 // @Description:  TCP端口监听器，用于接收远程mir的TCP连接请求，为新连接创建
 //			并启动一个TCP-Transport类型的LogicFace
 //
 type TcpListener struct {
 	TcpPort  uint16       // TCP端口号
 	listener net.Listener // TCP监听句柄
+	config   *common.MIRConfig
 }
 
-//
+// Init
 // @Description: 	初始化TCP监听器
 // @receiver t
 // @param logicFaceTable  全局logicFace表指针
 //
-func (t *TcpListener) Init(port int) {
-	t.TcpPort = uint16(port)
+func (t *TcpListener) Init(config *common.MIRConfig) {
+	t.TcpPort = uint16(config.TCPPort)
+	t.config = config
 }
 
 //
@@ -37,7 +40,7 @@ func (t *TcpListener) Init(port int) {
 // @param conn	新TCP连接句柄
 //
 func (t *TcpListener) tryCreateTcpLogicFace(conn net.Conn) {
-	createTcpLogicFace(conn)
+	createTcpLogicFace(conn, 0)
 }
 
 //
@@ -54,7 +57,7 @@ func (t *TcpListener) accept() {
 	}
 }
 
-//
+// Start
 // @Description:  启动监听协程
 // @receiver t
 //

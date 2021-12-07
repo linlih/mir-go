@@ -9,6 +9,7 @@ package lf
 
 import (
 	common2 "minlib/common"
+	"mir-go/daemon/common"
 	"net"
 	"os"
 	"os/exec"
@@ -17,10 +18,12 @@ import (
 type UnixStreamListener struct {
 	listener *net.UnixListener
 	filepath string
+	config   *common.MIRConfig
 }
 
-func (u *UnixStreamListener) Init(path string) {
-	u.filepath = path
+func (u *UnixStreamListener) Init(config *common.MIRConfig) {
+	u.filepath = config.UnixPath
+	u.config = config
 }
 
 //

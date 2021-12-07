@@ -175,7 +175,7 @@ func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
 	}
 }
 
-//
+// SetUpDefaultRoute
 // @Description: 加载静态路由配置文件
 // @param defaultRouteConfigPath	静态路由配置文件的文件路径
 // @param fib	FIB表指针
@@ -197,7 +197,7 @@ func SetUpDefaultRoute(defaultRouteConfigPath string, fib *table.FIB) {
 		if remoteUri[:3] == "udp" {
 			logicFace, err = lf.CreateUdpLogicFace(remoteUri[6:])
 		} else if remoteUri[:3] == "tcp" {
-			logicFace, err = lf.CreateTcpLogicFace(remoteUri[6:])
+			logicFace, err = lf.CreateTcpLogicFace(remoteUri[6:], 1)
 		} else if remoteUri[:3] == "eth" {
 			remoteAddr, err := net.ParseMAC(remoteUri[8:])
 			if err != nil {

@@ -27,7 +27,7 @@ func TestTcpTransport_Init(t *testing.T) {
 	faceSystem.Init(&packetValidator, &mir)
 	faceSystem.Start()
 
-	logicFace, err := lf.CreateTcpLogicFace("192.168.159.129:13899")
+	logicFace, err := lf.CreateTcpLogicFace("192.168.159.129:13899", 0)
 	if err != nil {
 		t.Fatal("Create TCP logic face failed", err.Error())
 	}
@@ -65,7 +65,7 @@ func TestTcpTransport_Init(t *testing.T) {
 
 }
 func tcpTransportSend(remoteAddr string, payloadSize int, nums int, wg *sync.WaitGroup) {
-	logicFace, err := lf.CreateTcpLogicFace(remoteAddr + ":13899")
+	logicFace, err := lf.CreateTcpLogicFace(remoteAddr+":13899", 0)
 	if err != nil {
 		fmt.Println("Create Tcp logic face failed", err.Error())
 		return
@@ -89,7 +89,7 @@ func tcpTransportSend(remoteAddr string, payloadSize int, nums int, wg *sync.Wai
 }
 
 func tcpTransportSendAndSign(remoteAddr string, payloadSize int, nums int, wg *sync.WaitGroup) {
-	logicFace, err := lf.CreateTcpLogicFace(remoteAddr + ":13899")
+	logicFace, err := lf.CreateTcpLogicFace(remoteAddr+":13899", 0)
 	if err != nil {
 		fmt.Println("Create Tcp logic face failed", err.Error())
 		return

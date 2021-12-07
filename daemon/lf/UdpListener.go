@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -10,6 +10,7 @@ package lf
 import (
 	common2 "minlib/common"
 	"minlib/packet"
+	"mir-go/daemon/common"
 	"net"
 	"strconv"
 	"sync"
@@ -17,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//
+// UdpPacket
 // @Description: 用来存接收到的UDP包
 //
 type UdpPacket struct {
@@ -26,7 +27,7 @@ type UdpPacket struct {
 	remoteAddr *net.UDPAddr
 }
 
-//
+// UdpListener
 // @Description:  udpAddrFaceMap 用于保存IP：PORT信息和logicFace的映射关系
 //			key 的格式是收到UDP包的 "<源IP地址>:<源端口号>"
 //			value 的格式是logicFace对象指针
@@ -43,13 +44,15 @@ type UdpListener struct {
 	udpAddrFaceMapLock sync.Mutex // udpAddrFaceMap 的互斥锁
 	recvBuf            []byte     // 接收缓冲区，大小为  9000
 	receiveRoutineNum  int
+	config             *common.MIRConfig
 }
 
-func (u *UdpListener) Init(port int, receiveRoutineNum int) {
-	u.udpPort = uint16(port)
+func (u *UdpListener) Init(config *common.MIRConfig) {
+	u.udpPort = uint16(config.UDPPort)
 	u.udpAddrFaceMap = make(map[string]*LogicFace)
 	u.recvBuf = make([]byte, 9000)
-	u.receiveRoutineNum = receiveRoutineNum
+	u.receiveRoutineNum = config.UDPReceiveRoutineNumber
+	u.config = config
 }
 
 //
@@ -61,7 +64,7 @@ func (u *UdpListener) createUdpLogicFace(conn *net.UDPConn) {
 	createUdpLogicFace(conn, nil)
 }
 
-//
+// Start
 // @Description:  启动监听协程
 // @receiver t
 //

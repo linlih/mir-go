@@ -132,7 +132,7 @@ func (f *FaceManager) addLogicFace(topPrefix *component.Identifier, interest *pa
 		logicFace.SetPersistence(persistency)
 		return MakeControlResponse(200, "", strconv.FormatUint(logicFace.LogicFaceId, 10))
 	case component.ControlParameterUriSchemeTCP:
-		logicFace, err := lf.CreateTcpLogicFace(uriItems[1])
+		logicFace, err := lf.CreateTcpLogicFace(uriItems[1], persistency)
 		if err != nil || logicFace == nil {
 			msg := ""
 			if err != nil {
