@@ -100,7 +100,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if lpPacket.GetFragmentNum() == 1 {
 		// 如果收到的是一个心跳包，则直接忽略
 		if lpPacket.IsHeartBeat() {
-			common2.LogInfo("Receive HeartBeat")
+			common2.LogDebug("Receive HeartBeat")
 			// 收到心跳包更新 Face
 			l.logicFace.refreshExpireTime()
 			return
