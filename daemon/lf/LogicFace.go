@@ -83,7 +83,7 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 	lf.linkService = linkService
 	lf.logicFaceType = faceType
 	lf.state = true
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	lf.refreshExpireTime()
 	lf.Mtu = uint64(linkService.mtu)
 	lf.Persistence = 0
 
@@ -147,7 +147,8 @@ func (lf *LogicFace) onReceivePacket(minPacket *packet.MINPacket) {
 		lf.logicFaceCounters.InDataN++
 	}
 
-	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
+	// 更新过期时间
+	lf.refreshExpireTime()
 }
 
 // Start
@@ -202,6 +203,14 @@ func (lf *LogicFace) Start() {
 			}
 		}()
 	}
+}
+
+// refreshExpireTime 更新过期时间
+//
+// @Description:
+//
+func (lf *LogicFace) refreshExpireTime() {
+	lf.expireTime = getTimestampMS() + logicFaceMaxIdolTimeMs
 }
 
 func (lf *LogicFace) addPkt2SendQue(pkt encoding.IEncodingAble) {
