@@ -100,7 +100,7 @@ func (l *LinkService) ReceivePacket(lpPacket *packet.LpPacket) {
 	if lpPacket.GetFragmentNum() == 1 {
 		// 如果收到的是一个心跳包，则直接忽略
 		if lpPacket.IsHeartBeat() {
-			common2.LogDebug("Receive HeartBeat")
+			common2.LogWarn("Receive HeartBeat")
 			// 收到心跳包更新 Face
 			l.logicFace.refreshExpireTime()
 			return
@@ -169,19 +169,6 @@ func (l *LinkService) sendByteBuffer(buf []byte, bufLen int) {
 	}
 	//lpPacketId++
 	atomic.AddUint64(&lpPacketId, 1)
-}
-
-// SendHeartBeat 往对端链路发送一个心跳包
-//
-// @Description:
-// @receiver l
-//
-func (l *LinkService) SendHeartBeat() {
-	heatBeatPkt := packet.NewLpPacket()
-	heatBeatPkt.SetFragmentNum(1)
-	heatBeatPkt.SetFragmentSeq(0)
-	heatBeatPkt.SetHeartBeat(true)
-	l.transport.Send(heatBeatPkt)
 }
 
 // SendInterest
@@ -317,14 +304,18 @@ func (l *LinkService) SendMINPacket(minPacket *packet.MINPacket) {
 // @receiver l
 // @param packet
 //
-func (l *LinkService) SendEncodingAble(packet encoding.IEncodingAble) {
+func (l *LinkService) SendEncodingAble(pkt encoding.IEncodingAble) {
+	if lpPacket, ok := pkt.(*packet.LpPacket); ok {
+		l.transport.Send(lpPacket)
+		return
+	}
 	var encoder encoding.Encoder
 	err := encoder.EncoderReset(encoding.MaxPacketSize, 0)
 	if err != nil {
 		common2.LogWarn(err)
 		return
 	}
-	bufLen, err := packet.WireEncode(&encoder)
+	bufLen, err := pkt.WireEncode(&encoder)
 	if err != nil {
 		common2.LogWarn(err)
 		return

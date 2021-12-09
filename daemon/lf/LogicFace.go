@@ -197,8 +197,13 @@ func (lf *LogicFace) Start() {
 
 				// 如果队列堆积较少，则发送心跳包（心跳包是一个特殊类型的 LpPacket）
 				if len(lf.sendQue) < 5 {
+					heatBeatPkt := packet.NewLpPacket()
+					heatBeatPkt.SetFragmentNum(1)
+					heatBeatPkt.SetFragmentSeq(0)
+					heatBeatPkt.SetHeartBeat(true)
 					common2.LogDebug("Send heart Beat")
-					lf.linkService.SendHeartBeat()
+					// 将心跳包加到发送队列当中
+					lf.sendQue <- heatBeatPkt
 				}
 			}
 		}()
