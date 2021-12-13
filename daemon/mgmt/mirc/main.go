@@ -56,6 +56,8 @@ func main() {
 			common.LogFatal(err)
 		}
 
+		// mirc 日志只输出到终端
+		mirConfig.LogFilePath = ""
 		// 初始化日志模块
 		common2.InitLogger(mirConfig)
 		mirc(mirConfig)
