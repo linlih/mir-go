@@ -82,6 +82,7 @@ func CreateLogicFaceCommands(controller *mgmtlib.MIRController) *grumble.Command
 //
 func ListLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceListCommand(topPrefix))
+	commandExecutor.SetAutoShutdown(true)
 	if err != nil {
 		return err
 	}
@@ -145,6 +146,8 @@ func AddLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
 
 	// 发起一个请求命令得到结果
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceAddCommand(topPrefix, parameters))
+	commandExecutor.SetAutoShutdown(true)
+
 	if err != nil {
 		return err
 	}
@@ -174,6 +177,8 @@ func DelLogicFace(c *grumble.Context, controller *mgmtlib.MIRController) error {
 
 	// 发起一个请求命令得到结果
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateLogicFaceDelCommand(topPrefix, logicFaceId))
+	commandExecutor.SetAutoShutdown(true)
+
 	if err != nil {
 		return err
 	}
