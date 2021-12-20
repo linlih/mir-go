@@ -7,18 +7,64 @@
 //
 package lf
 
-import "sync"
+import (
+	"minlib/utils"
+)
+
+// LogicFaceMap 一个线程安全的，用于存储 LogicFace 的 map 实现
+//
+// @Description:
+//
+type LogicFaceMap struct {
+	utils.ThreadFreeMap
+}
+
+// StoreLogicFace 保存LogicFace到map
+//
+// @Description:
+// @receiver l
+// @param key
+// @param logicFacePtr
+//
+func (l *LogicFaceMap) StoreLogicFace(key interface{}, logicFacePtr *LogicFace) {
+	l.ThreadFreeMap.Store(key, logicFacePtr)
+}
+
+// LoadLogicFace 从 map 中加载 LogicFace
+//
+// @Description:
+// @receiver l
+// @param key
+// @return *LogicFace
+//
+func (l *LogicFaceMap) LoadLogicFace(key interface{}) *LogicFace {
+	if value, ok := l.ThreadFreeMap.Load(key); !ok {
+		return nil
+	} else {
+		return value.(*LogicFace)
+	}
+}
 
 // LogicFaceTable
 // @Description:  用于保存LogicFaceId和真正Face对象的映射关系。
 //
 type LogicFaceTable struct {
-	mLogicFaceTable map[uint64]*LogicFace
-	mSize           uint64
-	tableLock       sync.Mutex
-	lastId          uint64
-	version         uint64 // 版本
+	mLogicFaceTable LogicFaceMap
+	mSize           utils.ThreadFreeUint64 // LogicFace 表的大小
+	lastId          utils.ThreadFreeUint64 // 下一个分配的 LogicFace Id
+	version         utils.ThreadFreeUint64 // 版本
 	OnEvicted       func(uint64)
+}
+
+// Init 初始化 LogicFace Table
+//
+// @Description:
+// @receiver l
+//
+func (l *LogicFaceTable) Init() {
+	l.lastId.SetValue(0)
+	l.mSize.SetValue(0)
+	l.version.SetValue(0)
 }
 
 // GetVersion 获取版本号
@@ -28,14 +74,16 @@ type LogicFaceTable struct {
 // @return uint64
 //
 func (l *LogicFaceTable) GetVersion() uint64 {
-	return l.version
+	return l.version.GetValue()
 }
 
-func (l *LogicFaceTable) Init() {
-	l.lastId = 0
-	l.mLogicFaceTable = make(map[uint64]*LogicFace)
-	l.mSize = 0
-	l.version = 0
+// Size
+// @Description: 获得当前表大小。
+// @receiver logicFaceTable
+// @return uint64  表中LogicFace个数
+//
+func (l *LogicFaceTable) Size() uint64 {
+	return l.mSize.GetValue()
 }
 
 // AddLogicFace
@@ -45,18 +93,14 @@ func (l *LogicFaceTable) Init() {
 // @return uint64  返回分配的LogicFaceId
 //
 func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
-	lfid := l.lastId
-	l.tableLock.Lock()
-	l.mLogicFaceTable[l.lastId] = logicFacePtr
-	logicFacePtr.LogicFaceId = l.lastId
-	l.mSize++
-	l.lastId++
-	l.version++
-	l.tableLock.Unlock()
+	logicFacePtr.LogicFaceId = l.lastId.GetAndPlus(1)
+	l.mLogicFaceTable.StoreLogicFace(logicFacePtr.LogicFaceId, logicFacePtr)
+	l.mSize.AddAndGet(1)
+	l.version.AddAndGet(1)
 	logicFacePtr.SetOnShutdownCallback(func(logicFaceId uint64) {
 		l.OnEvicted(logicFaceId)
 	})
-	return lfid
+	return logicFacePtr.LogicFaceId
 }
 
 // GetLogicFacePtrById
@@ -66,20 +110,7 @@ func (l *LogicFaceTable) AddLogicFace(logicFacePtr *LogicFace) uint64 {
 // @return *LogicFace	LogicFace对象指针
 //
 func (l *LogicFaceTable) GetLogicFacePtrById(logicFaceId uint64) *LogicFace {
-	var logicFacePtr *LogicFace = nil
-	l.tableLock.Lock()
-	logicFacePtr = l.mLogicFaceTable[logicFaceId]
-	l.tableLock.Unlock()
-	return logicFacePtr
-}
-
-// Size
-// @Description: 获得当前表大小。
-// @receiver logicFaceTable
-// @return uint64  表中LogicFace个数
-//
-func (l *LogicFaceTable) Size() uint64 {
-	return uint64(len(l.mLogicFaceTable))
+	return l.mLogicFaceTable.LoadLogicFace(logicFaceId)
 }
 
 // RemoveByLogicFaceId
@@ -88,12 +119,21 @@ func (l *LogicFaceTable) Size() uint64 {
 // @param logicFaceId logicFace号
 //
 func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
-	l.tableLock.Lock()
-	delete(l.mLogicFaceTable, logicFaceId)
-	l.mSize--
-	l.version++
-	l.tableLock.Unlock()
+	l.mLogicFaceTable.Delete(logicFaceId)
+	l.mSize.SubtractAndGet(1)
+	l.version.AddAndGet(1)
+}
 
+// Range 遍历 LogicFace Table
+//
+// @Description:
+// @receiver l
+// @param f
+//
+func (l *LogicFaceTable) Range(f func(key uint64, value *LogicFace) bool) {
+	l.mLogicFaceTable.Range(func(key, value interface{}) bool {
+		return f(key.(uint64), value.(*LogicFace))
+	})
 }
 
 // GetAllFaceList
@@ -102,8 +142,9 @@ func (l *LogicFaceTable) RemoveByLogicFaceId(logicFaceId uint64) {
 //
 func (l *LogicFaceTable) GetAllFaceList() []*LogicFace {
 	var faceList []*LogicFace
-	for _, v := range l.mLogicFaceTable {
-		faceList = append(faceList, v)
-	}
+	l.mLogicFaceTable.Range(func(key, value interface{}) bool {
+		faceList = append(faceList, value.(*LogicFace))
+		return true
+	})
 	return faceList
 }
