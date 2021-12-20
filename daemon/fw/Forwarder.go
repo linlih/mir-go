@@ -134,16 +134,9 @@ func (f *Forwarder) OnReceiveMINPacket(ipd *lf.IncomingPacketData) {
 			return
 		} else {
 			if interest.NackHeader.IsInitial() {
-				if nack, err := packet.NewNackByInterest(interest); err != nil {
-					common2.LogWarnWithFields(logrus.Fields{
-						"faceId":     ingress.LogicFaceId,
-						"identifier": identifyWrapper.ToUri(),
-					}, "Create Nack by Interest failed")
-					return
-				} else {
-					// Nack
-					f.OnIncomingNack(ingress, nack)
-				}
+				nack := packet.NewNackByInterest(interest)
+				// Nack
+				f.OnIncomingNack(ingress, nack)
 			} else {
 				// Interest
 				f.OnIncomingInterest(ingress, interest)
