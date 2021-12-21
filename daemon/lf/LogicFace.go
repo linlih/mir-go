@@ -12,6 +12,7 @@ import (
 	"minlib/encoding"
 	"minlib/packet"
 	"minlib/utils"
+	utils2 "mir-go/daemon/utils"
 	"sync"
 	"time"
 )
@@ -201,9 +202,10 @@ func (lf *LogicFace) onReceivePacket(minPacket *packet.MINPacket) {
 //
 func (lf *LogicFace) Start() {
 	// 启动收包协程
-	go lf.transport.Receive()
+	utils2.GoroutineNoPanic(lf.transport.Receive)
+
 	// 启动收包协程，负责把logic face 收到的包往forwarder的队列送
-	go func() {
+	utils2.GoroutineNoPanic(func() {
 		for lf.state {
 			minPacket, ok := <-lf.recvQue
 			if !ok {
@@ -213,9 +215,10 @@ func (lf *LogicFace) Start() {
 			}
 			lf.onReceivePacket(minPacket)
 		}
-	}()
+	})
+
 	// 启动发包协程，负责把forwarder 发往该 logic face 的包转发出去
-	go func() {
+	utils2.GoroutineNoPanic(func() {
 		for lf.state {
 			minPacket, ok := <-lf.sendQue
 			if !ok {
@@ -225,12 +228,12 @@ func (lf *LogicFace) Start() {
 			}
 			lf.linkService.SendEncodingAble(minPacket)
 		}
-	}()
+	})
 
 	// 如果是持久性的 TCP LogicFace，通过心跳包来保活
 	if lf.Persistence > 0 && lf.logicFaceType == LogicFaceTypeTCP {
 		// 启动心跳包协程，周期性的往发送队列里面放一个心跳包
-		go func() {
+		utils2.GoroutineNoPanic(func() {
 			ticker := time.NewTicker(5 * time.Second)
 			defer ticker.Stop()
 			for range ticker.C {
@@ -250,7 +253,7 @@ func (lf *LogicFace) Start() {
 					lf.sendQue <- heatBeatPkt
 				}
 			}
-		}()
+		})
 	}
 }
 

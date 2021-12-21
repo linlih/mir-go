@@ -21,6 +21,7 @@ import (
 	common2 "mir-go/daemon/common"
 	"mir-go/daemon/lf"
 	"mir-go/daemon/table"
+	"mir-go/daemon/utils"
 	"sync"
 )
 
@@ -63,7 +64,7 @@ type Dispatcher struct {
 // @Description:启动调度器进行收包监听
 //
 func (d *Dispatcher) Start() {
-	go func() {
+	utils.GoroutineNoPanic(func() {
 		if d.FaceClient == nil {
 			common.LogFatal("faceClient is null!")
 			return
@@ -177,7 +178,7 @@ func (d *Dispatcher) Start() {
 				d.sendControlResponse(MakeControlResponse(errorType, "Authorization Failed!", ""), interest)
 			})
 		}
-	}()
+	})
 }
 
 //

@@ -14,6 +14,7 @@ import (
 	"github.com/google/gopacket/pcap"
 	common2 "minlib/common"
 	"minlib/packet"
+	"mir-go/daemon/utils"
 	"net"
 )
 
@@ -98,7 +99,7 @@ func (i *InterfaceListener) Start() error {
 		return errors.New("create ether logic face error")
 	}
 	i.logicFace = logicFacePtr
-	go i.readPacketFromDev()
+	utils.GoroutineNoPanic(i.readPacketFromDev)
 	return nil
 }
 
@@ -173,7 +174,9 @@ func (i *InterfaceListener) readPacketFromDev() {
 	readPktChan := make(chan gopacket.Packet, 10000)
 	common2.LogInfo("start interface: ", i.name, " receive routine number = ", i.receiveRoutineNum)
 	for threadn := 0; threadn < i.receiveRoutineNum; threadn++ {
-		go i.processReceivedFrame(readPktChan)
+		utils.GoroutineNoPanic(func() {
+			i.processReceivedFrame(readPktChan)
+		})
 	}
 
 	pktSrc := gopacket.NewPacketSource(i.pcapHandle, i.pcapHandle.LinkType())

@@ -10,6 +10,7 @@ package lf
 import (
 	common2 "minlib/common"
 	"mir-go/daemon/common"
+	"mir-go/daemon/utils"
 	"time"
 )
 
@@ -76,7 +77,7 @@ func (l *LogicFaceSystem) Start() {
 	if l.config.SupportUnix {
 		l.unixListener.Start()
 	}
-	go l.faceCleaner()
+	utils.GoroutineNoPanic(l.faceCleaner)
 }
 
 func (l *LogicFaceSystem) destroyFace(logicFaceId uint64, logicFace *LogicFace) {

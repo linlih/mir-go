@@ -92,7 +92,9 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 	logicFaceSystem.Start()
 
 	// 加载静态路由配置
-	go SetUpDefaultRoute(mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
+	utils2.GoroutineNoPanic(func() {
+		SetUpDefaultRoute(mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
+	})
 
 	// 启动命令分发程序
 	dispatcher.Start()

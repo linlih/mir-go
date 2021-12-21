@@ -10,6 +10,7 @@ package lf
 import (
 	common2 "minlib/common"
 	"mir-go/daemon/common"
+	"mir-go/daemon/utils"
 	"net"
 	"os"
 	"os/exec"
@@ -75,5 +76,5 @@ func (u *UnixStreamListener) Start() {
 		common2.LogFatal(err)
 	}
 	u.listener = listener
-	go u.accept()
+	utils.GoroutineNoPanic(u.accept)
 }

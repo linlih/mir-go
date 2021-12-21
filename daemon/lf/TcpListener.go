@@ -10,6 +10,7 @@ package lf
 import (
 	common2 "minlib/common"
 	"mir-go/daemon/common"
+	"mir-go/daemon/utils"
 	"net"
 	"strconv"
 )
@@ -68,5 +69,5 @@ func (t *TcpListener) Start() {
 		return
 	}
 	t.listener = listener
-	go t.accept()
+	utils.GoroutineNoPanic(t.accept)
 }

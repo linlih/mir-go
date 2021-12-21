@@ -19,6 +19,7 @@ import (
 	"mir-go/daemon/lf"
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
+	"mir-go/daemon/utils"
 )
 
 // Forwarder MIR 转发器实例
@@ -72,21 +73,25 @@ func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalP
 // @Description:
 //
 func (f *Forwarder) Start() {
-	for true {
-		// 在处理包之前
-		f.heapTimer.DealEvent()
-		// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
-		if data, err := f.packetQueue.ReadUntil(10); err != nil {
-			// 读取超时了
-		} else {
-			ipd, ok := data.(*lf.IncomingPacketData)
-			if !ok {
-				continue
+	utils.ProtectRun(func() {
+		for true {
+			// 在处理包之前
+			f.heapTimer.DealEvent()
+			// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
+			if data, err := f.packetQueue.ReadUntil(10); err != nil {
+				// 读取超时了
+			} else {
+				ipd, ok := data.(*lf.IncomingPacketData)
+				if !ok {
+					continue
+				}
+				f.OnReceiveMINPacket(ipd)
 			}
-			f.OnReceiveMINPacket(ipd)
 		}
-
-	}
+	}, func(err interface{}) {
+		// Panic error
+		common2.LogError(err)
+	})
 }
 
 // OnReceiveMINPacket 处理收到一个 MINPacket

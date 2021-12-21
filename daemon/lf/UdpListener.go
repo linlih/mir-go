@@ -11,6 +11,7 @@ import (
 	common2 "minlib/common"
 	"minlib/packet"
 	"mir-go/daemon/common"
+	"mir-go/daemon/utils"
 	"net"
 	"strconv"
 	"sync"
@@ -80,7 +81,7 @@ func (u *UdpListener) Start() {
 	}
 	u.conn = conn
 	//u.createUdpLogicFace(conn)
-	go u.doReceive()
+	utils.GoroutineNoPanic(u.doReceive)
 }
 
 //
@@ -148,7 +149,9 @@ func (u *UdpListener) doReceive() {
 	readPacketChan := make(chan *UdpPacket, 10000)
 	logrus.Info("start udp receive routine number = ", u.receiveRoutineNum)
 	for i := 0; i < u.receiveRoutineNum; i++ {
-		go u.processUdpPacket(readPacketChan)
+		utils.GoroutineNoPanic(func() {
+			u.processUdpPacket(readPacketChan)
+		})
 	}
 	for true {
 		var udpPacket UdpPacket

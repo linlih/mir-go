@@ -10,6 +10,7 @@ package lf
 import (
 	common2 "minlib/common"
 	"minlib/utils"
+	utils2 "mir-go/daemon/utils"
 	"net"
 	"time"
 )
@@ -57,7 +58,7 @@ func (e *EthernetListener) Init(receiveRoutineNum int) {
 // @receiver e
 //
 func (e *EthernetListener) Start() {
-	go e.monitorDev()
+	utils2.GoroutineNoPanic(e.monitorDev)
 }
 
 //
