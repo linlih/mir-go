@@ -69,6 +69,16 @@ func (l *LinkService) Init(mtu int) {
 	//l.lpPacketId = 0
 }
 
+// updateMTU 更新MTU
+//
+// @Description:
+// @receiver l
+// @param mtu
+//
+func (l *LinkService) updateMTU(mtu int) {
+	l.mtu = mtu
+}
+
 //
 // @Description: 从lpPacket中提取出MINPacket对象
 // @param lpPacket  LpPacket 对象指针

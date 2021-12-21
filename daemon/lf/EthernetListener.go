@@ -9,17 +9,38 @@ package lf
 
 import (
 	common2 "minlib/common"
+	"minlib/utils"
 	"net"
 	"time"
 )
+
+// InterfaceListenerMap 一个线程安全的，用于存储 InterfaceListener 的 Map
+//
+// @Description:
+//
+type InterfaceListenerMap struct {
+	utils.ThreadFreeMap
+}
+
+func (i *InterfaceListenerMap) StoreInterfaceListener(key interface{}, interfaceListener *InterfaceListener) {
+	i.Store(key, interfaceListener)
+}
+
+func (i *InterfaceListenerMap) LoadInterfaceListener(key interface{}) *InterfaceListener {
+	if value, ok := i.ThreadFreeMap.Load(key); !ok {
+		return nil
+	} else {
+		return value.(*InterfaceListener)
+	}
+}
 
 // EthernetListener
 // @Description: 监听所有网卡信息，使用协程来从每个网卡读取包，每个网卡对应一个 InterfaceListener， 一个 InterfaceListener
 //			用于专门接收一个网卡的包
 //
 type EthernetListener struct {
-	mInterfaceListeners map[string]*InterfaceListener // 用于保存，已经打开了的网卡的信息，以及相应的logicFace号
-	badDev              map[string]int                // 用于保存无法启动的网卡名
+	mInterfaceListeners InterfaceListenerMap   // 用于保存，已经打开了的网卡的信息，以及相应的logicFace号
+	badDev              utils.ThreadFreeIntMap // 用于保存无法启动的网卡名
 	receiveRoutineNum   int
 }
 
@@ -28,8 +49,6 @@ type EthernetListener struct {
 // @receiver e
 //
 func (e *EthernetListener) Init(receiveRoutineNum int) {
-	e.mInterfaceListeners = make(map[string]*InterfaceListener)
-	e.badDev = make(map[string]int)
 	e.receiveRoutineNum = receiveRoutineNum
 }
 
@@ -49,7 +68,7 @@ func (e *EthernetListener) Start() {
 //
 func (e *EthernetListener) closeInterfaceListener(ifListener *InterfaceListener) {
 	ifListener.Close() // 关闭这个网卡对应的所有logicFace
-	delete(e.mInterfaceListeners, ifListener.name)
+	e.mInterfaceListeners.Delete(ifListener.name)
 }
 
 //
@@ -62,15 +81,17 @@ func (e *EthernetListener) closeInterfaceListener(ifListener *InterfaceListener)
 // @param flag		网卡状态信息
 //
 func (e *EthernetListener) updateDev(name string, macAddr net.HardwareAddr, mtu int, flag net.Flags) {
-	ifListener, ok := e.mInterfaceListeners[name]
-	if ok {
+	if ifListener := e.mInterfaceListeners.LoadInterfaceListener(name); ifListener != nil {
 		if ifListener.state && (flag&net.FlagUp) == 0 {
 			e.closeInterfaceListener(ifListener)
+		} else if ifListener.mtu != mtu {
+			// 更新MTU
+			ifListener.updateMtu(mtu)
 		}
 		return
 	}
 	if (flag & net.FlagUp) != 0 {
-		_, ok = e.badDev[name]
+		_, ok := e.badDev.Load(name)
 		if ok { // 该网卡前面尝试启动过，启动不了
 			return
 		}
@@ -90,10 +111,10 @@ func (e *EthernetListener) CreateInterfaceListener(ifName string, macAddr net.Ha
 	ifListener.Init(ifName, macAddr, mtu, e.receiveRoutineNum)
 	err := ifListener.Start() // 启动从网卡读取包的协程
 	if err != nil {
-		e.badDev[ifName] = 1
+		e.badDev.Store(ifName, 1)
 		return
 	}
-	e.mInterfaceListeners[ifName] = &ifListener
+	e.mInterfaceListeners.StoreInterfaceListener(ifName, &ifListener)
 }
 
 //
@@ -120,10 +141,12 @@ func (e *EthernetListener) monitorDev() {
 // @param remoteMacAddr	对端mac地址
 //
 func (e *EthernetListener) DeleteLogicFace(localMacAddr string, remoteMacAddr string) {
-	for _, ifListener := range e.mInterfaceListeners {
+	e.mInterfaceListeners.Range(func(key, value interface{}) bool {
+		ifListener := value.(*InterfaceListener)
 		if ifListener.macAddr.String() == localMacAddr {
 			ifListener.DeleteLogicFace(remoteMacAddr)
-			return
+			return false
 		}
-	}
+		return true
+	})
 }

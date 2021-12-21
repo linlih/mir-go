@@ -1,4 +1,4 @@
-//
+// Package lf
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -14,10 +14,10 @@ import (
 	"sync"
 )
 
-// 如果超过500ms没收到下一个分片，则删除表项
+// ReassembleTimeout 如果超过500ms没收到下一个分片，则删除表项
 const ReassembleTimeout = 500 // 500ms超时
 
-//
+// LpReassemble
 // @Description: 包重组器
 //			包重组器使用一个哈希表和一个超时事件堆实现。
 //			mPartialPackets 哈希表
@@ -41,7 +41,7 @@ type LpReassemble struct {
 	timeoutEventHeap    TimeoutEventHeap
 }
 
-//
+// Init
 // @Description: 初始化包重组器
 // @receiver l
 //
@@ -74,7 +74,7 @@ func (l *LpReassemble) processTimeoutEvent(curTime int64) {
 	}
 }
 
-//
+// ReceiveFragment
 // @Description: 对收到的分片进行重组。调用 processTimeoutEvent 处理超时事件，
 // @receiver l
 // @param remoteMacAddr	对端Mac地址

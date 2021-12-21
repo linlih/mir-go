@@ -11,40 +11,6 @@ import (
 	"minlib/utils"
 )
 
-// LogicFaceMap 一个线程安全的，用于存储 LogicFace 的 map 实现
-//
-// @Description:
-//
-type LogicFaceMap struct {
-	utils.ThreadFreeMap
-}
-
-// StoreLogicFace 保存LogicFace到map
-//
-// @Description:
-// @receiver l
-// @param key
-// @param logicFacePtr
-//
-func (l *LogicFaceMap) StoreLogicFace(key interface{}, logicFacePtr *LogicFace) {
-	l.ThreadFreeMap.Store(key, logicFacePtr)
-}
-
-// LoadLogicFace 从 map 中加载 LogicFace
-//
-// @Description:
-// @receiver l
-// @param key
-// @return *LogicFace
-//
-func (l *LogicFaceMap) LoadLogicFace(key interface{}) *LogicFace {
-	if value, ok := l.ThreadFreeMap.Load(key); !ok {
-		return nil
-	} else {
-		return value.(*LogicFace)
-	}
-}
-
 // LogicFaceTable
 // @Description:  用于保存LogicFaceId和真正Face对象的映射关系。
 //

@@ -31,8 +31,8 @@ import (
 // @return error		错误信息
 //
 func CreateEtherLogicFace(localIfName string, remoteMacAddr net.HardwareAddr) (*LogicFace, error) {
-	ifListener, ok := gLogicFaceSystem.ethernetListener.mInterfaceListeners[localIfName]
-	if !ok {
+	ifListener := gLogicFaceSystem.ethernetListener.mInterfaceListeners.LoadInterfaceListener(localIfName)
+	if ifListener == nil {
 		return nil, errors.New("can not find local dev name : " + localIfName)
 	}
 	logicFace := ifListener.GetLogicFaceByMacAddr(remoteMacAddr.String())

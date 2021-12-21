@@ -11,6 +11,7 @@ import (
 	common2 "minlib/common"
 	"minlib/encoding"
 	"minlib/packet"
+	"minlib/utils"
 	"sync"
 	"time"
 )
@@ -35,7 +36,39 @@ const (
 //
 var logicFaceMaxIdolTimeMs int64 = 600000
 
-//var logicFaceMaxIdolTimeMs int64 = 5000
+// LogicFaceMap 一个线程安全的，用于存储 LogicFace 的 map 实现
+//
+// @Description:
+//
+type LogicFaceMap struct {
+	utils.ThreadFreeMap
+}
+
+// StoreLogicFace 保存LogicFace到map
+//
+// @Description:
+// @receiver l
+// @param key
+// @param logicFacePtr
+//
+func (l *LogicFaceMap) StoreLogicFace(key interface{}, logicFacePtr *LogicFace) {
+	l.ThreadFreeMap.Store(key, logicFacePtr)
+}
+
+// LoadLogicFace 从 map 中加载 LogicFace
+//
+// @Description:
+// @receiver l
+// @param key
+// @return *LogicFace
+//
+func (l *LogicFaceMap) LoadLogicFace(key interface{}) *LogicFace {
+	if value, ok := l.ThreadFreeMap.Load(key); !ok {
+		return nil
+	} else {
+		return value.(*LogicFace)
+	}
+}
 
 // LogicFace
 // @Description: 逻辑接口类，用于发送网络分组，保存逻辑接口的状态信息等。
@@ -89,6 +122,17 @@ func (lf *LogicFace) Init(transport ITransport, linkService *LinkService, faceTy
 
 	lf.recvQue = make(chan *packet.MINPacket, gLogicFaceSystem.config.LFRecvQueSize)
 	lf.sendQue = make(chan encoding.IEncodingAble, gLogicFaceSystem.config.LFSendQueSize)
+}
+
+// updateMTU 更新MTU
+//
+// @Description:
+// @receiver lf
+// @param mtu
+//
+func (lf *LogicFace) updateMTU(mtu int) {
+	lf.Mtu = uint64(mtu)
+	lf.linkService.mtu = mtu
 }
 
 //

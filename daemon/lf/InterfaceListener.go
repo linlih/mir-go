@@ -15,7 +15,6 @@ import (
 	common2 "minlib/common"
 	"minlib/packet"
 	"net"
-	"sync"
 )
 
 // InterfaceListener
@@ -38,11 +37,10 @@ type InterfaceListener struct {
 	name              string           // 网卡名
 	macAddr           net.HardwareAddr // MAC地址
 	state             bool             // true 为开启、 false为关闭
-	mtu               int
-	logicFace         *LogicFace
-	etherFaceMap      map[string]*LogicFace // 对端mac地址和face对象映射表
-	etherFaceMapLock  sync.Mutex		//	访问 etherFaceMap 的互斥锁
-	pcapHandle        *pcap.Handle          // pcap 抓包句柄
+	mtu               int              // MTU
+	logicFace         *LogicFace       // 对应的逻辑接口
+	etherFaceMap      LogicFaceMap     // 对端mac地址和face对象映射表
+	pcapHandle        *pcap.Handle     // pcap 抓包句柄
 	receiveRoutineNum int
 }
 
@@ -54,12 +52,25 @@ type InterfaceListener struct {
 // @param mtu	网卡MTU
 //
 func (i *InterfaceListener) Init(name string, macAddr net.HardwareAddr, mtu int, receiveRoutineNum int) {
-	i.etherFaceMap = make(map[string]*LogicFace)
 	i.name = name
 	i.macAddr = macAddr
 	i.mtu = mtu
 	i.state = true
 	i.receiveRoutineNum = receiveRoutineNum
+}
+
+// updateMtu 更新本网卡相关的所有 LogicFace 的MTU
+//
+// @Description:
+// @receiver i
+// @param mtu
+//
+func (i *InterfaceListener) updateMtu(mtu int) {
+	i.logicFace.updateMTU(mtu)
+	i.etherFaceMap.Range(func(key, value interface{}) bool {
+		value.(*LogicFace).updateMTU(mtu)
+		return true
+	})
 }
 
 // Close
@@ -68,11 +79,11 @@ func (i *InterfaceListener) Init(name string, macAddr net.HardwareAddr, mtu int,
 //
 func (i *InterfaceListener) Close() {
 	i.logicFace.Shutdown()
-	i.etherFaceMapLock.Lock()
-	for _, value := range i.etherFaceMap {
-		value.Shutdown()
-	}
-	i.etherFaceMapLock.Unlock()
+	i.etherFaceMap.Range(func(key, value interface{}) bool {
+		lf := value.(*LogicFace)
+		lf.Shutdown()
+		return true
+	})
 }
 
 // Start @Description: 启动当前监听器
@@ -98,13 +109,7 @@ func (i *InterfaceListener) Start() error {
 // @return *LogicFace
 //
 func (i *InterfaceListener) GetLogicFaceByMacAddr(macAddr string) *LogicFace {
-	i.etherFaceMapLock.Lock()
-	logicFace, ok := i.etherFaceMap[macAddr]
-	i.etherFaceMapLock.Unlock()
-	if ok {
-		return logicFace
-	}
-	return nil
+	return i.etherFaceMap.LoadLogicFace(macAddr)
 }
 
 //
@@ -114,14 +119,10 @@ func (i *InterfaceListener) GetLogicFaceByMacAddr(macAddr string) *LogicFace {
 // @param srcMacAddr	收到包的源MAC地址
 //
 func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr string) {
-	i.etherFaceMapLock.Lock()
-	logicFace, ok := i.etherFaceMap[srcMacAddr]
-	i.etherFaceMapLock.Unlock()
-	if ok {
-		if logicFace.state == false {		// 如果 logicface 已经关闭，则删除相应表项
-			i.etherFaceMapLock.Lock()
-			delete(i.etherFaceMap, srcMacAddr)
-			i.etherFaceMapLock.Unlock()
+	logicFace := i.etherFaceMap.LoadLogicFace(srcMacAddr)
+	if logicFace != nil {
+		if logicFace.state == false { // 如果 logicface 已经关闭，则删除相应表项
+			i.etherFaceMap.Delete(srcMacAddr)
 		}
 		logicFace.linkService.ReceivePacket(lpPacket)
 		return
@@ -139,9 +140,7 @@ func (i *InterfaceListener) onReceive(lpPacket *packet.LpPacket, srcMacAddr stri
 	if logicFacePtr == nil {
 		common2.LogFatal("create ether logicface, error")
 	}
-	i.etherFaceMapLock.Lock()
-	i.etherFaceMap[srcMacAddr] = logicFacePtr
-	i.etherFaceMapLock.Unlock()
+	i.AddLogicFace(srcMacAddr, logicFacePtr)
 	logicFacePtr.linkService.ReceivePacket(lpPacket)
 }
 
@@ -189,9 +188,7 @@ func (i *InterfaceListener) readPacketFromDev() {
 // @param remoteMacAddr
 //
 func (i *InterfaceListener) DeleteLogicFace(remoteMacAddr string) {
-	i.etherFaceMapLock.Lock()
-	delete(i.etherFaceMap, remoteMacAddr)
-	i.etherFaceMapLock.Unlock()
+	i.etherFaceMap.Delete(remoteMacAddr)
 }
 
 // AddLogicFace
@@ -201,7 +198,5 @@ func (i *InterfaceListener) DeleteLogicFace(remoteMacAddr string) {
 // @param face
 //
 func (i *InterfaceListener) AddLogicFace(remoteMacAddr string, face *LogicFace) {
-	i.etherFaceMapLock.Lock()
-	i.etherFaceMap[remoteMacAddr] = face
-	i.etherFaceMapLock.Unlock()
+	i.etherFaceMap.StoreLogicFace(remoteMacAddr, face)
 }
