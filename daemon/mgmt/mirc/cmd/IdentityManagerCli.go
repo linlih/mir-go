@@ -184,11 +184,10 @@ func AddIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityAddCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -232,11 +231,10 @@ func DelIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDelCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -263,11 +261,10 @@ func DelIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 func ListIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityListCommand(topPrefix))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -322,11 +319,10 @@ func DumpCertIdentity(c *grumble.Context, controller *mgmt.MIRController) error 
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDumpCertCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -394,11 +390,10 @@ func ImportCertIdentity(c *grumble.Context, controller *mgmt.MIRController) erro
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityImportCertCommand(topPrefix, filePath))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -435,11 +430,10 @@ func SetDefIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentitySetDefCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -482,11 +476,10 @@ func DumpIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityDumpIdCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -563,11 +556,10 @@ func LoadIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityLoadIdCommand(topPrefix, filePath, passwd))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -604,11 +596,10 @@ func GetIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentityGetIdCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -652,11 +643,10 @@ func SelfIssueIdentity(c *grumble.Context, controller *mgmt.MIRController) error
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmt.CreateIdentitySelfIssueCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()

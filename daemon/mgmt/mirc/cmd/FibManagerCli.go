@@ -94,11 +94,10 @@ func AddFib(c *grumble.Context, controller *mgmtlib.MIRController) error {
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibAddCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -137,11 +136,10 @@ func DeleteNextHop(c *grumble.Context, controller *mgmtlib.MIRController) error 
 
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibDeleteCommand(topPrefix, parameters))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
@@ -168,11 +166,10 @@ func DeleteNextHop(c *grumble.Context, controller *mgmtlib.MIRController) error 
 func ListFib(c *grumble.Context, controller *mgmtlib.MIRController) error {
 	// 构造一个命令执行器
 	commandExecutor, err := controller.PrepareCommandExecutor(mgmtlib.CreateFibListCommand(topPrefix))
-	commandExecutor.SetAutoShutdown(true)
-
 	if err != nil {
 		return err
 	}
+	commandExecutor.SetAutoShutdown(true)
 
 	// 执行命令
 	response, err := commandExecutor.Start()
