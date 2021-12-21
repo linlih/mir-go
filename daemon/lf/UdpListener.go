@@ -8,15 +8,13 @@
 package lf
 
 import (
+	"github.com/sirupsen/logrus"
 	common2 "minlib/common"
 	"minlib/packet"
 	"mir-go/daemon/common"
 	"mir-go/daemon/utils"
 	"net"
 	"strconv"
-	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
 // UdpPacket
@@ -39,18 +37,17 @@ type UdpPacket struct {
 //			TODO 这样做可能会有问题，现在还没考虑到，到时候改成新建一个handle也比较简单，现在先这么做
 //
 type UdpListener struct {
-	udpPort            uint16
-	conn               *net.UDPConn
-	udpAddrFaceMap     map[string]*LogicFace
-	udpAddrFaceMapLock sync.Mutex // udpAddrFaceMap 的互斥锁
-	recvBuf            []byte     // 接收缓冲区，大小为  9000
-	receiveRoutineNum  int
-	config             *common.MIRConfig
+	udpPort        uint16
+	conn           *net.UDPConn
+	udpAddrFaceMap LogicFaceMap
+	//udpAddrFaceMapLock sync.Mutex // udpAddrFaceMap 的互斥锁
+	recvBuf           []byte // 接收缓冲区，大小为  9000
+	receiveRoutineNum int
+	config            *common.MIRConfig
 }
 
 func (u *UdpListener) Init(config *common.MIRConfig) {
 	u.udpPort = uint16(config.UDPPort)
-	u.udpAddrFaceMap = make(map[string]*LogicFace)
 	u.recvBuf = make([]byte, 9000)
 	u.receiveRoutineNum = config.UDPReceiveRoutineNumber
 	u.config = config
@@ -91,14 +88,10 @@ func (u *UdpListener) Start() {
 // @param remoteUdpAddr
 //
 func (u *UdpListener) onReceive(lpPacket *packet.LpPacket, remoteUdpAddr *net.UDPAddr) {
-	u.udpAddrFaceMapLock.Lock()
-	logicFace, ok := u.udpAddrFaceMap[remoteUdpAddr.String()]
-	u.udpAddrFaceMapLock.Unlock()
-	if ok {
+	logicFace := u.udpAddrFaceMap.LoadLogicFace(remoteUdpAddr.String())
+	if logicFace != nil {
 		if logicFace.state == false {
-			u.udpAddrFaceMapLock.Lock()
-			delete(u.udpAddrFaceMap, remoteUdpAddr.String())
-			u.udpAddrFaceMapLock.Unlock()
+			u.DeleteLogicFace(remoteUdpAddr.String())
 			return
 		}
 		logicFace.linkService.ReceivePacket(lpPacket)
@@ -167,23 +160,13 @@ func (u *UdpListener) doReceive() {
 }
 
 func (u *UdpListener) DeleteLogicFace(remoteAddr string) {
-	u.udpAddrFaceMapLock.Lock()
-	delete(u.udpAddrFaceMap, remoteAddr)
-	u.udpAddrFaceMapLock.Unlock()
+	u.DeleteLogicFace(remoteAddr)
 }
 
 func (u *UdpListener) AddLogicFace(remoteAddr string, logicFace *LogicFace) {
-	u.udpAddrFaceMapLock.Lock()
-	u.udpAddrFaceMap[remoteAddr] = logicFace
-	u.udpAddrFaceMapLock.Unlock()
+	u.udpAddrFaceMap.StoreLogicFace(remoteAddr, logicFace)
 }
 
 func (u *UdpListener) GetLogicFaceByRemoteUri(remoteAddr string) *LogicFace {
-	u.udpAddrFaceMapLock.Lock()
-	logicFace, ok := u.udpAddrFaceMap[remoteAddr]
-	u.udpAddrFaceMapLock.Unlock()
-	if ok {
-		return logicFace
-	}
-	return nil
+	return u.GetLogicFaceByRemoteUri(remoteAddr)
 }
