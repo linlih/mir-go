@@ -5,7 +5,7 @@ import (
 	"github.com/urfave/cli/v2"
 	common2 "minlib/common"
 	"mir-go/daemon/common"
-	"mir-go/daemon/mir"
+	"mir-go/daemon/mircmd"
 	"os"
 )
 

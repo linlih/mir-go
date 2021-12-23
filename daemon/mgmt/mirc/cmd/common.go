@@ -1,4 +1,4 @@
-// Package cmd Package main
+// Package mir Package main
 // @Author: Jianming Que
 // @Description:
 // @Version: 1.0.0

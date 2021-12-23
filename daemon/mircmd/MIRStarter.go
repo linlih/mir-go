@@ -51,6 +51,11 @@ func (m *MIRStarter) Init(mirConfig *common.MIRConfig) {
 	m.mirConfig = mirConfig
 	// 初始化日志模块
 	common.InitLogger(mirConfig)
+
+	// 初始化KeyChain
+	if err := m.keyChain.InitialKeyChainByPath(utils2.GetRelPath(m.mirConfig.SecurityConfig.IdentityDBPath)); err != nil {
+		common2.LogFatal(err)
+	}
 }
 
 // Start 传入所使用身份的密码，启动MIR
@@ -119,11 +124,6 @@ func (m *MIRStarter) IsExistDefaultIdentity() bool {
 // @param keyChain
 //
 func (m *MIRStarter) initKeyChain(passwd string) {
-	// 初始化KeyChain
-	if err := m.keyChain.InitialKeyChainByPath(utils2.GetRelPath(m.mirConfig.SecurityConfig.IdentityDBPath)); err != nil {
-		common2.LogFatal(err)
-	}
-
 	// 判断指定的网络身份是否存在
 	if m.IsExistDefaultIdentity() {
 		// 存在则使用输入的密码解密
