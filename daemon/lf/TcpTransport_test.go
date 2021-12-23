@@ -170,7 +170,7 @@ func TestTcpTransport_SpeedAndSign(t *testing.T) {
 func TestTcpTransport_Receive(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.CreateBlockQueue(10)
+	blockQueue := utils.NewBlockQueue(10)
 	packetValidator.Init(1, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()

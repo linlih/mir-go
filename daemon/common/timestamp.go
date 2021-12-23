@@ -1,4 +1,4 @@
-//
+// Package common
 // @Author: weiguohua
 // @Description:
 // @Version: 1.0.0
@@ -9,7 +9,7 @@ package common
 
 import "time"
 
-//
+// GetCurrentTime
 // 获取当前的时间戳（单位为 ms）
 //
 // @Description:

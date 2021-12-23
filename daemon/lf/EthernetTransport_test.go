@@ -38,7 +38,7 @@ var macRoutineNum = flag.Int("routineNum", 1, "number of routine to send UDP int
 func TestEthernetTransport_Send(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.CreateBlockQueue(10)
+	blockQueue := utils.NewBlockQueue(10)
 	packetValidator.Init(100, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()

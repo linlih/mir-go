@@ -1,8 +1,13 @@
-package main
+// Package mir
+// @Author: Jianming Que
+// @Description:
+// @Version: 1.0.0
+// @Date: 2021/12/23 9:13 PM
+// @Copyright: MIN-Group；国家重大科技基础设施——未来网络北大实验室；深圳市信息论与未来网络重点实验室
+//
+package mir
 
 import (
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/urfave/cli/v2"
 	common2 "minlib/common"
 	"minlib/component"
 	"minlib/security"
@@ -15,74 +20,71 @@ import (
 	"mir-go/daemon/table"
 	utils2 "mir-go/daemon/utils"
 	"net"
-	"os"
 	"time"
 )
 
 const defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini"
 
-func main() {
-	var configFilePath string
-	mirApp := cli.NewApp()
-	mirApp.Name = "mir"
-	mirApp.Usage = " MIR forwarder daemon program "
-	mirApp.Flags = []cli.Flag{
-		&cli.StringFlag{
-			Name:        "f",
-			Value:       defaultConfigFilePath,
-			Usage:       "Config file path for MIR",
-			Destination: &configFilePath,
-			Required:    true,
-		},
-	}
-	mirApp.Action = func(context *cli.Context) error {
-		common2.LogInfo(configFilePath)
-		mirConfig, err := common.ParseConfig(configFilePath)
-		if err != nil {
-			common2.LogFatal(err)
-		}
-
-		// 初始化日志模块
-		common.InitLogger(mirConfig)
-		InitForwarder(mirConfig)
-		return nil
-	}
-
-	if err := mirApp.Run(os.Args); err != nil {
-		return
-	}
+// MIRStarter MIR 启动器
+//
+// @Description:
+//
+type MIRStarter struct {
+	plugin.GlobalPluginManager                   // 全局插件管理器
+	keyChain                   security.KeyChain // 秘钥链
+	mirConfig                  *common.MIRConfig // MIR 配置文件
 }
 
-func InitForwarder(mirConfig *common.MIRConfig) {
-	// 初始化插件管理器
-	pluginManager := new(plugin.GlobalPluginManager)
-	// TODO: 在这边注册插件
-	//pluginManager.RegisterPlugin()
+// NewMIRStarter 新建一个 MIR 启动器
+//
+// @Description:
+// @param mirConfig
+// @return *MIRStarter
+//
+func NewMIRStarter(mirConfig *common.MIRConfig) *MIRStarter {
+	mirStarter := new(MIRStarter)
+	mirStarter.Init(mirConfig)
+	return mirStarter
+}
+
+func (m *MIRStarter) Init(mirConfig *common.MIRConfig) {
+	m.mirConfig = mirConfig
+	// 初始化日志模块
+	common.InitLogger(mirConfig)
+}
+
+// Start 传入所使用身份的密码，启动MIR
+//
+// @Description:
+// @param pwd
+//
+func (m *MIRStarter) Start(pwd string) {
+	// 初始化秘钥
+	m.initKeyChain(pwd)
 
 	// 初始化 BlockQueue
-	packetQueue := utils.CreateBlockQueue(uint(mirConfig.ForwarderConfig.PacketQueueSize))
+	packetQueue := utils.NewBlockQueue(uint(m.mirConfig.ForwarderConfig.PacketQueueSize))
 
 	// 初始化转发器
 	forwarder := new(fw.Forwarder)
-	if err := forwarder.Init(mirConfig, pluginManager, packetQueue); err != nil {
+	if err := forwarder.Init(m.mirConfig, &m.GlobalPluginManager, packetQueue); err != nil {
 		common2.LogFatal(err)
 	}
 
 	// PacketValidator
 	packetValidator := new(fw.PacketValidator)
-	packetValidator.Init(mirConfig.ParallelVerifyNum, mirConfig.VerifyPacket, packetQueue)
+	packetValidator.Init(m.mirConfig.ParallelVerifyNum, m.mirConfig.VerifyPacket, packetQueue)
 
 	// LogicFaceSystem
 	logicFaceSystem := new(lf.LogicFaceSystem)
-	logicFaceSystem.Init(packetValidator, mirConfig)
+	logicFaceSystem.Init(packetValidator, m.mirConfig)
 
 	// 管理模块
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	mgmtSystem := mgmt.CreateMgmtSystem()
 	mgmtSystem.SetFIB(forwarder.GetFIB())
 	mgmtSystem.BindFibCleaner(logicFaceSystem.LogicFaceTable())
-	dispatcher := mgmt.CreateDispatcher(mirConfig)
-	InitKeyChain(&dispatcher.KeyChain, mirConfig)
+	dispatcher := mgmt.CreateDispatcher(m.mirConfig, &m.keyChain)
 	dispatcher.FaceClient = faceClient
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
 	dispatcher.AddTopPrefix(topPrefix, forwarder.GetFIB(), faceServer)
@@ -93,73 +95,41 @@ func InitForwarder(mirConfig *common.MIRConfig) {
 
 	// 加载静态路由配置
 	utils2.GoroutineNoPanic(func() {
-		SetUpDefaultRoute(mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
+		SetUpDefaultRoute(m.mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
 	})
 
 	// 启动命令分发程序
 	dispatcher.Start()
 	// 启动转发处理流程（死循环阻塞）
 	forwarder.Start()
-
 }
 
-func askInputPassword() string {
-	passwd := ""
-	prompt := &survey.Password{
-		Message: "Please type your password",
-	}
-	if err := survey.AskOne(prompt, &passwd); err != nil {
-		common2.LogFatal(err)
-	}
-
-	return passwd
+// IsExistDefaultIdentity 判断默认身份是否存在
+//
+// @Description:
+// @return bool
+//
+func (m *MIRStarter) IsExistDefaultIdentity() bool {
+	return m.keyChain.ExistIdentity(m.mirConfig.GeneralConfig.DefaultId)
 }
 
-func askSetPasswd(name string) string {
-	for true {
-		passwd := ""
-		prompt := &survey.Password{
-			Message: "Please set passwd for " + name,
-		}
-		if err := survey.AskOne(prompt, &passwd); err != nil {
-			common2.LogFatal(err)
-		}
-		rePasswd := ""
-		prompt = &survey.Password{
-			Message: "Please confirm your passwd",
-		}
-		if err := survey.AskOne(prompt, &rePasswd); err != nil {
-			common2.LogFatal(err)
-		}
-
-		if passwd == rePasswd {
-			return passwd
-		} else {
-			common2.LogError("The two passwords are inconsistent！")
-		}
-	}
-	return ""
-}
-
-// InitKeyChain 初始化秘钥链
+// initKeyChain 初始化秘钥链
 //
 // @Description:
 // @param keyChain
 //
-func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
-	common2.LogInfo("DB:", utils2.GetRelPath(config.SecurityConfig.IdentityDBPath))
+func (m *MIRStarter) initKeyChain(passwd string) {
 	// 初始化KeyChain
-	if err := keyChain.InitialKeyChainByPath(utils2.GetRelPath(config.SecurityConfig.IdentityDBPath)); err != nil {
+	if err := m.keyChain.InitialKeyChainByPath(utils2.GetRelPath(m.mirConfig.SecurityConfig.IdentityDBPath)); err != nil {
 		common2.LogFatal(err)
 	}
 
 	// 判断指定的网络身份是否存在
-	if keyChain.ExistIdentity(config.GeneralConfig.DefaultId) {
-		// 存在则要求用户输入密码解锁网络身份
-		passwd := askInputPassword()
-		if identity := keyChain.GetIdentityByName(config.GeneralConfig.DefaultId); identity != nil {
+	if m.IsExistDefaultIdentity() {
+		// 存在则使用输入的密码解密
+		if identity := m.keyChain.GetIdentityByName(m.mirConfig.GeneralConfig.DefaultId); identity != nil {
 			common2.LogDebug(1, identity.IsLocked(), identity.Prikey, identity.PrikeyRawByte)
-			if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
+			if err := m.keyChain.SetCurrentIdentity(identity, passwd); err != nil {
 				common2.LogFatal(err)
 			}
 			common2.LogDebug(identity.IsLocked(), identity.Prikey, identity.PrikeyRawByte)
@@ -167,11 +137,10 @@ func InitKeyChain(keyChain *security.KeyChain, config *common.MIRConfig) {
 			common2.LogFatal("identify must not be nil!")
 		}
 	} else {
-		// 不存在则创建新的网络身份，并让用户为该网络身份设置密码
-		passwd := askSetPasswd(config.GeneralConfig.DefaultId)
-		if identity, err := keyChain.CreateIdentityByName(config.GeneralConfig.DefaultId, passwd); err != nil {
+		// 不存在则创建新的网络身份，并使用用户传入的密码作为它的密码
+		if identity, err := m.keyChain.CreateIdentityByName(m.mirConfig.GeneralConfig.DefaultId, passwd); err != nil {
 			common2.LogFatal(err)
-		} else if err := keyChain.SetCurrentIdentity(identity, passwd); err != nil {
+		} else if err := m.keyChain.SetCurrentIdentity(identity, passwd); err != nil {
 			common2.LogFatal(err)
 		}
 	}

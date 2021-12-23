@@ -13,7 +13,7 @@ import (
 func TestForwarder_Init(t *testing.T) {
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := utils.CreateBlockQueue(20)
+	queue := utils.NewBlockQueue(20)
 	forwarder.Init(nil, newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	face := new(lf.LogicFace)
@@ -48,7 +48,7 @@ func TestForwarder_OnOutgoingInterest(t *testing.T) {
 	newName1, _ := component.CreateIdentifierByString("/min")
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := utils.CreateBlockQueue(20)
+	queue := utils.NewBlockQueue(20)
 	forwarder.Init(nil, newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
@@ -83,7 +83,7 @@ func TestForwarder_OnInterestLoop(t *testing.T) {
 	newName1, _ := component.CreateIdentifierByString("/min")
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := utils.CreateBlockQueue(20)
+	queue := utils.NewBlockQueue(20)
 	forwarder.Init(nil, newPlugin, queue)
 	forwarder.SetDefaultStrategy("/")
 	forwarder.StrategyTable.Init()
@@ -119,7 +119,7 @@ func TestForwarder_OnContentStoreHit(t *testing.T) {
 
 	forwarder := new(Forwarder)
 	newPlugin := new(plugin.GlobalPluginManager)
-	queue := utils.CreateBlockQueue(20)
+	queue := utils.NewBlockQueue(20)
 	forwarder.Init(nil, newPlugin, queue)
 	fmt.Println("forwarder", forwarder.FIB.GetDepth(), forwarder.PIT.Size())
 	brs := BestRouteStrategy{StrategyBase{forwarder: forwarder}}

@@ -35,6 +35,7 @@ type Forwarder struct {
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 	packetQueue         *utils2.BlockQueue          // 包队列
 	heapTimer           *utils2.HeapTimer           // 堆定时器，用来处理PIT的超时事件
+	lastNum             uint64
 }
 
 // Init 初始化转发器
@@ -43,6 +44,7 @@ type Forwarder struct {
 // @receiver f
 //
 func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
+	f.lastNum = 0
 	f.config = config
 	// 初始化各个表
 	f.PIT.Init()
@@ -371,6 +373,12 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 // @param interest
 //
 func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
+	if item, err := interest.GetName().Get(-1); err == nil {
+		//if item.GetVersionNumber()-f.lastNum > 1 {
+		//	common2.LogWarn(f.lastNum, " => ", item.GetVersionNumber())
+		//}
+		f.lastNum = item.GetVersionNumber()
+	}
 	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   egress.LogicFaceId,
 		"interest": interest.ToUri(),
@@ -744,6 +752,10 @@ func (f *Forwarder) SetExpiryTime(pitEntry *table.PITEntry, duration int64) {
 	f.heapTimer.AddTimeoutEvent(duration, key, func() {
 		f.OnInterestFinalize(pitEntry)
 	})
+
+	if duration == 0 {
+		f.heapTimer.DealEvent()
+	}
 }
 
 func (f *Forwarder) GetFIB() *table.FIB {

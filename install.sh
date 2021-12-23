@@ -7,7 +7,7 @@ go mod download
 echo ""
 
 echo "======================== compile and install mir ==========================="
-go install ./daemon/mir
+go install ./daemon/mir/cmd
 echo "mir install to $GOPATH/bin/mir"
 echo ""
 

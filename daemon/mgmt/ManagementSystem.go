@@ -16,7 +16,7 @@ func (m *ManagementSystem) Init(dispatcher *Dispatcher, logicFaceTable *lf.Logic
 	m.fibManager.Init(dispatcher, logicFaceTable)
 	m.faceManager.Init(dispatcher, logicFaceTable)
 	m.csManager.Init(dispatcher, logicFaceTable)
-	m.identityManager = CreateIdentityManager(&dispatcher.KeyChain)
+	m.identityManager = CreateIdentityManager(dispatcher.keyChain)
 	m.identityManager.Init(dispatcher)
 }
 

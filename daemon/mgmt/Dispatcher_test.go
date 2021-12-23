@@ -3,11 +3,10 @@ package mgmt
 import (
 	"minlib/component"
 	"minlib/encoding"
-	"minlib/mgmt"
 	"minlib/packet"
+	"minlib/utils"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/utils"
 	"testing"
 	"time"
 )
@@ -16,7 +15,7 @@ func Test(t *testing.T) {
 
 	var Fsystem lf.LogicFaceSystem
 	var packetValidator = &fw.PacketValidator{}
-	blockQueue := utils.CreateBlockQueue(100)
+	blockQueue := utils.NewBlockQueue(100)
 	packetValidator.Init(100, false, blockQueue)
 	Fsystem.Init(packetValidator, nil)
 	Fsystem.Start()
@@ -24,7 +23,7 @@ func Test(t *testing.T) {
 	fibManager := CreateFibManager()
 	faceManager := CreateFaceManager()
 	csManager := CreateCsManager()
-	dispatcher := CreateDispatcher(nil)
+	dispatcher := CreateDispatcher(nil, nil)
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
 	dispatcher.AddTopPrefix(topPrefix, nil, nil)
 	fibManager.Init(dispatcher, Fsystem.LogicFaceTable())

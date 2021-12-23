@@ -160,7 +160,7 @@ func (lf *LogicFace) ReceivePacket(minPacket *packet.MINPacket) {
 	if len(lf.recvQue) < cap(lf.recvQue) {
 		lf.recvQue <- minPacket
 	} else {
-		common2.LogDebug("receive que full, ", lf.GetLocalUri(), lf.GetRemoteUri())
+		common2.LogError("receive que full, ", lf.GetLocalUri(), lf.GetRemoteUri())
 	}
 }
 

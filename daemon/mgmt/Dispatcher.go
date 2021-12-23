@@ -48,14 +48,31 @@ type Module struct {
 //   			读写锁，对网络包进行签名和验签、签名元数据、缓存
 //
 type Dispatcher struct {
-	FaceClient        *logicface.LogicFace             // 内部face，用来和转发器进行通信
-	topPrefixList     map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
-	module            map[string]*Module               // 行为模块
-	topLock           *sync.RWMutex                    // 顶级域map读写锁
-	moduleLock        *sync.RWMutex                    // 行为模块map读写锁
-	security.KeyChain                                  // 网络包签名和验签 发送数据包的时候使用
-	SignInfo          *component.SignatureInfo         // 表示签名的元数据
-	Cache             *Cache                           // 存储数据包分片缓存
+	FaceClient    *logicface.LogicFace             // 内部face，用来和转发器进行通信
+	topPrefixList map[string]*component.Identifier // 已经注册的顶级域前缀 map实现 方便取 存储前缀如:/min-mir/mgmt/localhost
+	module        map[string]*Module               // 行为模块
+	topLock       *sync.RWMutex                    // 顶级域map读写锁
+	moduleLock    *sync.RWMutex                    // 行为模块map读写锁
+	keyChain      *security.KeyChain               // 网络包签名和验签 发送数据包的时候使用
+	SignInfo      *component.SignatureInfo         // 表示签名的元数据
+	Cache         *Cache                           // 存储数据包分片缓存
+}
+
+// CreateDispatcher
+// 创建调度器函数
+//pp
+// @Description:创建调度器函数，对调度器进行初始化
+//
+func CreateDispatcher(config *common2.MIRConfig, keychain *security.KeyChain) *Dispatcher {
+	dispatcher := &Dispatcher{
+		topPrefixList: make(map[string]*component.Identifier),
+		module:        make(map[string]*Module),
+		topLock:       new(sync.RWMutex),
+		moduleLock:    new(sync.RWMutex),
+		keyChain:      keychain,
+		Cache:         New(config.ManagementConfig.CacheSize, nil),
+	}
+	return dispatcher
 }
 
 // Start
@@ -205,22 +222,6 @@ func (d *Dispatcher) authorization(topPrefix *component.Identifier, interest *pa
 	return
 }
 
-// CreateDispatcher
-// 创建调度器函数
-//pp
-// @Description:创建调度器函数，对调度器进行初始化
-//
-func CreateDispatcher(config *common2.MIRConfig) *Dispatcher {
-	dispatcher := &Dispatcher{
-		topPrefixList: make(map[string]*component.Identifier),
-		module:        make(map[string]*Module),
-		topLock:       new(sync.RWMutex),
-		moduleLock:    new(sync.RWMutex),
-		Cache:         New(config.ManagementConfig.CacheSize, nil),
-	}
-	return dispatcher
-}
-
 // AddTopPrefix
 // 添加顶级域函数
 //
@@ -349,7 +350,7 @@ func (d *Dispatcher) saveData(data *packet.Data) {
 	// TODO: 配置化
 	data.SetTtl(64)
 	// 给缓存的 data 包签名
-	if err := d.KeyChain.SignData(data); err != nil {
+	if err := d.keyChain.SignData(data); err != nil {
 		common.LogError("Sign data failed!")
 	}
 	common.LogDebug("SaveData: ", data.ToUri())
@@ -366,7 +367,7 @@ func (d *Dispatcher) sendData(data *packet.Data) {
 	// 直接发出的包设置不缓存
 	data.NoCache.SetNoCache(true)
 	// 给发出的 data 包签名
-	if err := d.KeyChain.SignData(data); err != nil {
+	if err := d.keyChain.SignData(data); err != nil {
 		common.LogError("Sign data failed!")
 	}
 	if err := d.FaceClient.SendData(data); err != nil {
