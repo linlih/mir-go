@@ -8,8 +8,11 @@
 package mir
 
 import (
+	"errors"
+	"fmt"
 	common2 "minlib/common"
 	"minlib/component"
+	"minlib/minsecurity/crypto/sm3"
 	"minlib/security"
 	"minlib/utils"
 	"mir-go/daemon/common"
@@ -101,7 +104,9 @@ func (m *MIRStarter) Init(mirConfig *common.MIRConfig) {
 //
 func (m *MIRStarter) Start(pwd string) (string, error) {
 	// 初始化秘钥
-	m.initKeyChain(pwd)
+	if err := m.initKeyChain(pwd); err != nil {
+		return "", err
+	}
 
 	// 启动 LogicFaceSystem
 	m.logicFaceSystem.Start()
@@ -126,27 +131,27 @@ func (m *MIRStarter) IsExistDefaultIdentity() bool {
 // @Description:
 // @param keyChain
 //
-func (m *MIRStarter) initKeyChain(passwd string) {
+func (m *MIRStarter) initKeyChain(passwd string) error {
 	// 判断指定的网络身份是否存在
 	if m.IsExistDefaultIdentity() {
 		// 存在则使用输入的密码解密
 		if identity := m.keyChain.GetIdentityByName(m.mirConfig.GeneralConfig.DefaultId); identity != nil {
-			common2.LogDebug(1, identity.IsLocked(), identity.Prikey, identity.PrikeyRawByte)
 			if err := m.keyChain.SetCurrentIdentity(identity, passwd); err != nil {
-				common2.LogFatal(err)
+				return err
 			}
 			common2.LogDebug(identity.IsLocked(), identity.Prikey, identity.PrikeyRawByte)
 		} else {
-			common2.LogFatal("identify must not be nil!")
+			return errors.New("identify must not be nil!")
 		}
 	} else {
 		// 不存在则创建新的网络身份，并使用用户传入的密码作为它的密码
 		if identity, err := m.keyChain.CreateIdentityByName(m.mirConfig.GeneralConfig.DefaultId, passwd); err != nil {
-			common2.LogFatal(err)
+			return err
 		} else if err := m.keyChain.SetCurrentIdentity(identity, passwd); err != nil {
-			common2.LogFatal(err)
+			return err
 		}
 	}
+	return nil
 }
 
 // SetUpDefaultRoute
@@ -196,4 +201,14 @@ func SetUpDefaultRoute(defaultRouteConfigPath string, fib *table.FIB) {
 			common2.LogInfo("add route prefix=", identifier.ToUri(), " -> logic face id = ", logicFace.LogicFaceId)
 		}
 	}
+}
+
+// GetEncryptPasswd 对字符串进行 SM3 hash，得到 SM3 hash 后的结果
+//
+// @Description:
+// @param str
+// @return string
+//
+func GetEncryptPasswd(str string) string {
+	return fmt.Sprintf("%x", sm3.SumSM3([]byte(str)))
 }

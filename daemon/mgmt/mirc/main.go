@@ -16,6 +16,7 @@ import (
 	"minlib/security"
 	common2 "mir-go/daemon/common"
 	"mir-go/daemon/mgmt/mirc/cmd"
+	mir "mir-go/daemon/mircmd"
 	"os"
 )
 
@@ -78,6 +79,7 @@ func mirc(mirConfig *common2.MIRConfig) {
 
 	// 要求用户输入密码
 	passwd, err := cmd.AskPassword()
+	passwd = mir.GetEncryptPasswd(passwd)
 	if err != nil {
 		common.LogFatal(err)
 	}

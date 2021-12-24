@@ -14,7 +14,10 @@ import (
 	common2 "minlib/common"
 	"mir-go/daemon/common"
 	mir "mir-go/daemon/mircmd"
+	"mir-go/daemon/utils"
 	"os"
+	"runtime"
+	"strings"
 )
 
 const (
@@ -63,7 +66,14 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	starter := mir.NewMIRStarter(mirConfig)
-	return starter.Start("123456")
+	savePath := fmt.Sprintf("%s%cpasswd%s", mirConfig.GeneralConfig.EncryptedPasswdSavePath,
+		os.PathSeparator, strings.Replace(mirConfig.GeneralConfig.DefaultId, "/", "-", -1))
+
+	if passwd, err := utils.ReadFromFile(savePath); err != nil {
+		return "", err
+	} else {
+		return starter.Start(passwd)
+	}
 }
 func init() {
 	stdlog = log.New(os.Stdout, "", 0)
@@ -71,7 +81,23 @@ func init() {
 }
 
 func main() {
-	srv, err := daemon.New(name, description, daemon.GlobalDaemon, dependencies...)
+	sysType := runtime.GOOS
+
+	daemonKind := daemon.SystemDaemon
+	if sysType == "darwin" {
+		// macos 系统
+		daemonKind = daemon.GlobalDaemon
+	} else if sysType == "linux" {
+		// Linux 系统
+		daemonKind = daemon.SystemDaemon
+	} else if sysType == "windows" {
+		// Windows 系统
+		daemonKind = daemon.SystemDaemon
+	} else {
+		common2.LogFatal("Not support system: ", sysType)
+	}
+
+	srv, err := daemon.New(name, description, daemonKind, dependencies...)
 	if err != nil {
 		errlog.Println("Error: ", err)
 		os.Exit(1)

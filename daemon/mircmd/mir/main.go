@@ -39,6 +39,7 @@ func main() {
 		} else {
 			passwd = askSetPasswd(mirConfig.GeneralConfig.DefaultId)
 		}
+		passwd = mir.GetEncryptPasswd(passwd)
 		starter.Start(passwd)
 		return nil
 	}

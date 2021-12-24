@@ -40,7 +40,9 @@ type MIRConfig struct {
 func (mirConfig *MIRConfig) Init() {
 	// General
 	mirConfig.GeneralConfig.DefaultId = "/localhost/mir"
+	mirConfig.GeneralConfig.EncryptedPasswdSavePath = "/usr/local/etc/mir/passwd"
 	mirConfig.GeneralConfig.IdentifierType = []int{102, 103, 104}
+	mirConfig.GeneralConfig.DefaultRouteConfigPath = "/usr/local/etc/mir/defaultRoute.xml"
 
 	// Log
 	mirConfig.LogConfig.LogLevel = "INFO"
@@ -94,9 +96,10 @@ type GeneralConfig struct {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	//// General
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	DefaultId              string `ini:"DefaultId"`              // 默认网络身份
-	IdentifierType         []int  `ini:"IdentifierType"`         // 当前路由器支持的标识类型，102 => GPPkt | 103 => 内容兴趣标识（Interest）| 104 => 内容兴趣标识（Interest）
-	DefaultRouteConfigPath string `ini:"DefaultRouteConfigPath"` // 静态路由配置文件路径
+	DefaultId               string `ini:"DefaultId"`               // 默认网络身份
+	EncryptedPasswdSavePath string `ini:"EncryptedPasswdSavePath"` // 加密秘钥保存位置
+	IdentifierType          []int  `ini:"IdentifierType"`          // 当前路由器支持的标识类型，102 => GPPkt | 103 => 内容兴趣标识（Interest）| 104 => 内容兴趣标识（Interest）
+	DefaultRouteConfigPath  string `ini:"DefaultRouteConfigPath"`  // 静态路由配置文件路径
 }
 
 type LogConfig struct {
