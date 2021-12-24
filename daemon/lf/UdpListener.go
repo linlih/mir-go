@@ -168,5 +168,5 @@ func (u *UdpListener) AddLogicFace(remoteAddr string, logicFace *LogicFace) {
 }
 
 func (u *UdpListener) GetLogicFaceByRemoteUri(remoteAddr string) *LogicFace {
-	return u.GetLogicFaceByRemoteUri(remoteAddr)
+	return u.udpAddrFaceMap.LoadLogicFace(remoteAddr)
 }
