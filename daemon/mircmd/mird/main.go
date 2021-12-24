@@ -26,9 +26,6 @@ const (
 	defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini" // MIR配置文件路径
 )
 
-// dependencies that are NOT required by the service, but might be used
-var dependencies = []string{"dummy.service"}
-
 var stdlog, errlog *log.Logger
 
 // Service has embedded daemon
@@ -97,7 +94,7 @@ func main() {
 		common2.LogFatal("Not support system: ", sysType)
 	}
 
-	srv, err := daemon.New(name, description, daemonKind, dependencies...)
+	srv, err := daemon.New(name, description, daemonKind)
 	if err != nil {
 		errlog.Println("Error: ", err)
 		os.Exit(1)
