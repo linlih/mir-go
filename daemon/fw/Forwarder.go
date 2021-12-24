@@ -8,6 +8,7 @@
 package fw
 
 import (
+	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	common2 "minlib/common"
@@ -20,6 +21,7 @@ import (
 	"mir-go/daemon/plugin"
 	"mir-go/daemon/table"
 	"mir-go/daemon/utils"
+	"os"
 )
 
 // Forwarder MIR 转发器实例
@@ -35,7 +37,7 @@ type Forwarder struct {
 	pluginManager       *plugin.GlobalPluginManager // 插件管理器
 	packetQueue         *utils2.BlockQueue          // 包队列
 	heapTimer           *utils2.HeapTimer           // 堆定时器，用来处理PIT的超时事件
-	lastNum             uint64
+	interrupt           chan os.Signal              // 用来接收系统的信号，结束程序
 }
 
 // Init 初始化转发器
@@ -44,8 +46,8 @@ type Forwarder struct {
 // @receiver f
 //
 func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
-	f.lastNum = 0
 	f.config = config
+	f.interrupt = make(chan os.Signal, 1)
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
@@ -74,26 +76,44 @@ func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalP
 //
 // @Description:
 //
-func (f *Forwarder) Start() {
+func (f *Forwarder) Start() (string, error) {
+	resMsg := ""
+	resErr := errors.New("")
 	utils.ProtectRun(func() {
 		for true {
-			// 在处理包之前
-			f.heapTimer.DealEvent()
-			// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
-			if data, err := f.packetQueue.ReadUntil(10); err != nil {
-				// 读取超时了
-			} else {
-				ipd, ok := data.(*lf.IncomingPacketData)
-				if !ok {
-					continue
+			select {
+			case killSignal := <-f.interrupt:
+				if killSignal == os.Interrupt {
+					common2.LogError("Daemon was interrupted by system signal")
+					resMsg = "Daemon was interrupted by system signal"
+				} else {
+					common2.LogError("Daemon was killed")
+					resMsg = "Daemon was killed"
 				}
-				f.OnReceiveMINPacket(ipd)
+				resErr = nil
+				break
+			default:
+				// 在处理包之前
+				f.heapTimer.DealEvent()
+				// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
+				if data, err := f.packetQueue.ReadUntil(10); err != nil {
+					// 读取超时了
+				} else {
+					ipd, ok := data.(*lf.IncomingPacketData)
+					if !ok {
+						continue
+					}
+					f.OnReceiveMINPacket(ipd)
+				}
 			}
 		}
 	}, func(err interface{}) {
 		// Panic error
 		common2.LogError(err)
+		resMsg = "Daemon crash by panic"
+		resErr = nil
 	})
+	return resMsg, resErr
 }
 
 // OnReceiveMINPacket 处理收到一个 MINPacket
@@ -373,12 +393,6 @@ func (f *Forwarder) OnContentStoreHit(ingress *lf.LogicFace, pitEntry *table.PIT
 // @param interest
 //
 func (f *Forwarder) OnOutgoingInterest(egress *lf.LogicFace, pitEntry *table.PITEntry, interest *packet.Interest) {
-	if item, err := interest.GetName().Get(-1); err == nil {
-		//if item.GetVersionNumber()-f.lastNum > 1 {
-		//	common2.LogWarn(f.lastNum, " => ", item.GetVersionNumber())
-		//}
-		f.lastNum = item.GetVersionNumber()
-	}
 	common2.LogDebugWithFields(logrus.Fields{
 		"faceId":   egress.LogicFaceId,
 		"interest": interest.ToUri(),

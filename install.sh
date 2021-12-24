@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GOPATH=$(go env GOPATH)
+
 # 首先下载依赖
 echo "======================== download ==========================="
 sudo apt install gcc libpcap-dev -y
@@ -9,6 +11,11 @@ echo ""
 echo "======================== compile and install mir ==========================="
 go install ./daemon/mircmd/mir
 echo "mir install to $GOPATH/bin/mir"
+echo ""
+
+echo "======================== compile and install mird ==========================="
+go install ./daemon/mircmd/mird
+echo "mir install to $GOPATH/bin/mird"
 echo ""
 
 echo "======================== compile and install mirc ==========================="

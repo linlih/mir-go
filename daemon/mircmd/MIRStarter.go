@@ -30,9 +30,12 @@ const defaultConfigFilePath = "/usr/local/etc/mir/mirconf.ini"
 // @Description:
 //
 type MIRStarter struct {
-	plugin.GlobalPluginManager                   // 全局插件管理器
-	keyChain                   security.KeyChain // 秘钥链
-	mirConfig                  *common.MIRConfig // MIR 配置文件
+	plugin.GlobalPluginManager                     // 全局插件管理器
+	keyChain                   security.KeyChain   // 秘钥链
+	mirConfig                  *common.MIRConfig   // MIR 配置文件
+	forwarder                  *fw.Forwarder       //转发器
+	logicFaceSystem            *lf.LogicFaceSystem // 管理LogicFace
+	dispatcher                 *mgmt.Dispatcher    // 管理命令分发器
 }
 
 // NewMIRStarter 新建一个 MIR 启动器
@@ -56,23 +59,13 @@ func (m *MIRStarter) Init(mirConfig *common.MIRConfig) {
 	if err := m.keyChain.InitialKeyChainByPath(utils2.GetRelPath(m.mirConfig.SecurityConfig.IdentityDBPath)); err != nil {
 		common2.LogFatal(err)
 	}
-}
-
-// Start 传入所使用身份的密码，启动MIR
-//
-// @Description:
-// @param pwd
-//
-func (m *MIRStarter) Start(pwd string) {
-	// 初始化秘钥
-	m.initKeyChain(pwd)
 
 	// 初始化 BlockQueue
 	packetQueue := utils.NewBlockQueue(uint(m.mirConfig.ForwarderConfig.PacketQueueSize))
 
 	// 初始化转发器
-	forwarder := new(fw.Forwarder)
-	if err := forwarder.Init(m.mirConfig, &m.GlobalPluginManager, packetQueue); err != nil {
+	m.forwarder = new(fw.Forwarder)
+	if err := m.forwarder.Init(m.mirConfig, &m.GlobalPluginManager, packetQueue); err != nil {
 		common2.LogFatal(err)
 	}
 
@@ -81,32 +74,42 @@ func (m *MIRStarter) Start(pwd string) {
 	packetValidator.Init(m.mirConfig.ParallelVerifyNum, m.mirConfig.VerifyPacket, packetQueue)
 
 	// LogicFaceSystem
-	logicFaceSystem := new(lf.LogicFaceSystem)
-	logicFaceSystem.Init(packetValidator, m.mirConfig)
+	m.logicFaceSystem = new(lf.LogicFaceSystem)
+	m.logicFaceSystem.Init(packetValidator, m.mirConfig)
 
 	// 管理模块
 	faceServer, faceClient := lf.CreateInnerLogicFacePair()
 	mgmtSystem := mgmt.CreateMgmtSystem()
-	mgmtSystem.SetFIB(forwarder.GetFIB())
-	mgmtSystem.BindFibCleaner(logicFaceSystem.LogicFaceTable())
-	dispatcher := mgmt.CreateDispatcher(m.mirConfig, &m.keyChain)
-	dispatcher.FaceClient = faceClient
+	mgmtSystem.SetFIB(m.forwarder.GetFIB())
+	mgmtSystem.BindFibCleaner(m.logicFaceSystem.LogicFaceTable())
+	m.dispatcher = mgmt.CreateDispatcher(m.mirConfig, &m.keyChain)
+	m.dispatcher.FaceClient = faceClient
 	topPrefix, _ := component.CreateIdentifierByString("/min-mir/mgmt/localhost")
-	dispatcher.AddTopPrefix(topPrefix, forwarder.GetFIB(), faceServer)
-	mgmtSystem.Init(dispatcher, logicFaceSystem.LogicFaceTable())
-
-	// 启动 LogicFaceSystem
-	logicFaceSystem.Start()
+	m.dispatcher.AddTopPrefix(topPrefix, m.forwarder.GetFIB(), faceServer)
+	mgmtSystem.Init(m.dispatcher, m.logicFaceSystem.LogicFaceTable())
 
 	// 加载静态路由配置
 	utils2.GoroutineNoPanic(func() {
-		SetUpDefaultRoute(m.mirConfig.DefaultRouteConfigPath, forwarder.GetFIB())
+		SetUpDefaultRoute(m.mirConfig.DefaultRouteConfigPath, m.forwarder.GetFIB())
 	})
+}
+
+// Start 传入所使用身份的密码，启动MIR
+//
+// @Description:
+// @param pwd
+//
+func (m *MIRStarter) Start(pwd string) (string, error) {
+	// 初始化秘钥
+	m.initKeyChain(pwd)
+
+	// 启动 LogicFaceSystem
+	m.logicFaceSystem.Start()
 
 	// 启动命令分发程序
-	dispatcher.Start()
+	m.dispatcher.Start()
 	// 启动转发处理流程（死循环阻塞）
-	forwarder.Start()
+	return m.forwarder.Start()
 }
 
 // IsExistDefaultIdentity 判断默认身份是否存在
