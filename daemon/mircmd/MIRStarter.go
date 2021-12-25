@@ -9,10 +9,8 @@ package mir
 
 import (
 	"errors"
-	"fmt"
 	common2 "minlib/common"
 	"minlib/component"
-	"minlib/minsecurity/crypto/sm3"
 	"minlib/security"
 	"minlib/utils"
 	"mir-go/daemon/common"
@@ -201,14 +199,4 @@ func SetUpDefaultRoute(defaultRouteConfigPath string, fib *table.FIB) {
 			common2.LogInfo("add route prefix=", identifier.ToUri(), " -> logic face id = ", logicFace.LogicFaceId)
 		}
 	}
-}
-
-// GetEncryptPasswd 对字符串进行 SM3 hash，得到 SM3 hash 后的结果
-//
-// @Description:
-// @param str
-// @return string
-//
-func GetEncryptPasswd(str string) string {
-	return fmt.Sprintf("%x", sm3.SumSM3([]byte(str)))
 }

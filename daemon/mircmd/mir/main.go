@@ -4,6 +4,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/urfave/cli/v2"
 	common2 "minlib/common"
+	"minlib/utils"
 	"mir-go/daemon/common"
 	"mir-go/daemon/mircmd"
 	"os"
@@ -39,7 +40,7 @@ func main() {
 		} else {
 			passwd = askSetPasswd(mirConfig.GeneralConfig.DefaultId)
 		}
-		passwd = mir.GetEncryptPasswd(passwd)
+		passwd = utils.GetEncryptPasswd(passwd)
 		starter.Start(passwd)
 		return nil
 	}

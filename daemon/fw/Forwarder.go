@@ -96,7 +96,7 @@ func (f *Forwarder) Start() (string, error) {
 				// 在处理包之前
 				f.heapTimer.DealEvent()
 				// 此处读取包时，不采用阻塞操作，因为要保证超时事件能得到正确的处理
-				if data, err := f.packetQueue.ReadUntil(10); err != nil {
+				if data, err := f.packetQueue.ReadUntil(1); err != nil {
 					// 读取超时了
 				} else {
 					ipd, ok := data.(*lf.IncomingPacketData)

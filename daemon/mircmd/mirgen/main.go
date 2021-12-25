@@ -16,8 +16,8 @@ import (
 	"io/ioutil"
 	common2 "minlib/common"
 	"minlib/security"
+	utils2 "minlib/utils"
 	"mir-go/daemon/common"
-	mir "mir-go/daemon/mircmd"
 	"mir-go/daemon/utils"
 	"os"
 	"strings"
@@ -139,7 +139,7 @@ func askInputPassword() string {
 	} else {
 		// 迅速将明文的密码转为 SM3 hash值
 		if !oldPasswdNoHash {
-			passwd = mir.GetEncryptPasswd(passwd)
+			passwd = utils2.GetEncryptPasswd(passwd)
 		}
 	}
 	return passwd
@@ -161,7 +161,7 @@ func askSetPasswd(name string) string {
 			common2.LogFatal(err)
 		}
 		// 迅速将明文的密码转为 SM3 hash值
-		passwd = mir.GetEncryptPasswd(passwd)
+		passwd = utils2.GetEncryptPasswd(passwd)
 
 		rePasswd := ""
 		prompt = &survey.Password{
@@ -171,7 +171,7 @@ func askSetPasswd(name string) string {
 			common2.LogFatal(err)
 		}
 		// 迅速将明文的密码转为 SM3 hash值
-		rePasswd = mir.GetEncryptPasswd(rePasswd)
+		rePasswd = utils2.GetEncryptPasswd(rePasswd)
 
 		if passwd == rePasswd {
 			return passwd
@@ -193,7 +193,7 @@ func askResetPasswd(name string, checkPasswd func(passwd string) error) (string,
 		}
 
 		if !oldPasswdNoHash {
-			oldPasswd = mir.GetEncryptPasswd(oldPasswd)
+			oldPasswd = utils2.GetEncryptPasswd(oldPasswd)
 		}
 
 		// 检查密码是否正确
@@ -208,7 +208,7 @@ func askResetPasswd(name string, checkPasswd func(passwd string) error) (string,
 		if err := survey.AskOne(prompt, &newPasswd); err != nil {
 			common2.LogFatal(err)
 		}
-		newPasswd = mir.GetEncryptPasswd(newPasswd)
+		newPasswd = utils2.GetEncryptPasswd(newPasswd)
 
 		rePasswd := ""
 		prompt = &survey.Password{
@@ -218,7 +218,7 @@ func askResetPasswd(name string, checkPasswd func(passwd string) error) (string,
 			common2.LogFatal(err)
 			continue
 		}
-		rePasswd = mir.GetEncryptPasswd(rePasswd)
+		rePasswd = utils2.GetEncryptPasswd(rePasswd)
 
 		if newPasswd == rePasswd {
 			return oldPasswd, newPasswd, nil
