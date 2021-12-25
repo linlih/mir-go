@@ -55,6 +55,14 @@ sudo mird status
 sudo mird remove
 ```
 
+- 终端日志输出位置
+  - Macos
+    - `/usr/local/var/log/mird.err`
+    - `/usr/local/var/log/mird.log`
+  - Linux => `/var/log/mird.log`
+
+关于启动后服务的日志如何输出 => https://blog.csdn.net/sinat_24092079/article/details/120676316
+
 ## 2. Install
 
 - 要提前装好 minlib，并且minlib与mir-go在同一目录下

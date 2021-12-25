@@ -9,7 +9,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/takama/daemon"
+	"github.com/SunnyQjm/daemon"
 	"log"
 	common2 "minlib/common"
 	"mir-go/daemon/common"
