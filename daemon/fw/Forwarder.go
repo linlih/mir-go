@@ -22,6 +22,8 @@ import (
 	"mir-go/daemon/table"
 	"mir-go/daemon/utils"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 // Forwarder MIR 转发器实例
@@ -48,6 +50,7 @@ type Forwarder struct {
 func (f *Forwarder) Init(config *common.MIRConfig, pluginManager *plugin.GlobalPluginManager, packetQueue *utils2.BlockQueue) error {
 	f.config = config
 	f.interrupt = make(chan os.Signal, 1)
+	signal.Notify(f.interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	// 初始化各个表
 	f.PIT.Init()
 	f.FIB.Init()
