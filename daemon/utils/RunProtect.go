@@ -12,11 +12,11 @@ import (
 )
 
 func ProtectRun(work func(), onError func(err interface{})) {
-	defer func() {
-		if err := recover(); err != nil {
-			onError(err)
-		}
-	}()
+	//defer func() {
+	//	if err := recover(); err != nil {
+	//		onError(err)
+	//	}
+	//}()
 	work()
 }
 
