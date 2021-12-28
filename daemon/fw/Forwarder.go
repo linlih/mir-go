@@ -87,11 +87,11 @@ func (f *Forwarder) Start() (string, error) {
 			select {
 			case killSignal := <-f.interrupt:
 				if killSignal == os.Interrupt {
-					common2.LogError("Daemon was interrupted by system signal")
 					resMsg = "Daemon was interrupted by system signal"
+					common2.LogFatal("Daemon was interrupted by system signal")
 				} else {
-					common2.LogError("Daemon was killed")
 					resMsg = "Daemon was killed"
+					common2.LogFatal("Daemon was killed")
 				}
 				resErr = nil
 				break
