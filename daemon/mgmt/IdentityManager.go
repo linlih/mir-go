@@ -433,6 +433,7 @@ func (im *IdentityManager) DumpId(topPrefix *component.Identifier, interest *pac
 //
 func (im *IdentityManager) LoadId(topPrefix *component.Identifier, interest *packet.Interest,
 	parameters *component.ControlParameters) *mgmt.ControlResponse {
+
 	// 解析参数
 	filePath := parameters.ControlParameterCommonString.Value()
 	passwd := parameters.Passwd()
@@ -449,15 +450,9 @@ func (im *IdentityManager) LoadId(topPrefix *component.Identifier, interest *pac
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 
-	// base64解码
-	res, err := base64.StdEncoding.DecodeString(string(data))
-	if err != nil {
-		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
-	}
-
 	// 加载身份
 	id := identity.Identity{}
-	if err := id.Load(res, passwd); err != nil {
+	if err := id.Load(data, passwd); err != nil {
 		return MakeControlResponse(mgmt.ControlResponseCodeCommonError, err.Error(), "")
 	}
 

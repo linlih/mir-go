@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/desertbit/grumble"
@@ -541,16 +540,9 @@ func LoadIdentity(c *grumble.Context, controller *mgmt.MIRController) error {
 		return err
 	}
 
-	// base64解码
-	res, err := base64.StdEncoding.DecodeString(string(data))
-
-	if err != nil {
-		return err
-	}
-
 	// 尝试本地解析身份，如果本地解析身份失败，就不需要和路由器进行通信了
 	id := identity.Identity{}
-	if err := id.Load(res, passwd); err != nil {
+	if err := id.Load(data, passwd); err != nil {
 		return err
 	}
 
