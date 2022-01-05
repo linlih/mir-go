@@ -116,13 +116,12 @@ func (s *StatusDatasetContext) Done(version uint64) error {
 		}
 		tempIdentifier.AppendVersionNumber(version)
 		tempIdentifier.AppendFragmentNumber(uint64(i))
-		dataPacket := new(packet.Data)
-		dataPacket.SetName(tempIdentifier)
-		length := sliceNum
+		dataPacket := packet.NewDataByName(tempIdentifier)
+		length := s.SliceSize
 		if i == sliceNum-1 {
-			length = len(data) - i*sliceNum
+			length = len(data) - i*s.SliceSize
 		}
-		dataPacket.Payload.SetValue(data[i*sliceNum : i*sliceNum+length])
+		dataPacket.Payload.SetValue(data[i*s.SliceSize : i*s.SliceSize+length])
 		s.dataSaver(dataPacket)
 	}
 
