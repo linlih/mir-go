@@ -33,7 +33,7 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
       - name: Build mir
-        run: go build ../daemon/mircmd/mir
+        run: pwd && ls -ltrh && ls -ltrh ../ && go build ../daemon/mircmd/mir
       - name: Build mird
         run: go build ../daemon/mircmd/mird
       - name: Build mirgen
