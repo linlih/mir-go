@@ -12,16 +12,11 @@ jobs:
         with:
           path: mir-go
 
-      - name: MV minlib1
-        run: ls -ltrh && echo "hhh" && cd .. &&  ls -ltrh
       - uses: actions/checkout@v2
         with:
           repository: MIN-Group/minlib
           ref: main
           path: miblib
-
-      - name: MV minlib
-        run: ls -ltrh && echo "hhh" && cd .. &&  ls -ltrh
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -29,7 +24,7 @@ jobs:
           go-version: 1.17
 
       - name: Install Dependency Library
-        run: sudo apt install gcc libpcap-dev -y && go mod download && mkdir build && cd build
+        run: cd mir-go && sudo apt install gcc libpcap-dev -y && go mod download && mkdir build && cd build
 
       - name: Get version
         id: get_version
