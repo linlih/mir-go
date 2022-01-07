@@ -13,10 +13,10 @@ jobs:
         with:
           repository: MIN-Group/minlib
           ref: main
-          path: miblib
+          path: ../miblib
 
       - name: MV minlib
-        run: mv minlib ../
+        run: ls -ltrh && echo "hhh" && cd .. &&  ls -ltrh
 
       - name: Set up Go
         uses: actions/setup-go@v2
