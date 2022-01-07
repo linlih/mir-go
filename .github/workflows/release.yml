@@ -9,11 +9,16 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          path: mir-go
+
+      - name: MV minlib1
+        run: ls -ltrh && echo "hhh" && cd .. &&  ls -ltrh
       - uses: actions/checkout@v2
         with:
           repository: MIN-Group/minlib
           ref: main
-          path: ../miblib
+          path: miblib
 
       - name: MV minlib
         run: ls -ltrh && echo "hhh" && cd .. &&  ls -ltrh
