@@ -23,7 +23,7 @@ jobs:
         with:
           go-version: 1.17
       - name: ls
-        run: ls -ltrh /home/runner/work/mir-go && echo "hhh" && ls -ltrh /home/runner/work/mir-go/mir-go && echo "hhh" && /home/runner/work/mir-go/mir-go/mir-go
+        run: ls -ltrh /home/runner/work/mir-go && echo "hhh" && ls -ltrh /home/runner/work/mir-go/mir-go && echo "hhh" && ls -ltrh /home/runner/work/mir-go/mir-go/mir-go
 
       - name: Install Dependency Library
         run: cd mir-go && sudo apt install gcc libpcap-dev -y && pwd && go mod download && mkdir build && cd build
