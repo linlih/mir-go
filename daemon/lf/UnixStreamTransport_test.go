@@ -23,17 +23,17 @@ package lf_test
 
 import (
 	"minlib/packet"
+	utils2 "minlib/utils"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
-	"mir-go/daemon/utils"
 	"testing"
 )
 
 func TestUnixStreamTransport_Send(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.NewBlockQueue(10)
+	blockQueue := utils2.NewBlockQueue(10)
 	packetValidator.Init(1, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()

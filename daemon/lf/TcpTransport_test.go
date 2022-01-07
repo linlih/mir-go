@@ -29,6 +29,7 @@ import (
 	"minlib/component"
 	"minlib/packet"
 	"minlib/security"
+	utils2 "minlib/utils"
 	"mir-go/daemon/common"
 	"mir-go/daemon/fw"
 	"mir-go/daemon/lf"
@@ -42,8 +43,8 @@ import (
 func TestTcpTransport_Init(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.BlockQueue{}
-	packetValidator.Init(100, false, &blockQueue)
+	blockQueue := utils2.NewBlockQueue(1024)
+	packetValidator.Init(100, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
@@ -152,8 +153,8 @@ var TcpRoutineNum = flag.Int("TcpRoutineNum", 1, "number of routine to send Tcp 
 func TestTcpTransport_Speed(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.BlockQueue{}
-	packetValidator.Init(100, true, &blockQueue)
+	blockQueue := utils2.NewBlockQueue(1024)
+	packetValidator.Init(100, true, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
@@ -172,8 +173,8 @@ func TestTcpTransport_Speed(t *testing.T) {
 func TestTcpTransport_SpeedAndSign(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.BlockQueue{}
-	packetValidator.Init(100, true, &blockQueue)
+	blockQueue := utils2.NewBlockQueue(1024)
+	packetValidator.Init(100, true, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()
 	faceSystem.Init(&packetValidator, &mir)
@@ -192,7 +193,7 @@ func TestTcpTransport_SpeedAndSign(t *testing.T) {
 func TestTcpTransport_Receive(t *testing.T) {
 	var faceSystem lf.LogicFaceSystem
 	var packetValidator fw.PacketValidator
-	blockQueue := utils.NewBlockQueue(10)
+	blockQueue := utils2.NewBlockQueue(10)
 	packetValidator.Init(1, false, blockQueue)
 	var mir common.MIRConfig
 	mir.Init()

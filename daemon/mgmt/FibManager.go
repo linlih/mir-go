@@ -277,3 +277,7 @@ func (f *FibManager) RegisterPrefix(topPrefix *component.Identifier, interest *p
 	parameters.SetLogicFaceId(interest.IncomingLogicFaceId.GetIncomingLogicFaceId())
 	return f.AddNextHop(topPrefix, interest, parameters)
 }
+
+func (f *FibManager) GetFib() *table.FIB {
+	return f.fib
+}

@@ -41,28 +41,24 @@ elif [ $macos_platform -eq 1 ]; then
 fi
 go mod download
 
-echo "======================== compile and install mir ==========================="
-go install ./daemon/mircmd/mir
-cp "$GOPATH"/bin/mir "$usr_bin_path"/mir # 拷贝到 /usr/local/bin
-echo "mir install to $GOPATH/bin/mir and $usr_bin_path/mir"
+echo "======================== install mir ==========================="
+cp mir "$usr_bin_path"/mir
+echo "mir install to $usr_bin_path/mir"
 echo ""
 
-echo "======================== compile and install mird ==========================="
-go install ./daemon/mircmd/mird
-cp "$GOPATH"/bin/mird "$usr_bin_path"/mird # 拷贝到 /usr/local/bin
-echo "mir install to $GOPATH/bin/mird and $usr_bin_path/mird"
+echo "======================== install mird ==========================="
+cp mird "$usr_bin_path"/mird
+echo "mird install to $usr_bin_path/mird"
 echo ""
 
-echo "======================== compile and install mirgen ==========================="
-go install ./daemon/mircmd/mirgen
-cp "$GOPATH"/bin/mirgen "$usr_bin_path"/mirgen # 拷贝到 /usr/local/bin
-echo "mirc install to $GOPATH/bin/mirgen and $usr_bin_path/mirgen"
+echo "======================== install mirgen ==========================="
+cp mirgen "$usr_bin_path"/mirgen
+echo "mirgen install to $usr_bin_path/mirgen"
 echo ""
 
 echo "======================== compile and install mirc ==========================="
-go install ./daemon/mgmt/mirc
-cp "$GOPATH"/bin/mirc "$usr_bin_path"/mirc # 拷贝到 /usr/local/bin
-echo "mirc install to $GOPATH/bin/mirc and $usr_bin_path/mirc"
+cp mirc "$usr_bin_path"/mirc
+echo "mirc install to $usr_bin_path/mirc"
 echo ""
 
 echo "======================== copy config file ==========================="
@@ -98,4 +94,4 @@ else
 fi
 echo ""
 
-#sudo "$GOPATH"/bin/mirgen
+sudo "$GOPATH"/bin/mirgen

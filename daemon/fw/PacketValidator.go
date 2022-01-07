@@ -58,14 +58,14 @@ func (p *PacketValidator) Init(cap int, needValidate bool, packetQueue *utils.Bl
 	// 当且仅当需要进行签名验证时，才开启协程池
 	if needValidate {
 		if keyChain, err := security.CreateKeyChain(); err != nil {
-			common2.LogFatal("Create KeyChain failed! msg => %s", err.Error())
+			common2.LogFatal("Create KeyChain failed! msg =>", err.Error())
 		} else {
 			p.keyChain = keyChain
 		}
 		p._pool, _ = ants.NewPool(cap)
 		if err := p.keyChain.InitialKeyChain(); err != nil {
 			// 如果初始化KeyChain失败，则认为是严重错误直接抛出错误退出程序
-			common2.LogFatal("PacketValidator init KeyChain failed！ msg => %s", err.Error())
+			common2.LogFatal("PacketValidator init KeyChain failed！ msg =>", err.Error())
 		}
 	}
 }
@@ -100,7 +100,7 @@ func (p *PacketValidator) ReceiveMINPacket(data *lf.IncomingPacketData) {
 		}
 	}); err != nil {
 		// 任务提交失败，输出错误
-		common2.LogError("PacketValidator create a packet verify task failed: %s", err.Error())
+		common2.LogError("PacketValidator create a packet verify task failed:", err.Error())
 	}
 }
 
