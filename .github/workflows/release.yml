@@ -15,8 +15,9 @@ jobs:
           ref: main
           path: miblib
 
-      - name: ls
-        run: ls -ltrh && cd .. && ls -ltrh
+      - name: MV minlib
+        run: mv minlib ../
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
