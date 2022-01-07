@@ -1,7 +1,7 @@
 name: ubuntu18.04-release
 on:
   push:
-    branches: [ main ]
+    branches: [ test-workflow ]
     tags:
       - v*
 jobs:
