@@ -33,21 +33,21 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
       - name: Build mir
-        run: pwd && ls -ltrh && ls -ltrh ../ && go build ../daemon/mircmd/mir
+        run: cd mir-go/build && ls -ltrh && ls -ltrh ../ && go build ../daemon/mircmd/mir
       - name: Build mird
-        run: go build ../daemon/mircmd/mird
+        run: cd mir-go/build && go build ../daemon/mircmd/mird
       - name: Build mirgen
-        run: go build ../daemon/mircmd/mirgen
+        run: cd mir-go/build && go build ../daemon/mircmd/mirgen
       - name: Build mirc
-        run: go build ../daemon/mgmt/mirc
+        run: cd mir-go/build && go build ../daemon/mgmt/mirc
       - name: Copy Config File
-        run: cp ../mirconf.ini . && cp ../min.conf . && cp ../install_release.sh install.sh
+        run: cd mir-go/build && cp ../mirconf.ini . && cp ../min.conf . && cp ../install_release.sh install.sh
       - name: Archive
-        run: cd .. && tar -czvf mir-go-ubuntu18.04-${{ steps.get_version.outputs.VERSION }}.tar.gz build
+        run: cd mir-go && tar -czvf mir-go-ubuntu18.04-${{ steps.get_version.outputs.VERSION }}.tar.gz build
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            mir-go-ubuntu18.04-${{ steps.get_version.outputs.VERSION }}.tar.gz
+            mir-go/mir-go-ubuntu18.04-${{ steps.get_version.outputs.VERSION }}.tar.gz
 
